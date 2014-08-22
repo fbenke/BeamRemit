@@ -47,14 +47,11 @@ LOCAL_APPS = (
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 # SSL Redirects
-# if ENV != ENV_LOCAL:
-#     PRODUCTION_MIDDLEWARE = ('sslify.middleware.SSLifyMiddleware',)
-# else:
-#     # No automatic redirects on local
-#     PRODUCTION_MIDDLEWARE = ()
-
-# TODO: SSL Redicects
-PRODUCTION_MIDDLEWARE = ()
+if ENV != ENV_LOCAL:
+    PRODUCTION_MIDDLEWARE = ('sslify.middleware.SSLifyMiddleware',)
+else:
+    # No automatic redirects on local
+    PRODUCTION_MIDDLEWARE = ()
 
 MIDDLEWARE_CLASSES = PRODUCTION_MIDDLEWARE + (
     'django.contrib.sessions.middleware.SessionMiddleware',
