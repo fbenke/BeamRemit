@@ -1,0 +1,18 @@
+# humanstxt.org/
+# The humans responsible & technology colophon
+
+# TEAM
+
+    Nikunj Handa -- Developer -- _nknj
+    Falk Benke -- Developer -- fbenke
+
+# THANKS
+
+    ?
+
+# TECHNOLOGY COLOPHON
+
+    HTML5, CSS3
+    jQuery, Modernizr
+    Bootstrap
+    Django
