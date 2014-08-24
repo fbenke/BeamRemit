@@ -1,2 +1,1 @@
-web: python manage.py collectstatic --noinput; python manage.py migrate; newrelic-admin run-program python manage.py run_gunicorn -b "0.0.0.0:$PORT" -w 3
-
+web: python manage.py collectstatic --noinput; python manage.py migrate; newrelic-admin run-program gunicorn -b "0.0.0.0:$PORT" beam.wsgi --log-file - --workers $WEB_CONCURRENCY

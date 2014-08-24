@@ -33,7 +33,6 @@ DJANGO_APPS = (
 )
 
 THIRD_PARTY_APPS = (
-    'gunicorn',
     'south',
     'rest_framework',
     'rest_framework.authtoken',
