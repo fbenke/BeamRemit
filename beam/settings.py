@@ -41,6 +41,7 @@ THIRD_PARTY_APPS = (
 
 LOCAL_APPS = (
     'beam',
+    'beam_user',
 )
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -148,3 +149,5 @@ else:
         # ENV_SITE_MAPPING[ENV][SITE_ADMIN],
         # ENV_SITE_MAPPING[ENV][SITE_USER]
     )
+
+AUTH_USER_MODEL = 'beam_user.BeamUser'
