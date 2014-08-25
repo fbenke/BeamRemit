@@ -16,6 +16,16 @@ urlpatterns = patterns(
         views.RetrieveUserView.as_view(),
         name='retrieve'
     ),
+    url(
+        r'^login/$',
+        views.Login.as_view(),
+        name='login'
+    ),
+    url(
+        r'^logout/$',
+        'beam_user.views.logout',
+        name='logout'
+    ),
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)
