@@ -14,6 +14,10 @@ urlpatterns = patterns(
         name='home'
     ),
     url(
+        r'^api/v1/user/',
+        include('beam_user.urls', namespace='user')
+    ),
+    url(
         r'^robots\.txt$',
         TemplateView.as_view(template_name='robots.txt', content_type='text/plain'),
         name='robots'
@@ -40,8 +44,3 @@ handler404 = 'beam.views.page_not_found'
 handler500 = 'beam.views.custom_error'
 handler403 = 'beam.views.permission_denied'
 handler400 = 'beam.views.bad_request'
-
-
-
-
-

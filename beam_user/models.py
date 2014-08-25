@@ -50,20 +50,21 @@ class BeamUser(AbstractBaseUser):
         'Email',
         max_length=30,
         unique=True,
-        help_text='Unique Email Address identifying a Sender'
+        help_text='Unique Email Address identifying a User'
     )
 
     first_name = models.CharField(
         'First Name',
-        max_length=50,
-        blank=True
+        max_length=35,
+        blank=True,
+        help_text='First Name of the User'
     )
 
     last_name = models.CharField(
         'Last Name',
-        max_length=30,
+        max_length=35,
         blank=True,
-        help_text="Last Name of the Sender"
+        help_text='Last Name of the User'
     )
 
     is_active = models.BooleanField(
