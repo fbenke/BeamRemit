@@ -93,10 +93,6 @@ class BeamUser(AbstractBaseUser):
     def is_staff(self):
         return self.is_admin
 
-    def save(self, *args, **kwargs):
-        self.set_password(self.password)
-        super(BeamUser, self).save(*args, **kwargs)
-
     def delete(self, *args, **kwargs):
         self.is_active = False
         self.save()

@@ -1,14 +1,14 @@
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
-
+from rest_framework.viewsets import ModelViewSet
 
 from beam_user import serializers
 from beam_user.models import BeamUser
-from beam_user.permissions import IsOwner
 
 
 class CreateUserView(APIView):
@@ -43,35 +43,24 @@ class Login(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class EditUserView(generics.UpdateAPIView):
+class BeamUserViewSet(ModelViewSet):
+
     serializer_class = serializers.BeamUserSerializer
-    permission_classes = (IsOwner,)
+    permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
-        return BeamUser.objects.filter(is_active=True)
+        user = self.request.user
 
-
-class RetrieveUserView(generics.RetrieveAPIView):
-    serializer_class = serializers.BeamUserSerializer
-    permission_classes = (IsOwner,)
-
-    def get_queryset(self):
-        return BeamUser.objects.filter(is_active=True)
-
-
-class DeleteUserView(generics.DestroyAPIView):
-    serializer_class = serializers.BeamUserSerializer
-    permission_classes = (IsOwner,)
-
-    def get_queryset(self):
-        return BeamUser.objects.filter(is_active=True)
+        # only this particular user is in the query set, which prevents the user
+        # from accessing data of other users
+        return BeamUser.objects.filter(id=user.id)
 
     def destroy(self, request, *args, **kwargs):
 
-        response = super(generics.DestroyAPIView, self).destroy(
+        response = super(ModelViewSet, self).destroy(
             request=request, *args, **kwargs
         )
-        
+
         if request.auth is not None:
             request.auth.delete()
         return response

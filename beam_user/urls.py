@@ -4,6 +4,13 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from beam_user import views
 
 
+user_list = views.BeamUserViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
 urlpatterns = patterns(
     '',
     url(
@@ -12,14 +19,9 @@ urlpatterns = patterns(
         name='create'
     ),
     url(
-        r'^edit/(?P<pk>[0-9]+)/$',
-        views.EditUserView.as_view(),
-        name='edit'
-    ),
-    url(
-        r'^view/(?P<pk>[0-9]+)/$',
-        views.RetrieveUserView.as_view(),
-        name='retrieve'
+        r'^(?P<pk>[0-9]+)/$',
+        user_list,
+        name='change'
     ),
     url(
         r'^login/$',
@@ -30,11 +32,6 @@ urlpatterns = patterns(
         r'^logout/$',
         'beam_user.views.logout',
         name='logout'
-    ),
-    url(
-        r'^delete/(?P<pk>[0-9]+)/$',
-        views.DeleteUserView.as_view(),
-        name='delete'
     ),
 )
 
