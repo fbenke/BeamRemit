@@ -31,6 +31,11 @@ urlpatterns = patterns(
         'beam_user.views.logout',
         name='logout'
     ),
+    url(
+        r'^delete/(?P<pk>[0-9]+)/$',
+        views.DeleteUserView.as_view(),
+        name='delete'
+    ),
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)

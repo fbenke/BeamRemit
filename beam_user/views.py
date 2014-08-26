@@ -59,6 +59,24 @@ class RetrieveUserView(generics.RetrieveAPIView):
         return BeamUser.objects.filter(is_active=True)
 
 
+class DeleteUserView(generics.DestroyAPIView):
+    serializer_class = serializers.BeamUserSerializer
+    permission_classes = (IsOwner,)
+
+    def get_queryset(self):
+        return BeamUser.objects.filter(is_active=True)
+
+    def destroy(self, request, *args, **kwargs):
+
+        response = super(generics.DestroyAPIView, self).destroy(
+            request=request, *args, **kwargs
+        )
+        
+        if request.auth is not None:
+            request.auth.delete()
+        return response
+
+
 @api_view(['POST'])
 def logout(request):
     if request.auth is not None:
