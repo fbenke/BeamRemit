@@ -12,7 +12,12 @@ urlpatterns = patterns(
         name='create'
     ),
     url(
-        r'^(?P<pk>[0-9]+)/$',
+        r'^edit/(?P<pk>[0-9]+)/$',
+        views.EditUserView.as_view(),
+        name='edit'
+    ),
+    url(
+        r'^view/(?P<pk>[0-9]+)/$',
         views.RetrieveUserView.as_view(),
         name='retrieve'
     ),

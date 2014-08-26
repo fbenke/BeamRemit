@@ -35,7 +35,7 @@ class BeamUserSerializer(serializers.ModelSerializer):
             )
         return attrs
 
-    def save(self):
+    def save(self, force_insert=False, force_update=False, using=None):
         with dbtransaction.atomic():
             user = super(BeamUserSerializer, self).save()
             user.set_password(user.password)
@@ -43,6 +43,8 @@ class BeamUserSerializer(serializers.ModelSerializer):
         return user
 
 
+# customized version of standard rest serializer working with email instead of username
+# https://github.com/tomchristie/django-rest-framework/blob/master/rest_framework/authtoken/serializers.py
 class AuthTokenSerializer(serializers.Serializer):
     email = serializers.CharField()
     password = serializers.CharField()

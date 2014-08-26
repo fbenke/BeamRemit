@@ -43,6 +43,14 @@ class Login(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class EditUserView(generics.UpdateAPIView):
+    serializer_class = serializers.BeamUserSerializer
+    permission_classes = (IsOwner,)
+
+    def get_queryset(self):
+        return BeamUser.objects.filter(is_active=True)
+
+
 class RetrieveUserView(generics.RetrieveAPIView):
     serializer_class = serializers.BeamUserSerializer
     permission_classes = (IsOwner,)
