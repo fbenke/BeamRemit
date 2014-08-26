@@ -56,14 +56,12 @@ class BeamUser(AbstractBaseUser):
     first_name = models.CharField(
         'First Name',
         max_length=35,
-        blank=True,
         help_text='First Name of the User'
     )
 
     last_name = models.CharField(
         'Last Name',
         max_length=35,
-        blank=True,
         help_text='Last Name of the User'
     )
 

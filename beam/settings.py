@@ -117,21 +117,11 @@ LOGGING = {
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Session Authentication
-ENABLE_SESSION_AUTHENTICATION = bool(int(os.environ.get('ENABLE_SESSION_AUTHENTICATION', '1')))
-
-if ENABLE_SESSION_AUTHENTICATION:
-    ADDITIONAL_AUTHENTICATION = (
-        'rest_framework.authentication.SessionAuthentication',
-    )
-else:
-    ADDITIONAL_AUTHENTICATION = ()
-
 # Django Rest Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
-    ) + ADDITIONAL_AUTHENTICATION,
+    ),
     'DEFAULT_PARSER_CLASSES': (
         'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.FormParser',

@@ -22,6 +22,7 @@ class BeamUserSerializer(serializers.ModelSerializer):
         return self._validate_name(attrs, source)
 
     def _validate_name(self, attrs, source):
+
         if not re.match(r'^[a-zA-Z]{4,35}$', attrs[source]):
             raise serializers.ValidationError('Name must consist of 4 - 35 letters.')
         return attrs
