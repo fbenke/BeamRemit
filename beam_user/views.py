@@ -23,8 +23,7 @@ class CreateUserView(APIView):
             return Response(
                 {'token': token.key, 'id': user.id}, status.HTTP_201_CREATED
             )
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class Login(APIView):
@@ -46,6 +45,8 @@ class Login(APIView):
 class BeamUserViewSet(ModelViewSet):
 
     serializer_class = serializers.BeamUserSerializer
+
+    # user must be authenticated to have access to these calls
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
@@ -55,6 +56,7 @@ class BeamUserViewSet(ModelViewSet):
         # from accessing data of other users
         return BeamUser.objects.filter(id=user.id)
 
+    # customized to delete token upon delete of a user
     def destroy(self, request, *args, **kwargs):
 
         response = super(ModelViewSet, self).destroy(

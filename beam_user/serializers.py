@@ -36,6 +36,7 @@ class BeamUserSerializer(serializers.ModelSerializer):
             )
         return attrs
 
+    # overwritten to store encrypted password
     def save(self, force_insert=False, force_update=False, using=None):
         with dbtransaction.atomic():
             user = super(BeamUserSerializer, self).save()

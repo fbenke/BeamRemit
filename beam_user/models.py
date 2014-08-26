@@ -93,6 +93,7 @@ class BeamUser(AbstractBaseUser):
     def is_staff(self):
         return self.is_admin
 
+    # default delete behavior: just deactivate a user, never delete
     def delete(self, *args, **kwargs):
         self.is_active = False
         self.save()
