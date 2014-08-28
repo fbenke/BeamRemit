@@ -44,7 +44,8 @@ LOCAL_APPS = (
     'beam_user',
 )
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
 # SSL Redirects
 if ENV != ENV_LOCAL:
@@ -118,6 +119,12 @@ LOGGING = {
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Django Rest Framework
+
+if ENV != ENV_LOCAL:
+    throttling_rates = {'anon': '1/second', }
+else:
+    throttling_rates = {'anon': '100/second', }
+
 REST_FRAMEWORK = {
     # if not specified otherwise, anyone can acess a view (this is the default)
     'DEFAULT_PERMISSION_CLASSES': (
@@ -142,9 +149,13 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.AnonRateThrottle',
     ),
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '1/second',
-    }
+    'DEFAULT_THROTTLE_RATES': (
+        throttling_rates
+    ),
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+    'TEST_REQUEST_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    )
 }
 
 # Django CORS headers
