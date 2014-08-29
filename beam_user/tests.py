@@ -8,7 +8,11 @@ class CreateUserTests(APITestCase):
     url_login = reverse('user:login')
     url_logout = reverse('user:logout')
 
-    def createUser(self, mail, password='Django123', first_name='Test', last_name='Hans'):
+    mails = iter(['test{}@mail.com'.format(k) for k in xrange(1, 1000)])
+
+    def createUser(self, mail=None, password='Django123', first_name='Test', last_name='Hans'):
+        if mail is None:
+            mail = self.mails.next()
         data = {
             'first_name': first_name,
             'last_name': last_name,
@@ -16,7 +20,7 @@ class CreateUserTests(APITestCase):
             'password': password,
         }
         response = self.client.post(self.url_signup, data)
-        return response.data['token']
+        return response.data['token'], response.data['id']
 
     def test_signup(self):
         data = {
@@ -32,14 +36,16 @@ class CreateUserTests(APITestCase):
         self.assertTrue(response.data['id'] is not None)
 
     def test_login(self):
-        self.createUser(mail='test2@mail.com')
-        response = self.client.post(self.url_login, {'email': 'test2@mail.com', 'password': 'Django123'})
+        self.createUser(mail='falk@mail.com', password='Django123')
+        response = self.client.post(self.url_login, {'email': 'falk@mail.com', 'password': 'Django321'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.client.post(self.url_login, {'email': 'falk@mail.com', 'password': 'Django123'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['token'] is not None)
         self.assertTrue(response.data['id'] is not None)
 
     def test_logout(self):
-        token = self.createUser(mail='test3@mail.com')
+        token, _ = self.createUser()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         response = self.client.post(self.url_logout)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -54,7 +60,7 @@ class CreateUserTests(APITestCase):
         'incomplete post'
         data = {
             'first_name': 'Falk',
-            'email': 'test4@mail.com',
+            'email': self.mails.next(),
             'password': 'Django123'
         }
         response = self.client.post(self.url_signup, data)
@@ -63,11 +69,11 @@ class CreateUserTests(APITestCase):
 
     def test_validation_duplicate_mail(self):
         'duplicate mail'
-        self.createUser(mail='test4@mail.com')
+        self.createUser(mail='falk2@mail.com')
         data = {
             'first_name': 'Falk',
             'last_name': 'Benke',
-            'email': 'test4@mail.com',
+            'email': 'falk2@mail.com',
             'password': 'Django123'
         }
         response = self.client.post(self.url_signup, data)
@@ -85,3 +91,22 @@ class CreateUserTests(APITestCase):
         response = self.client.post(self.url_signup, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['password'][0], 'Password must be at least 6 characters long, contain at leastone upper case letter, one lower case letter, and one numeric digit.')
+
+    def test_retrieve_user(self):
+        token, id = self.createUser()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        url_retrieve = reverse('user:change', args=(id,))
+        response = self.client.get(url_retrieve)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_retrieve_user_fail(self):
+        token, id = self.createUser()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        url_retrieve = reverse('user:change', args=(id + 1,))
+        response = self.client.get(url_retrieve)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_retrieve_user_fail_permission(self):
+        url_retrieve = reverse('user:change', args=(0,))
+        response = self.client.get(url_retrieve)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
