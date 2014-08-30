@@ -1,4 +1,8 @@
 *.pyc
+
 static
+htmlcov
+
 .env
 .idea
+.coverage
