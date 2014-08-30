@@ -4,6 +4,7 @@ from rest_framework.test import APITestCase
 
 
 class CreateUserTests(APITestCase):
+
     url_signup = reverse('user:create')
     url_login = reverse('user:login')
     url_logout = reverse('user:logout')
@@ -36,13 +37,18 @@ class CreateUserTests(APITestCase):
         self.assertTrue(response.data['id'] is not None)
 
     def test_login(self):
-        self.createUser(mail='falk@mail.com', password='Django123')
-        response = self.client.post(self.url_login, {'email': 'falk@mail.com', 'password': 'Django321'})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        response = self.client.post(self.url_login, {'email': 'falk@mail.com', 'password': 'Django123'})
+        mail = self.mails.next()
+        self.createUser(mail=mail, password='Django123')
+        response = self.client.post(self.url_login, {'email': mail, 'password': 'Django123'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['token'] is not None)
         self.assertTrue(response.data['id'] is not None)
+
+    def test_login_failure(self):
+        mail = self.mails.next()
+        self.createUser(mail=mail, password='Django123')
+        response = self.client.post(self.url_login, {'email': mail, 'password': 'Django321'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_logout(self):
         token, _ = self.createUser()
@@ -69,11 +75,12 @@ class CreateUserTests(APITestCase):
 
     def test_validation_duplicate_mail(self):
         'duplicate mail'
-        self.createUser(mail='falk2@mail.com')
+        mail = self.mails.next()
+        self.createUser(mail=mail)
         data = {
             'first_name': 'Falk',
             'last_name': 'Benke',
-            'email': 'falk2@mail.com',
+            'email': mail,
             'password': 'Django123'
         }
         response = self.client.post(self.url_signup, data)
@@ -82,10 +89,11 @@ class CreateUserTests(APITestCase):
 
     def test_validation_password_format(self):
         'violating password format'
+        mail = self.mails.next()
         data = {
             'first_name': 'Falk',
             'last_name': 'Benke',
-            'email': 'test5@mail.com',
+            'email': mail,
             'password': 'Django'
         }
         response = self.client.post(self.url_signup, data)
@@ -95,18 +103,83 @@ class CreateUserTests(APITestCase):
     def test_retrieve_user(self):
         token, id = self.createUser()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        url_retrieve = reverse('user:change', args=(id,))
-        response = self.client.get(url_retrieve)
+        url = reverse('user:change', args=(id,))
+        response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_retrieve_user_fail(self):
         token, id = self.createUser()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        url_retrieve = reverse('user:change', args=(id + 1,))
-        response = self.client.get(url_retrieve)
+        url = reverse('user:change', args=(id + 1,))
+        response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_retrieve_user_fail_permission(self):
-        url_retrieve = reverse('user:change', args=(0,))
-        response = self.client.get(url_retrieve)
+        url = reverse('user:change', args=(0,))
+        response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_user(self):
+        mail = self.mails.next()
+        token, id = self.createUser()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        url = reverse('user:change', args=(id,))
+        data = {
+            'first_name': 'Falk',
+            'last_name': 'Benke',
+            'email': mail,
+            'password': 'Django123'
+        }
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['first_name'], 'Falk')
+        self.assertEqual(response.data['last_name'], 'Benke')
+        self.assertEqual(response.data['email'], mail)
+        response = self.client.post(self.url_login, {'email': mail, 'password': 'Django123'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_update_user_fail(self):
+        url = reverse('user:change', args=(500,))
+        token, id = self.createUser()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        data = {
+            'first_name': 'Falk',
+            'last_name': 'Benke',
+            'email': self.mails.next(),
+            'password': 'Django123'
+        }
+
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Users can only edit their own details.')
+
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Users can only edit their own details.')
+
+    def test_partially_update_user(self):
+        token, id = self.createUser()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        url = reverse('user:change', args=(id,))
+        mail = self.mails.next()
+        data = {
+            'first_name': 'Falk',
+            'email': mail,
+        }
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['first_name'], 'Falk')
+        self.assertEqual(response.data['email'], mail)
+
+    def test_delete_user(self):
+        mail = self.mails.next()
+        password = 'Django123'
+        token, id = self.createUser(mail=mail, password=password)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        url = reverse('user:change', args=(id,))
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        self.client.credentials(HTTP_AUTHORIZATION=None)
+        response = self.client.post(self.url_login, {'email': mail, 'password': password})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

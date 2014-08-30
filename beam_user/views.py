@@ -56,7 +56,19 @@ class BeamUserViewSet(ModelViewSet):
         # from accessing data of other users
         return BeamUser.objects.filter(id=user.id)
 
-    # customized to delete token upon delete of a user
+    # customized to make sure users cannot change details of other users
+    def update(self, request, *args, **kwargs):
+        if request.user.id != int(kwargs['pk']):
+            return Response(
+                {'detail': 'Users can only edit their own details.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super(ModelViewSet, self).update(
+            request=request, *args, **kwargs
+        )
+
+    # customized to delete token upon deletion of a user
     def destroy(self, request, *args, **kwargs):
 
         response = super(ModelViewSet, self).destroy(
