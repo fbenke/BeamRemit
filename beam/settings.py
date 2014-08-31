@@ -30,6 +30,7 @@ DJANGO_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 )
 
 THIRD_PARTY_APPS = (
@@ -37,11 +38,15 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'userena',
+    'guardian',
+    'easy_thumbnails',
 )
 
 LOCAL_APPS = (
     'beam',
     'beam_user',
+    'accounts',
 )
 
 
@@ -168,4 +173,72 @@ else:
         # ENV_SITE_MAPPING[ENV][SITE_USER]
     )
 
-AUTH_USER_MODEL = 'beam_user.BeamUser'
+
+# Site types in Env
+SITE_API = 0
+SITE_ADMIN = 1
+SITE_USER = 2
+
+# ENV to URL mapping
+ENV_SITE_MAPPING = {
+    ENV_LOCAL: {
+        SITE_API: os.environ.get('LOCAL_SITE_API'),
+        SITE_ADMIN: os.environ.get('LOCAL_SITE_ADMIN'),
+        SITE_USER: os.environ.get('LOCAL_SITE_USER')
+    },
+    ENV_DEV: {
+        SITE_API: 'api-dev.beamremit.com',
+        SITE_ADMIN: 'admin-dev.beamremit.com',
+        SITE_USER: 'dev.beamremit.com'
+    },
+    ENV_VIP: {
+        SITE_API: 'api-vip.beamremit.com',
+        SITE_ADMIN: 'admin-vip.beamremit.com',
+        SITE_USER: 'vip.beamremit.com'
+    },
+    ENV_PROD: {
+        SITE_API: 'api.beamremit.com',
+        SITE_ADMIN: 'admin.beamremit.com',
+        SITE_USER: 'beamremit.com'
+    }
+}
+
+
+# AUTH_USER_MODEL = 'beam_user.BeamUser'
+
+# Userena Settings
+AUTHENTICATION_BACKENDS = (
+    'userena.backends.UserenaAuthenticationBackend',
+    'guardian.backends.ObjectPermissionBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+AUTH_PROFILE_MODULE = 'accounts.BeamProfile'
+
+ANONYMOUS_USER_ID = -1
+
+SITE_ID = 0
+
+# TODO: remove soon
+USERENA_SIGNIN_REDIRECT_URL = '/accounts/%(username)s/'
+LOGIN_URL = '/accounts/signin/'
+LOGOUT_URL = '/accounts/signout/'
+
+# Email Settings
+if ENV == ENV_LOCAL:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# TODO: Switch to Sendgrid
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_USE_TLS = True
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_HOST_USER = 'benke.falk@gmail.com'
+    EMAIL_HOST_PASSWORD = '1iw4totbfwis?'
+
+# South Settings
+
+# assign migrations for third-party apps to project folders
+SOUTH_MIGRATION_MODULES = {
+    'sites': 'accounts.migrations',
+}

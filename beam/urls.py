@@ -38,6 +38,10 @@ urlpatterns = patterns(
         r'^api-auth/',
         include('rest_framework.urls', namespace='rest_framework')
     ),
+    url(
+        r'^accounts/',
+        include('userena.urls')
+    ),
 )
 
 handler404 = 'beam.views.page_not_found'
