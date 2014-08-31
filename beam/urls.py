@@ -13,9 +13,14 @@ urlpatterns = patterns(
         TemplateView.as_view(template_name='index.html'),
         name='home'
     ),
+    # TODO remove once the merge is done
     url(
         r'^api/v1/user/',
         include('beam_user.urls', namespace='user')
+    ),
+    url(
+        r'^api/v1/accounts/',
+        include('accounts.urls', namespace='accounts')
     ),
     url(
         r'^robots\.txt$',
@@ -38,6 +43,7 @@ urlpatterns = patterns(
         r'^api-auth/',
         include('rest_framework.urls', namespace='rest_framework')
     ),
+    # TODO remove once the merge is done
     url(
         r'^accounts/',
         include('userena.urls')
