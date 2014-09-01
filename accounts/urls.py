@@ -7,8 +7,13 @@ urlpatterns = patterns(
     '',
     url(
         r'^signup/$',
-        views.SignupView.as_view(),
-        name='accounts_signup'
+        views.Signup.as_view(),
+        name='signup'
+    ),
+    url(
+        r'^activate/(?P<activation_key>\w+)/$',
+        views.Activation.as_view(),
+        name='activate'
     ),
 )
 

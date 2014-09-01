@@ -154,11 +154,6 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Django Rest Framework
 
-if ENV != ENV_LOCAL:
-    throttling_rates = {'anon': '1/second', }
-else:
-    throttling_rates = {'anon': '100/second', }
-
 REST_FRAMEWORK = {
     # if not specified otherwise, anyone can acess a view (this is the default)
     'DEFAULT_PERMISSION_CLASSES': (
@@ -184,7 +179,7 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': (
-        throttling_rates
+        {'anon': '1/second', }
     ),
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'TEST_REQUEST_RENDERER_CLASSES': (
