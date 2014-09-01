@@ -69,6 +69,35 @@ MIDDLEWARE_CLASSES = PRODUCTION_MIDDLEWARE + (
     'corsheaders.middleware.CorsMiddleware',
 )
 
+# Site types in Env
+SITE_API = 0
+SITE_ADMIN = 1
+SITE_USER = 2
+
+# ENV to URL mapping
+ENV_SITE_MAPPING = {
+    ENV_LOCAL: {
+        SITE_API: os.environ.get('LOCAL_SITE_API'),
+        SITE_ADMIN: os.environ.get('LOCAL_SITE_ADMIN'),
+        SITE_USER: os.environ.get('LOCAL_SITE_USER')
+    },
+    ENV_DEV: {
+        SITE_API: 'api-dev.beamremit.com',
+        SITE_ADMIN: 'admin-dev.beamremit.com',
+        SITE_USER: 'dev.beamremit.com'
+    },
+    ENV_VIP: {
+        SITE_API: 'api-vip.beamremit.com',
+        SITE_ADMIN: 'admin-vip.beamremit.com',
+        SITE_USER: 'vip.beamremit.com'
+    },
+    ENV_PROD: {
+        SITE_API: 'api.beamremit.com',
+        SITE_ADMIN: 'admin.beamremit.com',
+        SITE_USER: 'beamremit.com'
+    }
+}
+
 ROOT_URLCONF = 'beam.urls'
 
 WSGI_APPLICATION = 'beam.wsgi.application'
@@ -168,43 +197,9 @@ if ENV == ENV_LOCAL:
     CORS_ORIGIN_ALLOW_ALL = True
 else:
     CORS_ORIGIN_WHITELIST = (
-        # TODO
-        # ENV_SITE_MAPPING[ENV][SITE_ADMIN],
-        # ENV_SITE_MAPPING[ENV][SITE_USER]
+        ENV_SITE_MAPPING[ENV][SITE_ADMIN],
+        ENV_SITE_MAPPING[ENV][SITE_USER]
     )
-
-
-# Site types in Env
-SITE_API = 0
-SITE_ADMIN = 1
-SITE_USER = 2
-
-# ENV to URL mapping
-ENV_SITE_MAPPING = {
-    ENV_LOCAL: {
-        SITE_API: os.environ.get('LOCAL_SITE_API'),
-        SITE_ADMIN: os.environ.get('LOCAL_SITE_ADMIN'),
-        SITE_USER: os.environ.get('LOCAL_SITE_USER')
-    },
-    ENV_DEV: {
-        SITE_API: 'api-dev.beamremit.com',
-        SITE_ADMIN: 'admin-dev.beamremit.com',
-        SITE_USER: 'dev.beamremit.com'
-    },
-    ENV_VIP: {
-        SITE_API: 'api-vip.beamremit.com',
-        SITE_ADMIN: 'admin-vip.beamremit.com',
-        SITE_USER: 'vip.beamremit.com'
-    },
-    ENV_PROD: {
-        SITE_API: 'api.beamremit.com',
-        SITE_ADMIN: 'admin.beamremit.com',
-        SITE_USER: 'beamremit.com'
-    }
-}
-
-
-# AUTH_USER_MODEL = 'beam_user.BeamUser'
 
 # Userena Settings
 AUTHENTICATION_BACKENDS = (
@@ -219,11 +214,6 @@ USERENA_USE_HTTPS = (ENV != ENV_LOCAL)
 
 ANONYMOUS_USER_ID = -1
 SITE_ID = 0
-
-# TODO: remove soon
-USERENA_SIGNIN_REDIRECT_URL = '/accounts/%(username)s/'
-LOGIN_URL = '/accounts/signin/'
-LOGOUT_URL = '/accounts/signout/'
 
 # Email Settings
 if ENV == ENV_LOCAL:
@@ -243,3 +233,9 @@ else:
 # SOUTH_MIGRATION_MODULES = {
 #     'sites': 'accounts.migrations',
 # }
+
+# TODO: remove soon
+USERENA_SIGNIN_REDIRECT_URL = '/accounts/%(username)s/'
+LOGIN_URL = '/accounts/signin/'
+LOGOUT_URL = '/accounts/signout/'
+# AUTH_USER_MODEL = 'beam_user.BeamUser'
