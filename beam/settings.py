@@ -214,9 +214,10 @@ AUTHENTICATION_BACKENDS = (
 )
 
 AUTH_PROFILE_MODULE = 'accounts.BeamProfile'
+USERENA_ACTIVATION_DAYS = 1
+USERENA_USE_HTTPS = (ENV != ENV_LOCAL)
 
 ANONYMOUS_USER_ID = -1
-
 SITE_ID = 0
 
 # TODO: remove soon
@@ -227,18 +228,18 @@ LOGOUT_URL = '/accounts/signout/'
 # Email Settings
 if ENV == ENV_LOCAL:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# TODO: Switch to Sendgrid
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_USE_TLS = True
-    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_HOST = 'smtp.sendgrid.net'
+    EMAIL_HOST_USER = os.environ.get('SENDGRID_USERNAME')
+    EMAIL_HOST_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
     EMAIL_PORT = 587
-    EMAIL_HOST_USER = 'benke.falk@gmail.com'
-    EMAIL_HOST_PASSWORD = '1iw4totbfwis?'
+    EMAIL_USE_TLS = True
+    DEFAULT_FROM_EMAIL = 'noreply@beamremit.com'
 
 # South Settings
 
-# assign migrations for third-party apps to project folders
-SOUTH_MIGRATION_MODULES = {
-    'sites': 'accounts.migrations',
-}
+# # assign migrations for third-party apps to project folders
+# SOUTH_MIGRATION_MODULES = {
+#     'sites': 'accounts.migrations',
+# }

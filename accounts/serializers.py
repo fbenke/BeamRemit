@@ -8,6 +8,7 @@ from rest_framework import serializers
 from rest_framework import fields
 
 USERNAME_RE = r'^[\.\w]+$'
+PASSWORD_RE = r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$'
 
 
 class SignupSerializer(serializers.Serializer):
@@ -21,20 +22,25 @@ class SignupSerializer(serializers.Serializer):
     '''
 
     username = fields.RegexField(
-        regex=USERNAME_RE,
-        max_length=30,
         label=_('Username'),
+        regex=USERNAME_RE,
         error_messages={
             'invalid': _('Username must contain only letters, numbers, dots and underscores.')
         }
     )
 
     email = fields.EmailField(
-        label=_('Email')
+        label=_('Email'),
     )
 
-    password1 = fields.CharField(
-        label=_('Create password')
+    password1 = fields.RegexField(
+        label=_('Password'),
+        regex=PASSWORD_RE,
+        error_messages={
+            'invalid': _(
+                'Password must be at least 6 characters long, contain at least one upper case letter, one lower case letter, and one numeric digit.'
+            )
+        }
     )
 
     password2 = fields.CharField(
@@ -56,7 +62,7 @@ class SignupSerializer(serializers.Serializer):
             pass
         else:
             if userena_settings.USERENA_ACTIVATION_REQUIRED and\
-               UserenaSignup.objects.filter(user__username__iexact=self.attrs['username'])\
+               UserenaSignup.objects.filter(user__username__iexact=attrs['username'])\
                .exclude(activation_key=userena_settings.USERENA_ACTIVATED):
                 raise serializers.ValidationError(
                     _('This username is already taken but not confirmed. '
@@ -97,7 +103,7 @@ class SignupSerializer(serializers.Serializer):
         if instance is not None:
             instance.update(attrs)
             return instance
-            
+
         new_user = UserenaSignup.objects.create_user(
             username=attrs['username'],
             email=attrs['email'],

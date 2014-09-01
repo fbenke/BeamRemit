@@ -16,11 +16,6 @@ class SignupView(APIView):
         if serializer.is_valid():
             user = serializer.save()
 
-            # TODO: do we need that signal?
-            # userena_signals.signup_complete.send(
-            # 	sender=None, user=user
-            # )
-
             token, created = Token.objects.get_or_create(user=user)
             return Response(
                 {'token': token.key, 'id': user.id}, status.HTTP_201_CREATED
