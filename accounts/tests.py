@@ -89,7 +89,7 @@ class CreateUserTests(APITestCase):
         self.assertTrue(response.data['activation_key'] is not None)
         self.assertEqual(response.data['detail'], 'Activation Key has expired.')
 
-    def test_login(self):
+    def test_signin(self):
         email = self.emails.next()
         self._create_activated_user(email=email)
         response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
@@ -97,21 +97,21 @@ class CreateUserTests(APITestCase):
         self.assertTrue(response.data['token'] is not None)
         self.assertTrue(response.data['id'] is not None)
 
-    def test_login_wrong_credentials(self):
+    def test_signin_wrong_credentials(self):
         email = self.emails.next()
         self._create_activated_user(email=email)
         response = self.client.post(self.url_signin, {'email': email, 'password': self.password[1:]})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['non_field_errors'][0], 'Unable to login with provided credentials.')
 
-    def test_login_without_activation(self):
+    def test_singin_without_activation(self):
         email = self.emails.next()
         self._create_user(email=email)
         response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['non_field_errors'][0], 'User account is disabled.')
 
-    def test_logout(self):
+    def test_signout(self):
         email = self.emails.next()
         token, _ = self._create_activated_user(email=email)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
