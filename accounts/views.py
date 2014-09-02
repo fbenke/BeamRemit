@@ -22,9 +22,8 @@ class Signup(APIView):
             user = serializer.save()
 
             token, created = Token.objects.get_or_create(user=user)
-            return Response(
-                {'token': token.key, 'id': user.id}, status.HTTP_201_CREATED
-            )
+            return Response({'token': token.key, 'id': user.id}, status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -51,7 +50,38 @@ class Activation(APIView):
 
             # activation key expired
             else:
-                return Response({'detail': _('Activation Key has expired.')})
+                return Response(
+                    {'activation_key': activation_key,
+                     'detail': _('Activation Key has expired.')},
+                    status.HTTP_200_OK
+                )
         # invalid key
+        except UserenaSignup.DoesNotExist:
+            return Response({'detail': _('Invalid Key')}, status.HTTP_400_BAD_REQUEST)
+
+
+class ActivationRetry(APIView):
+    throttle_classes = (AnonRateThrottle,)
+
+    def get(self, request, *args, **kwargs):
+
+        activation_key = kwargs['activation_key']
+
+        try:
+            if UserenaSignup.objects.check_expired_activation(activation_key):
+                new_key = UserenaSignup.objects.reissue_activation(activation_key)
+                if new_key:
+                    return Response({'detail': 'success'}, status.HTTP_201_CREATED)
+                else:
+                    # TODO: logging
+                    return Response(
+                        {'detail': _('Key could not be generated.')},
+                        status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+            else:
+                return Response(
+                    {'detail': _('Key is not expired.')},
+                    status.HTTP_400_BAD_REQUEST
+                )
         except UserenaSignup.DoesNotExist:
             return Response({'detail': _('Invalid Key')}, status.HTTP_400_BAD_REQUEST)
