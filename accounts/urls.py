@@ -10,16 +10,26 @@ urlpatterns = patterns(
         views.Signup.as_view(),
         name='signup'
     ),
-    # Account activation
     url(
         r'^activate/(?P<activation_key>\w+)/$',
         views.Activation.as_view(),
         name='activate'
     ),
-    # Retry activation
-    url(r'^activate/retry/(?P<activation_key>\w+)/$',
+    url(
+        r'^activate/retry/(?P<activation_key>\w+)/$',
         views.ActivationRetry.as_view(),
-        name='activate_retry'),
+        name='activate_retry'
+    ),
+    url(
+        r'^signin/$',
+        views.Signin.as_view(),
+        name='signin'
+    ),
+    url(
+        r'^signout/$',
+        views.Signout.as_view(),
+        name='signout'
+    ),
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)

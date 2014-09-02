@@ -7,7 +7,10 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from userena.models import UserenaSignup
+
 from accounts import serializers
+
+from beam.utils import log_error
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 
@@ -20,9 +23,8 @@ class Signup(APIView):
         serializer = self.serializer_class(data=request.DATA)
         if serializer.is_valid():
             user = serializer.save()
-
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key, 'id': user.id}, status.HTTP_201_CREATED)
+            if user:
+                return Response({'detail': 'success'}, status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -45,7 +47,10 @@ class Activation(APIView):
                     return Response({'token': token.key, 'id': user.id}, status.HTTP_200_OK)
 
                 else:
-                    # TODO: log error
+                    log_error(
+                        'ERROR - User for activation key {} could not be found'.
+                        format(activation_key)
+                    )
                     return Response({'detail': _('User not found.')}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             # activation key expired
@@ -73,7 +78,10 @@ class ActivationRetry(APIView):
                 if new_key:
                     return Response({'detail': 'success'}, status.HTTP_201_CREATED)
                 else:
-                    # TODO: logging
+                    log_error(
+                        'ERROR - activation key could not be generated for expired key {}'.
+                        format(activation_key)
+                    )
                     return Response(
                         {'detail': _('Key could not be generated.')},
                         status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -85,3 +93,28 @@ class ActivationRetry(APIView):
                 )
         except UserenaSignup.DoesNotExist:
             return Response({'detail': _('Invalid Key')}, status.HTTP_400_BAD_REQUEST)
+
+
+class Signin(APIView):
+    throttle_classes = (AnonRateThrottle,)
+    serializer_class = serializers.AuthTokenSerializer
+    model = Token
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.DATA)
+        if serializer.is_valid():
+            authenticated_user = serializer.object['user']
+            token, created = Token.objects.get_or_create(user=authenticated_user)
+            return Response(
+                {'token': token.key, 'id': authenticated_user.id})
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class Signout(APIView):
+    throttle_classes = (AnonRateThrottle,)
+
+    def post(self, request):
+        if request.auth is not None:
+            request.auth.delete()
+        return Response({'status': 'success'})

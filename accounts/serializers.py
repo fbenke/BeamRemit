@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate
 from django.utils.translation import ugettext_lazy as _
 
 from userena import settings as userena_settings
@@ -113,3 +114,28 @@ class SignupSerializer(serializers.Serializer):
         )
 
         return new_user
+
+
+# customized version of standard rest serializer working with email instead of username
+# https://github.com/tomchristie/django-rest-framework/blob/master/rest_framework/authtoken/serializers.py
+class AuthTokenSerializer(serializers.Serializer):
+    email = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if email and password:
+            user = authenticate(identification=email, password=password)
+            if user:
+                if not user.is_active:
+                    raise serializers.ValidationError(_('User account is disabled.'))
+                if user.is_staff:
+                    raise serializers.ValidationError(_('Login with an Admin account not supported.'))
+                attrs['user'] = user
+                return attrs
+            else:
+                raise serializers.ValidationError(_('Unable to login with provided credentials.'))
+        else:
+            raise serializers.ValidationError(_('Must include "email" and "password"'))
