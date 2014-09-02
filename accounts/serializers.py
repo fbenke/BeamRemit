@@ -1,6 +1,9 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import ugettext_lazy as _
 
+from hashlib import sha1 as sha_constructor
+import random
+
 from userena import settings as userena_settings
 from userena.models import UserenaSignup
 from userena.utils import get_user_model
@@ -22,14 +25,6 @@ class SignupSerializer(serializers.Serializer):
     Also requires the password to be entered twice.
     '''
 
-    username = fields.RegexField(
-        label=_('Username'),
-        regex=USERNAME_RE,
-        error_messages={
-            'invalid': _('Username must contain only letters, numbers, dots and underscores.')
-        }
-    )
-
     email = fields.EmailField(
         label=_('Email'),
     )
@@ -47,32 +42,6 @@ class SignupSerializer(serializers.Serializer):
     password2 = fields.CharField(
         label=_('Repeat password')
     )
-
-    def validate_username(self, attrs, source):
-        '''
-        Validate that the username is alphanumeric and is not already in use.
-        Also validates that the username is not listed in
-        ``USERENA_FORBIDDEN_USERNAMES`` list.
-        '''
-
-        # TODO: might be removed once we agree on dropping usernames
-        # merge with logic in SignupFormOnlyEmail in that case
-        try:
-            get_user_model().objects.get(username__iexact=attrs['username'])
-        except get_user_model().DoesNotExist:
-            pass
-        else:
-            if userena_settings.USERENA_ACTIVATION_REQUIRED and\
-               UserenaSignup.objects.filter(user__username__iexact=attrs['username'])\
-               .exclude(activation_key=userena_settings.USERENA_ACTIVATED):
-                raise serializers.ValidationError(
-                    _('This username is already taken but not confirmed. '
-                      'Please check your email for verification steps.')
-                )
-            raise serializers.ValidationError(_('This username is already taken.'))
-        if attrs['username'].lower() in userena_settings.USERENA_FORBIDDEN_USERNAMES:
-            raise serializers.ValidationError(_('This username is not allowed.'))
-        return attrs
 
     def validate_email(self, attrs, source):
         'Validate that the e-mail address is unique.'
@@ -98,15 +67,21 @@ class SignupSerializer(serializers.Serializer):
         return attrs
 
     def restore_object(self, attrs, instance=None):
-        '''
-        Creates a new user and account. Returns the newly created user.
-        '''
+        ''' Creates a new user and account. Returns the newly created user. '''
         if instance is not None:
             instance.update(attrs)
             return instance
 
+        ''' Generate a random username before falling back to parent signup form '''
+        while True:
+            username = sha_constructor(str(random.random())).hexdigest()[:5]
+            try:
+                get_user_model().objects.get(username__iexact=username)
+            except get_user_model().DoesNotExist:
+                break
+
         new_user = UserenaSignup.objects.create_user(
-            username=attrs['username'],
+            username=username,
             email=attrs['email'],
             password=attrs['password1'],
             active=not userena_settings.USERENA_ACTIVATION_REQUIRED,

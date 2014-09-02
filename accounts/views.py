@@ -28,7 +28,6 @@ class Signup(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class Activation(APIView):
     throttle_classes = (AnonRateThrottle,)
 
