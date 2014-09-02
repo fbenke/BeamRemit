@@ -2,7 +2,7 @@ from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from django.views.generic import TemplateView, RedirectView
 
-from beam.settings import STATIC_URL
+from beam.settings.production import STATIC_URL
 
 admin.autodiscover()
 

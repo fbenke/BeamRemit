@@ -1,5 +1,6 @@
 from south.v2 import DataMigration
-from beam.settings import ENV_SITE_MAPPING, ENV, SITE_USER
+
+from django.conf import settings
 
 
 class Migration(DataMigration):
@@ -10,7 +11,7 @@ class Migration(DataMigration):
         orm['sites.site'].objects.all().delete()
         site = orm['sites.site'].objects.create(
             id=0,
-            domain=ENV_SITE_MAPPING[ENV][SITE_USER],
+            domain=settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_USER],
             name='Beam'
         )
         site.save()
