@@ -116,4 +116,5 @@ class Signout(APIView):
     def post(self, request):
         if request.auth is not None:
             request.auth.delete()
-        return Response({'status': 'success'})
+            return Response({'status': 'success'})
+        return Response()

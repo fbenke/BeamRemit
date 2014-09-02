@@ -178,9 +178,9 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.AnonRateThrottle',
     ),
-    'DEFAULT_THROTTLE_RATES': (
-        {'anon': '1/second', }
-    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '1/second'
+    },
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'TEST_REQUEST_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
