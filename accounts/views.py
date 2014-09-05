@@ -22,16 +22,12 @@ class Signup(APIView):
 
     def post(self, request):
         serializer = self.serializer_class(data=request.DATA)
-        try:
-            if serializer.is_valid():
-                user = serializer.save()
-                if user:
-                    return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
+        if serializer.is_valid():
+            user = serializer.save()
+            if user:
+                return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        except ValueError as v:
-            return Response(repr(v), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class Activation(APIView):
@@ -134,18 +130,18 @@ class Email_Change(APIView):
         try:
 
             if not new_email:
-                raise EmailChangeException({'detail': _('Invalid parameters')})
+                raise EmailChangeException(_('Invalid parameters'))
             if new_email.lower() == user.email:
-                raise EmailChangeException({'detail': _('You are already known under this email.')})
+                raise EmailChangeException(_('You are already known under this email.'))
             if get_user_model().objects.filter(email__iexact=new_email):
-                raise EmailChangeException({'detail': _('This email is already in use. Please supply a different email.')})
+                raise EmailChangeException(_('This email is already in use. Please supply a different email.'))
 
             user.userena_signup.change_email(new_email)
 
             return Response({'status': 'success'})
 
         except EmailChangeException as e:
-            return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class Email_Confirm(APIView):

@@ -11,7 +11,6 @@ from userena.utils import get_user_model
 from rest_framework import serializers
 from rest_framework import fields
 
-from beam.utils import log_error
 
 USERNAME_RE = r'^[\.\w]+$'
 PASSWORD_RE = r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$'
@@ -69,11 +68,6 @@ class SignupSerializer(serializers.Serializer):
         return attrs
 
     def restore_object(self, attrs, instance=None):
-        ''' Creates a new user and account. Returns the newly created user. '''
-        if instance is not None:
-            log_error('SignupSerializer ERROR- Instance is not None')
-            raise ValueError('Instace in not None')
-
         ''' Generate a random username before falling back to parent signup form '''
         while True:
             username = sha_constructor(str(random.random())).hexdigest()[:5]
@@ -91,6 +85,14 @@ class SignupSerializer(serializers.Serializer):
         )
 
         return new_user
+
+    def save(self, *args, **kwargs):
+        '''
+        Overwritten, because the actual save has been done in restore_object.
+        This helps just with verifying, that restore_object actually returned a
+        user object
+        '''
+        return self.object
 
 
 class AuthTokenSerializer(serializers.Serializer):

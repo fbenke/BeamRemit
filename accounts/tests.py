@@ -18,8 +18,10 @@ class CreateUserTests(APITestCase):
     url_signup = reverse('accounts:signup')
     url_signin = reverse('accounts:signin')
     url_singout = reverse('accounts:signout')
+    url_email_change = reverse('accounts:email_change')
     plain_url_activate = 'accounts:activate'
     plain_url_activate_retry = 'accounts:activate_retry'
+    plain_url_email_change_confirm = 'accounts:email_confirm'
 
     password = 'Django123'
 
@@ -43,6 +45,8 @@ class CreateUserTests(APITestCase):
         return response
 
     def _create_activated_user(self, email=None, password=None):
+        if email is None:
+            email = self.emails.next()
         self._create_user(email, password)
         activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
         url_activate = reverse(self.plain_url_activate, args=(activation_key,))
@@ -50,14 +54,16 @@ class CreateUserTests(APITestCase):
         return response.data['token'], response.data['id']
 
     def test_signup(self):
-        # test signup
+
+        no_emails = len(mailbox.outbox)
+
         email = self.emails.next()
         response = self._create_user(email=email)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['status'], 'success')
 
         # assert that mail was sent
-        self.assertEqual(len(mailbox.outbox), 1)
+        self.assertEqual(len(mailbox.outbox), no_emails + 1)
 
         # get activation key and send activate get request
         activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
@@ -186,9 +192,70 @@ class CreateUserTests(APITestCase):
         self.assertEqual(response.data['non_field_errors'][0], 'User account is disabled.')
 
     def test_signout(self):
-        email = self.emails.next()
-        token, _ = self._create_activated_user(email=email)
+        token, _ = self._create_activated_user()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         response = self.client.post(self.url_singout)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['status'], 'success')
+
+    def test_email_change(self):
+        old_email = self.emails.next()
+        token, _ = self._create_activated_user(email=old_email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        no_emails = len(mailbox.outbox)
+        new_mail = self.emails.next()
+        response = self.client.patch(self.url_email_change, {'email': new_mail})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'success')
+
+        # assert that two mails were sent
+        self.assertEqual(len(mailbox.outbox), no_emails + 2)
+
+        # check if corresponding database fields exist
+        user = get_user_model().objects.get(email__iexact=old_email)
+        self.assertEqual(user.userena_signup.email_unconfirmed, new_mail)
+
+        confirmation_key = user.userena_signup.email_confirmation_key
+
+        url_email_change_confirm = reverse(self.plain_url_email_change_confirm, args=(confirmation_key,))
+        response = self.client.get(url_email_change_confirm)
+        self.assertEqual(response.data['status'], 'success')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # verify that new email address is active and old no longer in use
+        self.assertIsNotNone(get_user_model().objects.get(email__iexact=new_mail))
+        with self.assertRaises(get_user_model().DoesNotExist):
+            get_user_model().objects.get(email__iexact=old_email)
+
+    def test_email_change_failure_empty(self):
+        token, _ = self._create_activated_user()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.patch(self.url_email_change, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Invalid parameters')
+
+    def test_email_change_failure_same_mail(self):
+        email = self.emails.next()
+        token, _ = self._create_activated_user(email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.patch(self.url_email_change, {'email': email})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'You are already known under this email.')
+
+    def test_email_change_failure_existing_mail(self):
+        # create a user with email
+        email = self.emails.next()
+        self._create_activated_user(email)
+        # create another user
+        token, _ = self._create_activated_user()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        # try to change to email of first user
+        response = self.client.patch(self.url_email_change, {'email': email})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'This email is already in use. Please supply a different email.')
+
+    def test_email_change_confirm_failure(self):
+        url_email_change_confirm = reverse(self.plain_url_email_change_confirm, args=('invalidkey',))
+        response = self.client.get(url_email_change_confirm)
+        self.assertEqual(response.data['detail'], 'invalid')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
