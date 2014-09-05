@@ -2,34 +2,39 @@ from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework import permissions
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from userena.models import UserenaSignup
+from userena.utils import get_user_model
 
 from accounts import serializers
 
-from beam.utils import log_error
+from beam.utils import log_error, EmailChangeException
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 
 
 class Signup(APIView):
-    throttle_classes = (AnonRateThrottle,)
+
     serializer_class = serializers.SignupSerializer
 
     def post(self, request):
         serializer = self.serializer_class(data=request.DATA)
-        if serializer.is_valid():
-            user = serializer.save()
-            if user:
-                return Response({'detail': 'success'}, status.HTTP_201_CREATED)
+        try:
+            if serializer.is_valid():
+                user = serializer.save()
+                if user:
+                    return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except ValueError as v:
+            return Response(repr(v), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class Activation(APIView):
-    throttle_classes = (AnonRateThrottle,)
 
     def get(self, request, *args, **kwargs):
 
@@ -65,7 +70,6 @@ class Activation(APIView):
 
 
 class ActivationRetry(APIView):
-    throttle_classes = (AnonRateThrottle,)
 
     def get(self, request, *args, **kwargs):
 
@@ -75,7 +79,7 @@ class ActivationRetry(APIView):
             if UserenaSignup.objects.check_expired_activation(activation_key):
                 new_key = UserenaSignup.objects.reissue_activation(activation_key)
                 if new_key:
-                    return Response({'detail': 'success'}, status.HTTP_201_CREATED)
+                    return Response({'status': 'success'}, status.HTTP_201_CREATED)
                 else:
                     log_error(
                         'ERROR - activation key could not be generated for expired key {}'.
@@ -95,7 +99,7 @@ class ActivationRetry(APIView):
 
 
 class Signin(APIView):
-    throttle_classes = (AnonRateThrottle,)
+
     serializer_class = serializers.AuthTokenSerializer
     model = Token
 
@@ -111,10 +115,47 @@ class Signin(APIView):
 
 
 class Signout(APIView):
-    throttle_classes = (AnonRateThrottle,)
 
     def post(self, request):
         if request.auth is not None:
             request.auth.delete()
             return Response({'status': 'success'})
         return Response()
+
+
+class Email_Change(APIView):
+
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def patch(self, request):
+        user = request.user
+        new_email = request.DATA.get('email', None)
+
+        try:
+
+            if not new_email:
+                raise EmailChangeException({'detail': _('Invalid parameters')})
+            if new_email.lower() == user.email:
+                raise EmailChangeException({'detail': _('You are already known under this email.')})
+            if get_user_model().objects.filter(email__iexact=new_email):
+                raise EmailChangeException({'detail': _('This email is already in use. Please supply a different email.')})
+
+            user.userena_signup.change_email(new_email)
+
+            return Response({'status': 'success'})
+
+        except EmailChangeException as e:
+            return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+
+
+class Email_Confirm(APIView):
+
+    def get(self, request, *args, **kwargs):
+
+        confirmation_key = kwargs['confirmation_key']
+
+        user = UserenaSignup.objects.confirm_email(confirmation_key)
+        if user:
+            return Response({'status': 'success'}, status.HTTP_200_OK)
+
+        return Response({'detail': 'invalid'}, status.HTTP_400_BAD_REQUEST)

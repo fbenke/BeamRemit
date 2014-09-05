@@ -3,8 +3,10 @@ import os
 import dj_database_url
 
 # Helpers
+
 BASE_DIR = lambda *x: os.path.join(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), os.path.pardir)).replace('\\', '/'), *x)
+    os.path.dirname(__file__), os.path.pardir, os.path.pardir)).
+    replace('\\', '/'), *x)
 
 DEBUG = bool(int(os.environ.get('DEBUG', '1')))
 
@@ -207,7 +209,8 @@ AUTH_PROFILE_MODULE = 'accounts.BeamProfile'
 USERENA_WITHOUT_USERNAMES = True
 USERENA_ACTIVATION_DAYS = 1
 USERENA_USE_HTTPS = (ENV != ENV_LOCAL)
-
+# disable userena admin customizations to allow our own ones
+USERENA_REGISTER_USER = False
 
 ANONYMOUS_USER_ID = -1
 SITE_ID = 0
@@ -223,6 +226,8 @@ else:
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = 'noreply@beamremit.com'
+
+
 
 # South Settings
 

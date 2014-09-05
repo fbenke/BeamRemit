@@ -11,6 +11,8 @@ from userena.utils import get_user_model
 from rest_framework import serializers
 from rest_framework import fields
 
+from beam.utils import log_error
+
 USERNAME_RE = r'^[\.\w]+$'
 PASSWORD_RE = r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$'
 
@@ -69,8 +71,8 @@ class SignupSerializer(serializers.Serializer):
     def restore_object(self, attrs, instance=None):
         ''' Creates a new user and account. Returns the newly created user. '''
         if instance is not None:
-            instance.update(attrs)
-            return instance
+            log_error('SignupSerializer ERROR- Instance is not None')
+            raise ValueError('Instace in not None')
 
         ''' Generate a random username before falling back to parent signup form '''
         while True:
@@ -91,9 +93,14 @@ class SignupSerializer(serializers.Serializer):
         return new_user
 
 
-# customized version of standard rest serializer working with email instead of username
-# https://github.com/tomchristie/django-rest-framework/blob/master/rest_framework/authtoken/serializers.py
 class AuthTokenSerializer(serializers.Serializer):
+    '''
+    customized version of standard rest serializer working
+    with email instead of username
+
+    see: https://github.com/tomchristie/django-rest-framework/blob/master/rest_framework/authtoken/serializers.py
+    '''
+
     email = serializers.CharField()
     password = serializers.CharField()
 

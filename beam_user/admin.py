@@ -12,4 +12,4 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'is_admin', )
     search_fields = ('email', 'first_name', 'last_name',)
 
-admin.site.register(BeamUser, UserAdmin)
+# admin.site.register(BeamUser, UserAdmin)

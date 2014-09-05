@@ -1,22 +1,24 @@
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.admin import TokenAdmin
 from django.contrib import admin
-from userena.models import UserenaSignup
+
+from userena.admin import UserenaAdmin
+from userena.utils import get_user_model
 
 
-class UserenaSignupAdmin(admin.ModelAdmin):
-    readonly_fields = (
-        'user',
-        'last_active',
-        'activation_key',
-        'activation_notification_send',
-        'email_unconfirmed',
-        'email_confirmation_key',
-        'email_confirmation_key_created',
-    )
-    read_and_write_fields = ()
-    fields = readonly_fields + read_and_write_fields
-    # list_display = ('id', 'email', 'is_admin', 'is_active',)
-    # list_display_links = ('email',)
-    # list_filter = ('is_active', 'is_admin', )
-    # search_fields = ('email', 'first_name', 'last_name',)
+class CustomUserenaAdmin(UserenaAdmin):
+    list_display = ('id', 'email', 'is_staff', 'is_active', 'date_joined')
+    list_display_links = ('id', 'email')
 
-admin.site.register(UserenaSignup, UserenaSignupAdmin)
+
+class CustomTokenAdmin(TokenAdmin):
+    list_display = ('key', 'created', 'user')
+
+try:
+    admin.site.unregister(get_user_model())
+except admin.sites.NotRegistered:
+    pass
+admin.site.register(get_user_model(), CustomUserenaAdmin)
+
+admin.site.unregister(Token)
+admin.site.register(Token, CustomTokenAdmin)

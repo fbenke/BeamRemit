@@ -23,7 +23,7 @@ class CreateUserTests(APITestCase):
 
     password = 'Django123'
 
-    emails = iter(['test{}@mail.com'.format(k) for k in xrange(1, 1000)])
+    emails = iter(['test{}@mail.com'.format(k) for k in xrange(1, 100)])
 
     def setUp(self):
         UserenaSignup.objects.check_permissions()
@@ -54,7 +54,7 @@ class CreateUserTests(APITestCase):
         email = self.emails.next()
         response = self._create_user(email=email)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['detail'], 'success')
+        self.assertEqual(response.data['status'], 'success')
 
         # assert that mail was sent
         self.assertEqual(len(mailbox.outbox), 1)
@@ -62,6 +62,10 @@ class CreateUserTests(APITestCase):
         # get activation key and send activate get request
         activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
         url_activate = reverse(self.plain_url_activate, args=(activation_key,))
+
+        # check if mail contains correct link
+        # TODO: replace `url_activate` with the real link later
+        self.assertTrue(url_activate in mailbox.outbox[0].body)
         response = self.client.get(url_activate)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['token'] is not None)

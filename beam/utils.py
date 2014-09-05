@@ -16,3 +16,7 @@ class JSONResponse(HttpResponse):
 def log_error(message):
     logger = logging.getLogger('django')
     logger.error(message)
+
+
+class EmailChangeException(Exception):
+    pass
