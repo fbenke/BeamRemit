@@ -47,7 +47,6 @@ THIRD_PARTY_APPS = (
 
 LOCAL_APPS = (
     'beam',
-    'beam_user',
     'accounts',
 )
 
