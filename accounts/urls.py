@@ -50,6 +50,11 @@ urlpatterns = patterns(
         views.PasswordResetConfirm.as_view(),
         name='password_reset_confirm'
     ),
+    url(
+        r'^password/$',
+        views.PasswordChange.as_view(),
+        name='password_change'
+    ),
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)

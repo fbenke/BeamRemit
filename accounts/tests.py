@@ -204,7 +204,7 @@ class CreateUserTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         no_emails = len(mailbox.outbox)
         new_mail = self.emails.next()
-        response = self.client.patch(self.url_email_change, {'email': new_mail})
+        response = self.client.post(self.url_email_change, {'email': new_mail})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['detail'], 'Success')
 
@@ -230,7 +230,7 @@ class CreateUserTests(APITestCase):
     def test_email_change_failure_empty(self):
         token, _ = self._create_activated_user()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.patch(self.url_email_change, {})
+        response = self.client.post(self.url_email_change, {})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'Invalid Parameters')
 
@@ -238,7 +238,7 @@ class CreateUserTests(APITestCase):
         email = self.emails.next()
         token, _ = self._create_activated_user(email)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.patch(self.url_email_change, {'email': email})
+        response = self.client.post(self.url_email_change, {'email': email})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'You are already known under this email.')
 
@@ -250,7 +250,7 @@ class CreateUserTests(APITestCase):
         token, _ = self._create_activated_user()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         # try to change to email of first user
-        response = self.client.patch(self.url_email_change, {'email': email})
+        response = self.client.post(self.url_email_change, {'email': email})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'This email is already in use. Please supply a different email.')
 

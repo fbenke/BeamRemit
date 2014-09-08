@@ -128,7 +128,7 @@ class Email_Change(APIView):
 
     permission_classes = (permissions.IsAuthenticated,)
 
-    def patch(self, request):
+    def post(self, request):
         user = request.user
         new_email = request.DATA.get('email', None)
 
@@ -233,6 +233,26 @@ class PasswordResetConfirm(APIView):
 
             serializer.save()
             return Response({'detail': RESPONSE_SUCCESS})
+
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordChange(APIView):
+    serializer_class = serializers.ChangePasswordSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        serializer = self.serializer_class(user=request.user, data=request.POST)
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            # issue new token for user
+            request.auth.delete()
+            token, _ = Token.objects.get_or_create(user=serializer.object)
+            return Response({'token': token.key})
 
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -189,3 +189,21 @@ class SetPasswordSerializer(PasswordSerializer):
     def restore_object(self, attrs, instance=None):
         self.user.set_password(attrs['password1'])
         return self.user
+
+
+class ChangePasswordSerializer(SetPasswordSerializer):
+    '''
+    Serializer for resetting password by entering the old one.
+    Basically ports django.contrib.auth.forms.PasswordChangeForm to a
+    Serializer to work with Django Rest Framework.
+    '''
+
+    old_password = serializers.CharField(label='Old password')
+
+    def validate_old_password(self, attrs, source):
+
+        old_password = attrs[source]
+        if not self.user.check_password(old_password):
+            raise serializers.ValidationError('Old Password is incorrect')
+
+        return attrs
