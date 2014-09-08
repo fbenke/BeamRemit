@@ -60,7 +60,7 @@ class CreateUserTests(APITestCase):
         email = self.emails.next()
         response = self._create_user(email=email)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['status'], 'success')
+        self.assertEqual(response.data['detail'], 'Success')
 
         # assert that mail was sent
         self.assertEqual(len(mailbox.outbox), no_emails + 1)
@@ -196,7 +196,7 @@ class CreateUserTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         response = self.client.post(self.url_singout)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], 'success')
+        self.assertEqual(response.data['detail'], 'Success')
 
     def test_email_change(self):
         old_email = self.emails.next()
@@ -206,7 +206,7 @@ class CreateUserTests(APITestCase):
         new_mail = self.emails.next()
         response = self.client.patch(self.url_email_change, {'email': new_mail})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], 'success')
+        self.assertEqual(response.data['detail'], 'Success')
 
         # assert that two mails were sent
         self.assertEqual(len(mailbox.outbox), no_emails + 2)
@@ -219,7 +219,7 @@ class CreateUserTests(APITestCase):
 
         url_email_change_confirm = reverse(self.plain_url_email_change_confirm, args=(confirmation_key,))
         response = self.client.get(url_email_change_confirm)
-        self.assertEqual(response.data['status'], 'success')
+        self.assertEqual(response.data['detail'], 'Success')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # verify that new email address is active and old no longer in use
@@ -232,7 +232,7 @@ class CreateUserTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         response = self.client.patch(self.url_email_change, {})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['detail'], 'Invalid parameters')
+        self.assertEqual(response.data['detail'], 'Invalid Parameters')
 
     def test_email_change_failure_same_mail(self):
         email = self.emails.next()
@@ -257,5 +257,5 @@ class CreateUserTests(APITestCase):
     def test_email_change_confirm_failure(self):
         url_email_change_confirm = reverse(self.plain_url_email_change_confirm, args=('invalidkey',))
         response = self.client.get(url_email_change_confirm)
-        self.assertEqual(response.data['detail'], 'invalid')
+        self.assertEqual(response.data['detail'], 'Invalid Parameters')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

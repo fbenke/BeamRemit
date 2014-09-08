@@ -227,6 +227,10 @@ else:
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = 'noreply@beamremit.com'
 
+# Email templates
+MAIL_PASSWORD_RESET_SUBJECT = 'registration/password_reset_subject.txt'
+MAIL_PASSWORD_RESET_BODY = 'userena/emails/password_reset_message.txt'
+MAIL_PASSWORD_RESET_BODY_HTML = 'userena/emails/password_reset_message.txt'
 
 
 # South Settings

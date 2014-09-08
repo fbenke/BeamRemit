@@ -1,5 +1,9 @@
 import logging
+
+from django.core.mail import EmailMultiAlternatives
 from django.http import HttpResponse
+from django.template import loader
+
 from rest_framework.renderers import JSONRenderer
 
 
@@ -18,5 +22,15 @@ def log_error(message):
     logger.error(message)
 
 
-class EmailChangeException(Exception):
-    pass
+def send_mail(subject_template_name, email_template_name,
+              context, from_email, to_email, html_email_template_name=None):
+    subject = loader.render_to_string(subject_template_name, context)
+    subject = ''.join(subject.splitlines())
+    body = loader.render_to_string(email_template_name, context)
+
+    email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
+    if html_email_template_name is not None:
+        html_email = loader.render_to_string(html_email_template_name, context)
+        email_message.attach_alternative(html_email, 'text/html')
+
+    email_message.send()
