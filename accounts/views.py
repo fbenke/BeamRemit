@@ -210,13 +210,14 @@ class PasswordResetConfirm(APIView):
         return None
 
     def get(self, request, *args, **kwargs):
+
         uidb64 = kwargs['uidb64']
         token = kwargs['token']
 
         if self._get_user(uidb64, token):
             return Response({'detail': RESPONSE_SUCCESS})
 
-        return Response({'detail': RESPONSE_INVD_PARAM})
+        return Response({'detail': RESPONSE_INVD_PARAM}, status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, *args, **kwargs):
 
@@ -244,7 +245,8 @@ class PasswordChange(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
-        serializer = self.serializer_class(user=request.user, data=request.POST)
+
+        serializer = self.serializer_class(user=request.user, data=request.DATA)
 
         if serializer.is_valid():
 

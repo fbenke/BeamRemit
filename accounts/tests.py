@@ -1,6 +1,9 @@
+from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.core.urlresolvers import reverse
 from django.core import mail as mailbox
 from django.utils import timezone
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -19,12 +22,16 @@ class CreateUserTests(APITestCase):
     url_signin = reverse('accounts:signin')
     url_singout = reverse('accounts:signout')
     url_email_change = reverse('accounts:email_change')
+    url_password_reset = reverse('accounts:password_reset')
+    url_password_change = reverse('accounts:password_change')
     plain_url_activate = 'accounts:activate'
     plain_url_activate_retry = 'accounts:activate_retry'
     plain_url_email_change_confirm = 'accounts:email_confirm'
-    plain_url_profile = ('accounts:profile')
+    plain_url_profile = 'accounts:profile'
+    plain_url_password_reset_confirm = 'accounts:password_reset_confirm'
 
     password = 'Django123'
+    new_password = 'Django321'
 
     emails = iter(['test{}@mail.com'.format(k) for k in xrange(1, 100)])
 
@@ -53,6 +60,10 @@ class CreateUserTests(APITestCase):
         url_activate = reverse(self.plain_url_activate, args=(activation_key,))
         response = self.client.get(url_activate)
         return response.data['token'], response.data['id']
+
+    def _generate_password_reset_confirmation_key(self, id):
+        user = get_user_model().objects.get(id=id)
+        return urlsafe_base64_encode(force_bytes(user.pk)), token_generator.make_token(user)
 
     def test_signup(self):
 
@@ -261,8 +272,6 @@ class CreateUserTests(APITestCase):
         self.assertEqual(response.data['detail'], 'Invalid Parameters')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    # TODO....
-
     def test_retrieve_user(self):
         email = self.emails.next()
         token, id = self._create_activated_user(email=email)
@@ -317,3 +326,66 @@ class CreateUserTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=None)
         response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_password_reset(self):
+        email = self.emails.next()
+        token, id = self._create_activated_user(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
+        no_emails = len(mailbox.outbox)
+        url = reverse('accounts:password_reset')
+
+        response = self.client.post(url, {'email': email})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['detail'], 'Success')
+
+        self.assertEqual(len(mailbox.outbox), no_emails + 1)
+
+        # get confirmation key and send activate get request
+        uid, token = self._generate_password_reset_confirmation_key(id)
+        url_confirm = reverse(self.plain_url_password_reset_confirm, args=(uid, token))
+
+        # check if mail contains correct link
+        # TODO: replace `url_activate` with the real link later
+        self.assertTrue(url_confirm in mailbox.outbox[no_emails].body)
+
+        # send a get request to check if the generated token/uid combination is valid
+        response = self.client.get(url_confirm)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['detail'], 'Success')
+
+        # change password
+        response = self.client.post(url_confirm, {'password1': self.new_password, 'password2': self.new_password})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # fails to signin with old credentials
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # signin with new credentials
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.new_password})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['token'] is not None)
+        self.assertTrue(response.data['id'] is not None)
+
+    def test_password_change(self):
+        email = self.emails.next()
+        token, _ = self._create_activated_user(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        data = {
+            'old_password': self.password,
+            'password1': self.new_password,
+            'password2': self.new_password
+        }
+
+        response = self.client.post(self.url_password_change, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['token'] is not None)
+
+        response = self.client.post(self.url_signin, data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data['detail'], 'Invalid token')
+
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.new_password})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data['detail'], 'Invalid token')
