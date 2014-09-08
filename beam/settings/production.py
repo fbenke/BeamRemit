@@ -210,6 +210,7 @@ USERENA_ACTIVATION_DAYS = 1
 USERENA_USE_HTTPS = (ENV != ENV_LOCAL)
 # disable userena admin customizations to allow our own ones
 USERENA_REGISTER_USER = False
+USERENA_REGISTER_PROFILE = False
 
 ANONYMOUS_USER_ID = -1
 SITE_ID = 0
