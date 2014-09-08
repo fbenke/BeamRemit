@@ -12,7 +12,11 @@ class CustomUserenaAdmin(UserenaAdmin):
 
 
 class CustomTokenAdmin(TokenAdmin):
-    list_display = ('key', 'created', 'user')
+
+    def user_email(self, obj):
+        return obj.user.email
+
+    list_display = ('user_email', 'key', 'created')
 
 try:
     admin.site.unregister(get_user_model())
