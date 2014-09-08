@@ -231,17 +231,3 @@ else:
 MAIL_PASSWORD_RESET_SUBJECT = 'registration/password_reset_subject.txt'
 MAIL_PASSWORD_RESET_BODY = 'userena/emails/password_reset_message.txt'
 MAIL_PASSWORD_RESET_BODY_HTML = 'userena/emails/password_reset_message.txt'
-
-
-# South Settings
-
-# # assign migrations for third-party apps to project folders
-# SOUTH_MIGRATION_MODULES = {
-#     'sites': 'accounts.migrations',
-# }
-
-# TODO: remove soon
-USERENA_SIGNIN_REDIRECT_URL = '/accounts/%(username)s/'
-LOGIN_URL = '/accounts/signin/'
-LOGOUT_URL = '/accounts/signout/'
-# AUTH_USER_MODEL = 'beam_user.BeamUser'

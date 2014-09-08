@@ -9,7 +9,7 @@ class BeamProfile(UserenaBaseProfile):
     user = models.OneToOneField(
         User,
         unique=True,
-        related_name='beam'
+        related_name='profile'
     )
     favourite_snack = models.CharField(
         _('favourite snack'),

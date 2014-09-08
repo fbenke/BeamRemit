@@ -6,6 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
 from userena.models import UserenaSignup
 from userena.utils import get_user_model
@@ -256,3 +257,38 @@ class PasswordChange(APIView):
 
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BeamUserViewSet(ModelViewSet):
+
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializers.UserSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # only this particular user is in the query set, which prevents the user
+        # from accessing data of other users
+        return get_user_model().objects.filter(id=user.id)
+    
+    def destroy(self, request, *args, **kwargs):
+        '''
+        customized to set active=false and delete
+        token upon deletion of a user
+        '''
+
+        obj = self.get_object()
+        # any pre-delete routine
+        self.pre_delete(obj)
+
+        # deactiveate users
+        obj.is_active = False
+        obj.save()
+
+        # delete authentication token
+        if request.auth is not None:
+            request.auth.delete()
+
+        # any post-delete routine
+        self.post_delete(obj)
+        return Response(status=status.HTTP_204_NO_CONTENT)

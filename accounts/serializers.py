@@ -16,7 +16,9 @@ from rest_framework import serializers
 from rest_framework import fields
 
 from beam.utils import send_mail
+
 from accounts.utils import PasswordResetException
+from accounts import models
 
 USERNAME_RE = r'^[\.\w]+$'
 PASSWORD_RE = r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$'
@@ -207,3 +209,25 @@ class ChangePasswordSerializer(SetPasswordSerializer):
             raise serializers.ValidationError('Old Password is incorrect')
 
         return attrs
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = models.BeamProfile
+        read_only_fields = ()
+        read_and_write_fields = ('favourite_snack', )
+
+        fields = read_only_fields + read_and_write_fields
+
+
+class UserSerializer(serializers.ModelSerializer):
+
+    profile = ProfileSerializer(many=False)
+
+    class Meta:
+        model = get_user_model()
+        read_only_fields = ('id', 'email', )
+        read_and_write_fields = ('first_name', 'last_name', 'profile', )
+
+        fields = read_only_fields + read_and_write_fields

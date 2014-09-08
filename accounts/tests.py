@@ -22,6 +22,7 @@ class CreateUserTests(APITestCase):
     plain_url_activate = 'accounts:activate'
     plain_url_activate_retry = 'accounts:activate_retry'
     plain_url_email_change_confirm = 'accounts:email_confirm'
+    plain_url_profile = ('accounts:profile')
 
     password = 'Django123'
 
@@ -258,4 +259,61 @@ class CreateUserTests(APITestCase):
         url_email_change_confirm = reverse(self.plain_url_email_change_confirm, args=('invalidkey',))
         response = self.client.get(url_email_change_confirm)
         self.assertEqual(response.data['detail'], 'Invalid Parameters')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # TODO....
+
+    def test_retrieve_user(self):
+        email = self.emails.next()
+        token, id = self._create_activated_user(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        url = reverse('accounts:profile', args=(id,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], email)
+
+    def test_retrieve_user_fail(self):
+        token, id = self._create_activated_user()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        url = reverse('accounts:profile', args=(id + 1,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_retrieve_user_fail_permission(self):
+        url = reverse('accounts:profile', args=(0,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_partially_update_user(self):
+        token, id = self._create_activated_user()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        url = reverse('accounts:profile', args=(id,))
+        data = {
+            'first_name': 'Falk',
+            'last_name': 'Benke',
+            'profile': {'favourite_snack': 'Ice'}
+        }
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['first_name'], 'Falk')
+        self.assertEqual(response.data['last_name'], 'Benke')
+        self.assertEqual(response.data['profile']['favourite_snack'], 'Ice')
+
+    def test_partially_update_user_fail(self):
+        token, id = self._create_activated_user()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        url = reverse('accounts:profile', args=(id + 1,))
+        response = self.client.patch(url, {'first_name': 'Falk'})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_user(self):
+        email = self.emails.next()
+        token, id = self._create_activated_user(email=email, password=self.password)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        url = reverse('accounts:profile', args=(id,))
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        self.client.credentials(HTTP_AUTHORIZATION=None)
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

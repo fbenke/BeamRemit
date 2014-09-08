@@ -3,8 +3,20 @@ from rest_framework.urlpatterns import format_suffix_patterns
 
 from accounts import views
 
+user_list = views.BeamUserViewSet.as_view({
+    'get': 'retrieve',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
 urlpatterns = patterns(
     '',
+    url(
+        r'^(?P<pk>[0-9]+)/$',
+        user_list,
+        name='profile'
+    ),
+
     url(
         r'^signup/$',
         views.Signup.as_view(),
