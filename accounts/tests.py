@@ -24,10 +24,10 @@ class CreateUserTests(APITestCase):
     url_email_change = reverse('accounts:email_change')
     url_password_reset = reverse('accounts:password_reset')
     url_password_change = reverse('accounts:password_change')
+    url_profile = reverse('accounts:profile')
     plain_url_activate = 'accounts:activate'
     plain_url_activate_retry = 'accounts:activate_retry'
     plain_url_email_change_confirm = 'accounts:email_confirm'
-    plain_url_profile = 'accounts:profile'
     plain_url_password_reset_confirm = 'accounts:password_reset_confirm'
 
     password = 'Django123'
@@ -150,14 +150,23 @@ class CreateUserTests(APITestCase):
         activation_key = user.userena_signup.activation_key
         url_activate = reverse(self.plain_url_activate, args=(activation_key,))
         response = self.client.get(url_activate)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(response.data['activation_key'] is not None)
-        self.assertEqual(response.data['detail'], 'Activation Key has expired.')
+        self.assertEqual(response.data['detail'], 'Activation Key has expired')
 
         # request a new activation key
         url_activate_retry = reverse(self.plain_url_activate_retry, args=(activation_key,))
         response = self.client.get(url_activate_retry)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # activate account with new activation key
+        activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
+        url_activate = reverse(self.plain_url_activate, args=(activation_key,))
+
+        response = self.client.get(url_activate)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['token'] is not None)
+        self.assertTrue(response.data['id'] is not None)
 
     def test_activation_retry_invalid_key(self):
         url_activate_retry = reverse(self.plain_url_activate_retry, args=('invalidkey',))
@@ -173,7 +182,7 @@ class CreateUserTests(APITestCase):
         response = self.client.get(url_activate_retry)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['detail'], 'Key is not expired.')
+        self.assertEqual(response.data['detail'], 'Key is not expired')
 
     def test_signin(self):
         email = self.emails.next()
@@ -276,51 +285,33 @@ class CreateUserTests(APITestCase):
         email = self.emails.next()
         token, id = self._create_activated_user(email=email)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        url = reverse('accounts:profile', args=(id,))
-        response = self.client.get(url)
+        response = self.client.get(self.url_profile)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['email'], email)
 
-    def test_retrieve_user_fail(self):
-        token, id = self._create_activated_user()
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        url = reverse('accounts:profile', args=(id + 1,))
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
     def test_retrieve_user_fail_permission(self):
-        url = reverse('accounts:profile', args=(0,))
-        response = self.client.get(url)
+        response = self.client.get(self.url_profile)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_partially_update_user(self):
         token, id = self._create_activated_user()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        url = reverse('accounts:profile', args=(id,))
         data = {
             'first_name': 'Falk',
             'last_name': 'Benke',
-            'profile': {'favourite_snack': 'Ice'}
+            'profile': {'country': 'DE'}
         }
-        response = self.client.patch(url, data)
+        response = self.client.patch(self.url_profile, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['first_name'], 'Falk')
         self.assertEqual(response.data['last_name'], 'Benke')
-        self.assertEqual(response.data['profile']['favourite_snack'], 'Ice')
-
-    def test_partially_update_user_fail(self):
-        token, id = self._create_activated_user()
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        url = reverse('accounts:profile', args=(id + 1,))
-        response = self.client.patch(url, {'first_name': 'Falk'})
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['profile']['country'], 'DE')
 
     def test_delete_user(self):
         email = self.emails.next()
         token, id = self._create_activated_user(email=email, password=self.password)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        url = reverse('accounts:profile', args=(id,))
-        response = self.client.delete(url)
+        response = self.client.delete(self.url_profile)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         self.client.credentials(HTTP_AUTHORIZATION=None)

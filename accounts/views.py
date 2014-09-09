@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
 from userena.models import UserenaSignup
 from userena.utils import get_user_model
@@ -57,14 +57,14 @@ class Activation(APIView):
                         'ERROR - User for activation key {} could not be found'.
                         format(activation_key)
                     )
-                    return Response({'detail': 'User not found.'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    return Response({'detail': 'User not found'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             # activation key expired
             else:
                 return Response(
                     {'activation_key': activation_key,
-                     'detail': 'Activation Key has expired.'},
-                    status.HTTP_200_OK
+                     'detail': 'Activation Key has expired'},
+                    status.HTTP_400_BAD_REQUEST
                 )
         # invalid key
         except UserenaSignup.DoesNotExist:
@@ -88,12 +88,12 @@ class ActivationRetry(APIView):
                         format(activation_key)
                     )
                     return Response(
-                        {'detail': 'Key could not be generated.'},
+                        {'detail': 'Key could not be generated'},
                         status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
             else:
                 return Response(
-                    {'detail': 'Key is not expired.'},
+                    {'detail': 'Key is not expired'},
                     status.HTTP_400_BAD_REQUEST
                 )
         except UserenaSignup.DoesNotExist:
@@ -261,18 +261,15 @@ class PasswordChange(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class BeamUserViewSet(ModelViewSet):
+class ProfileView(RetrieveUpdateDestroyAPIView):
 
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = serializers.UserSerializer
 
-    def get_queryset(self):
+    def get_object(self, queryset=None):
         user = self.request.user
+        return get_user_model().objects.get(id=user.id)
 
-        # only this particular user is in the query set, which prevents the user
-        # from accessing data of other users
-        return get_user_model().objects.filter(id=user.id)
-    
     def destroy(self, request, *args, **kwargs):
         '''
         customized to set active=false and delete
