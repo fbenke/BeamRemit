@@ -6,7 +6,7 @@ from django.contrib import admin
 from userena.admin import UserenaAdmin
 from userena.utils import get_user_model
 
-from accounts.models import BeamProfile
+from account.models import BeamProfile
 
 
 class BeamProfileAdmin(admin.ModelAdmin):

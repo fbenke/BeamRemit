@@ -14,8 +14,8 @@ urlpatterns = patterns(
         name='home'
     ),
     url(
-        r'^api/v1/accounts/',
-        include('accounts.urls', namespace='accounts')
+        r'^api/v1/account/',
+        include('account.urls', namespace='account')
     ),
     url(
         r'^robots\.txt$',

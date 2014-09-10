@@ -7,7 +7,7 @@
     </p>
     <p>
         {% trans "Please confirm this email address by clicking on the link below:" %}<br>
-        {{ protocol }}://{{ site.domain }}{% url 'accounts:email_confirm' confirmation_key %}
+        {{ protocol }}://{{ site.domain }}{% url 'account:email_confirm' confirmation_key %}
     </p>
     <p>
         {% trans "Thanks for using our site!" %}<br />

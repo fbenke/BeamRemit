@@ -17,8 +17,8 @@ from rest_framework import fields
 
 from beam.utils import send_mail
 
-from accounts.utils import PasswordResetException
-from accounts import models
+from account.utils import PasswordResetException
+from account import models
 
 USERNAME_RE = r'^[\.\w]+$'
 PASSWORD_RE = r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$'

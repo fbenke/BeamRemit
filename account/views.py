@@ -13,8 +13,8 @@ from userena.utils import get_user_model
 
 from beam.utils import log_error
 
-from accounts import serializers
-from accounts.utils import EmailChangeException, PasswordResetException
+from account import serializers
+from account.utils import EmailChangeException, PasswordResetException
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 

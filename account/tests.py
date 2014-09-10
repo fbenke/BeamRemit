@@ -18,17 +18,17 @@ from django.conf import settings
 
 class CreateUserTests(APITestCase):
 
-    url_signup = reverse('accounts:signup')
-    url_signin = reverse('accounts:signin')
-    url_singout = reverse('accounts:signout')
-    url_email_change = reverse('accounts:email_change')
-    url_password_reset = reverse('accounts:password_reset')
-    url_password_change = reverse('accounts:password_change')
-    url_profile = reverse('accounts:profile')
-    plain_url_activate = 'accounts:activate'
-    plain_url_activate_retry = 'accounts:activate_retry'
-    plain_url_email_change_confirm = 'accounts:email_confirm'
-    plain_url_password_reset_confirm = 'accounts:password_reset_confirm'
+    url_signup = reverse('account:signup')
+    url_signin = reverse('account:signin')
+    url_singout = reverse('account:signout')
+    url_email_change = reverse('account:email_change')
+    url_password_reset = reverse('account:password_reset')
+    url_password_change = reverse('account:password_change')
+    url_profile = reverse('account:profile')
+    plain_url_activate = 'account:activate'
+    plain_url_activate_retry = 'account:activate_retry'
+    plain_url_email_change_confirm = 'account:email_confirm'
+    plain_url_password_reset_confirm = 'account:password_reset_confirm'
 
     password = 'Django123'
     new_password = 'Django321'
@@ -324,9 +324,8 @@ class CreateUserTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
 
         no_emails = len(mailbox.outbox)
-        url = reverse('accounts:password_reset')
-
-        response = self.client.post(url, {'email': email})
+        
+        response = self.client.post(self.url_password_reset, {'email': email})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['detail'], 'Success')
 

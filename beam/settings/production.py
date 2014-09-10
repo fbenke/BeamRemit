@@ -47,7 +47,8 @@ THIRD_PARTY_APPS = (
 
 LOCAL_APPS = (
     'beam',
-    'accounts',
+    'account',
+    'transaction'
 )
 
 
@@ -204,7 +205,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-AUTH_PROFILE_MODULE = 'accounts.BeamProfile'
+AUTH_PROFILE_MODULE = 'account.BeamProfile'
 USERENA_WITHOUT_USERNAMES = True
 USERENA_ACTIVATION_DAYS = 1
 USERENA_USE_HTTPS = (ENV != ENV_LOCAL)

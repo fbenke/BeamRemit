@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from rest_framework.urlpatterns import format_suffix_patterns
 
-from accounts import views
+from account import views
 
 urlpatterns = patterns(
     '',

@@ -8,59 +8,28 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Deleting field 'BeamProfile.favourite_snack'
-        db.delete_column(u'accounts_beamprofile', 'favourite_snack')
-
-        # Adding field 'BeamProfile.date_of_birth'
-        db.add_column(u'accounts_beamprofile', 'date_of_birth',
-                      self.gf('django.db.models.fields.DateField')(null=True, blank=True),
-                      keep_default=False)
-
-        # Adding field 'BeamProfile.street'
-        db.add_column(u'accounts_beamprofile', 'street',
-                      self.gf('django.db.models.fields.CharField')(default='', max_length=50, blank=True),
-                      keep_default=False)
-
-        # Adding field 'BeamProfile.post_code'
-        db.add_column(u'accounts_beamprofile', 'post_code',
-                      self.gf('django.db.models.fields.CharField')(default='', max_length=10, blank=True),
-                      keep_default=False)
-
-        # Adding field 'BeamProfile.city'
-        db.add_column(u'accounts_beamprofile', 'city',
-                      self.gf('django.db.models.fields.CharField')(default='', max_length=40, blank=True),
-                      keep_default=False)
-
-        # Adding field 'BeamProfile.country'
-        db.add_column(u'accounts_beamprofile', 'country',
-                      self.gf('django_countries.fields.CountryField')(default='', max_length=2, blank=True),
-                      keep_default=False)
+        # Adding model 'BeamProfile'
+        db.create_table(u'account_beamprofile', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('mugshot', self.gf('django.db.models.fields.files.ImageField')(max_length=100, blank=True)),
+            ('privacy', self.gf('django.db.models.fields.CharField')(default='registered', max_length=15)),
+            ('user', self.gf('django.db.models.fields.related.OneToOneField')(related_name='profile', unique=True, to=orm['auth.User'])),
+            ('date_of_birth', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
+            ('street', self.gf('django.db.models.fields.CharField')(max_length=50, blank=True)),
+            ('post_code', self.gf('django.db.models.fields.CharField')(max_length=10, blank=True)),
+            ('city', self.gf('django.db.models.fields.CharField')(max_length=40, blank=True)),
+            ('country', self.gf('django_countries.fields.CountryField')(max_length=2, blank=True)),
+        ))
+        db.send_create_signal(u'account', ['BeamProfile'])
 
 
     def backwards(self, orm):
-        # Adding field 'BeamProfile.favourite_snack'
-        db.add_column(u'accounts_beamprofile', 'favourite_snack',
-                      self.gf('django.db.models.fields.CharField')(default='', max_length=5),
-                      keep_default=False)
-
-        # Deleting field 'BeamProfile.date_of_birth'
-        db.delete_column(u'accounts_beamprofile', 'date_of_birth')
-
-        # Deleting field 'BeamProfile.street'
-        db.delete_column(u'accounts_beamprofile', 'street')
-
-        # Deleting field 'BeamProfile.post_code'
-        db.delete_column(u'accounts_beamprofile', 'post_code')
-
-        # Deleting field 'BeamProfile.city'
-        db.delete_column(u'accounts_beamprofile', 'city')
-
-        # Deleting field 'BeamProfile.country'
-        db.delete_column(u'accounts_beamprofile', 'country')
+        # Deleting model 'BeamProfile'
+        db.delete_table(u'account_beamprofile')
 
 
     models = {
-        u'accounts.beamprofile': {
+        u'account.beamprofile': {
             'Meta': {'object_name': 'BeamProfile'},
             'city': ('django.db.models.fields.CharField', [], {'max_length': '40', 'blank': 'True'}),
             'country': ('django_countries.fields.CountryField', [], {'max_length': '2', 'blank': 'True'}),
@@ -110,4 +79,4 @@ class Migration(SchemaMigration):
         }
     }
 
-    complete_apps = ['accounts']
+    complete_apps = ['account']
