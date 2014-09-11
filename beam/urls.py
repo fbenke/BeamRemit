@@ -18,6 +18,10 @@ urlpatterns = patterns(
         include('account.urls', namespace='account')
     ),
     url(
+        r'^api/v1/pricing/',
+        include('pricing.urls', namespace='pricing')
+    ),
+    url(
         r'^api/v1/transaction/',
         include('transaction.urls', namespace='transaction')
     ),

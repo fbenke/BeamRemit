@@ -1,12 +1,11 @@
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
 
 from transaction import serializers
-from transaction.models import Transaction, Pricing
+from transaction.models import Transaction
 
 
 class CreateTransaction(APIView):
@@ -37,22 +36,3 @@ class ViewTransactions(ListAPIView):
         if state is not None:
             queryset = queryset.filter(state=state)
         return queryset
-
-
-class PricingCurrent(RetrieveAPIView):
-    serializer_class = serializers.PricingSerializer
-    permission_classes = (IsAdminUser,)
-
-    def retrieve(self, request, *args, **kwargs):
-        self.object = Pricing.objects.get(end__isnull=True)
-        serializer = self.get_serializer(self.object)
-        return Response(serializer.data)
-
-
-class PricingViewSet(ModelViewSet):
-    serializer_class = serializers.PricingSerializer
-    permission_classes = (IsAdminUser,)
-    queryset = Pricing.objects.all()
-
-    def pre_save(self, obj):
-        Pricing.end_previous_pricing()
