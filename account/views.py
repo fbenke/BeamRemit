@@ -103,7 +103,6 @@ class ActivationRetry(APIView):
 class Signin(APIView):
 
     serializer_class = serializers.AuthTokenSerializer
-    model = Token
 
     def post(self, request):
         serializer = self.serializer_class(data=request.DATA)
@@ -229,7 +228,7 @@ class PasswordResetConfirm(APIView):
         if not user:
             return Response({'detail': RESPONSE_INVD_PARAM})
 
-        serializer = self.serializer_class(user, user, request.DATA)
+        serializer = self.serializer_class(user=user, data=request.DATA)
 
         if serializer.is_valid():
 
@@ -269,6 +268,12 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
     def get_object(self, queryset=None):
         user = self.request.user
         return get_user_model().objects.get(id=user.id)
+
+    def update(self, request, *args, **kwargs):
+        response = super(ProfileView, self).update(request, args, kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            response.data = {'detail': 'success'}
+        return response
 
     def destroy(self, request, *args, **kwargs):
         '''

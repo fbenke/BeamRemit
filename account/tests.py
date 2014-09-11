@@ -303,9 +303,7 @@ class CreateUserTests(APITestCase):
         }
         response = self.client.patch(self.url_profile, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['first_name'], 'Falk')
-        self.assertEqual(response.data['last_name'], 'Benke')
-        self.assertEqual(response.data['profile']['country'], 'DE')
+        self.assertEqual(response.data['detail'], 'success')
 
     def test_delete_user(self):
         email = self.emails.next()
@@ -324,7 +322,7 @@ class CreateUserTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
 
         no_emails = len(mailbox.outbox)
-        
+
         response = self.client.post(self.url_password_reset, {'email': email})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['detail'], 'Success')

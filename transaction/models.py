@@ -1,4 +1,6 @@
-from django.core.exceptions import ObjectDoesNotExist
+import random
+
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -66,6 +68,9 @@ class Recipient(models.Model):
         blank=True,
         help_text='Email Address of recipient'
     )
+
+    def __unicode__(self):
+        return '{}'.format(self.name)
 
 
 class Transaction(models.Model):
@@ -163,6 +168,16 @@ class Transaction(models.Model):
         help_text='Time at which the transaction was cancelled and rolled back'
     )
 
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.pricing = Pricing.get_current_pricing()
+            self._generate_reference_number()
+        else:
+            original = Transaction.objects.get(pk=self.pk)
+            if original.pricing != self.pricing:
+                raise ValidationError('Pricing cannot be changed after initialization')
+        super(Transaction, self).save(*args, **kwargs)
+
     def set_invalid(self):
         self.state = Transaction.INVALID
         self.declined_at = timezone.now()
@@ -177,3 +192,6 @@ class Transaction(models.Model):
         self.state = Transaction.PAID
         self.paid_at = timezone.now()
         self.save()
+
+    def _generate_reference_number(self):
+        self.reference_number = str(random.randint(10000, 999999))

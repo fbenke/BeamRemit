@@ -23,8 +23,13 @@ urlpatterns = patterns(
         name='pricing-current'
     ),
     url(
-        r'^$',
-        views.ListTransactions.as_view(),
-        name='list'
+        r'^add/$',
+        views.CreateTransaction.as_view(),
+        name='transaction-add'
+    ),
+    url(
+        r'^list/$',
+        views.ViewTransactions.as_view(),
+        name='transaction-list'
     )
 )
