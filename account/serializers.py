@@ -122,8 +122,6 @@ class AuthTokenSerializer(serializers.Serializer):
             if user:
                 if not user.is_active:
                     raise serializers.ValidationError('User account is disabled.')
-                if user.is_staff:
-                    raise serializers.ValidationError('Login with an Admin account not supported.')
                 attrs['user'] = user
                 return attrs
             else:
@@ -212,7 +210,7 @@ class ChangePasswordSerializer(SetPasswordSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = models.BeamProfile
         read_only_fields = ()

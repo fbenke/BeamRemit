@@ -1,14 +1,20 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.utils import timezone
+
 from userena.utils import get_user_model
+
+from beam.utils import log_error
 
 
 class Pricing(models.Model):
+
     start = models.DateTimeField(
         'Start Time',
         auto_now_add=True,
         help_text='Time at which pricing structure came into effect'
     )
-    
+
     end = models.DateTimeField(
         'End Time',
         blank=True,
@@ -26,6 +32,22 @@ class Pricing(models.Model):
         'GHS/USD Exchange Rate',
         help_text='Amount of GHS you get for 1 USD'
     )
+
+    def __unicode__(self):
+        return '{}'.format(self.id)
+
+    @staticmethod
+    def get_current_pricing():
+        return Pricing.objects.get(end__isnull=True)
+
+    @staticmethod
+    def end_previous_pricing():
+        try:
+            previous_pricing = Pricing.objects.get(end__isnull=True)
+            previous_pricing.end = timezone.now()
+            previous_pricing.save()
+        except ObjectDoesNotExist:
+            log_error('ERROR - Failed to end previous pricing.')
 
 
 class Recipient(models.Model):
@@ -140,3 +162,18 @@ class Transaction(models.Model):
         blank=True,
         help_text='Time at which the transaction was cancelled and rolled back'
     )
+
+    def set_invalid(self):
+        self.state = Transaction.INVALID
+        self.declined_at = timezone.now()
+        self.save()
+
+    def set_declined(self):
+        self.state = Transaction.DECLINED
+        self.declined_at = timezone.now()
+        self.save()
+
+    def set_paid(self):
+        self.state = Transaction.PAID
+        self.paid_at = timezone.now()
+        self.save()

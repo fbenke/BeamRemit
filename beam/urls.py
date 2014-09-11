@@ -18,6 +18,10 @@ urlpatterns = patterns(
         include('account.urls', namespace='account')
     ),
     url(
+        r'^api/v1/transaction/',
+        include('transaction.urls', namespace='transaction')
+    ),
+    url(
         r'^robots\.txt$',
         TemplateView.as_view(template_name='robots.txt', content_type='text/plain'),
         name='robots'
