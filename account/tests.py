@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.core.urlresolvers import reverse
 from django.core import mail as mailbox
@@ -6,60 +7,25 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 
 from rest_framework import status
-from rest_framework.test import APITestCase
 
-from userena.models import UserenaSignup
 from userena.utils import get_user_model
 
 from datetime import timedelta
 
-from django.conf import settings
+from beam.tests import BeamAPITestCase
 
 
-class CreateUserTests(APITestCase):
+class AccountTests(BeamAPITestCase):
 
-    url_signup = reverse('account:signup')
     url_signin = reverse('account:signin')
     url_singout = reverse('account:signout')
     url_email_change = reverse('account:email_change')
     url_password_reset = reverse('account:password_reset')
     url_password_change = reverse('account:password_change')
     url_profile = reverse('account:profile')
-    plain_url_activate = 'account:activate'
     plain_url_activate_retry = 'account:activate_retry'
     plain_url_email_change_confirm = 'account:email_confirm'
     plain_url_password_reset_confirm = 'account:password_reset_confirm'
-
-    password = 'Django123'
-    new_password = 'Django321'
-
-    emails = iter(['test{}@mail.com'.format(k) for k in xrange(1, 100)])
-
-    def setUp(self):
-        UserenaSignup.objects.check_permissions()
-
-    def _create_user(self, email=None, password=None):
-        if email is None:
-            email = self.emails.next()
-        if password is None:
-            password = self.password
-        data = {
-            'email': email,
-            'password1': password,
-            'password2': password,
-
-        }
-        response = self.client.post(self.url_signup, data)
-        return response
-
-    def _create_activated_user(self, email=None, password=None):
-        if email is None:
-            email = self.emails.next()
-        self._create_user(email, password)
-        activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
-        url_activate = reverse(self.plain_url_activate, args=(activation_key,))
-        response = self.client.get(url_activate)
-        return response.data['token'], response.data['id']
 
     def _generate_password_reset_confirmation_key(self, id):
         user = get_user_model().objects.get(id=id)

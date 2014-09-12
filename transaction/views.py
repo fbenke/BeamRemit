@@ -20,6 +20,8 @@ class CreateTransaction(APIView):
 
             self.object = serializer.save(force_insert=True)
 
+            print 'here'
+
             return Response({'detail': 'success'}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

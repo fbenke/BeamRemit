@@ -45,4 +45,5 @@ class Pricing(models.Model):
             previous_pricing.end = timezone.now()
             previous_pricing.save()
         except ObjectDoesNotExist:
-            log_error('ERROR - Failed to end previous pricing.')
+            if Pricing.objects.all().exists():
+                log_error('ERROR - Failed to end previous pricing.')
