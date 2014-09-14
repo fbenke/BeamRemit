@@ -48,3 +48,6 @@ class BeamProfile(UserenaBaseProfile):
         blank=True,
         help_text='Country'
     )
+
+    def is_verified(self):
+        return True

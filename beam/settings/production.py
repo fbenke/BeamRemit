@@ -233,3 +233,11 @@ else:
 MAIL_PASSWORD_RESET_SUBJECT = 'registration/password_reset_subject.txt'
 MAIL_PASSWORD_RESET_BODY = 'userena/emails/password_reset_message.txt'
 MAIL_PASSWORD_RESET_BODY_HTML = 'userena/emails/password_reset_message.txt'
+
+# Coinbase Settings
+COINBASE_BASE_URL = 'https://coinbase.com/api/v1/'
+COINBASE_API_KEY = os.environ.get('COINBASE_API_KEY')
+COINBASE_API_SECRET = os.environ.get('CONBASE_API_SECRET')
+# will be replaced by accounts in future
+COINBASE_GENERATE_ADDRESS = COINBASE_BASE_URL + 'account/generate_receive_address'
+COINBASE_GENERATE_ADDRESS_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + 'api/v1/transaction/received/'

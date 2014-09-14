@@ -1,11 +1,13 @@
-from rest_framework.views import APIView
+from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
 
 from transaction import serializers
 from transaction.models import Transaction
+from transaction.api_calls import coinbase
 
 
 class CreateTransaction(APIView):
@@ -19,8 +21,6 @@ class CreateTransaction(APIView):
         if serializer.is_valid():
 
             self.object = serializer.save(force_insert=True)
-
-            print 'here'
 
             return Response({'detail': 'success'}, status=status.HTTP_201_CREATED)
 
@@ -38,3 +38,10 @@ class ViewTransactions(ListAPIView):
         if state is not None:
             queryset = queryset.filter(state=state)
         return queryset
+
+
+@api_view(['GET'])
+def test(request):
+
+    coinbase.generate_receive_address('12345')
+    return Response()

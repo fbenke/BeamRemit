@@ -2,7 +2,8 @@ from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from django.views.generic import TemplateView, RedirectView
 
-from beam.settings.production import STATIC_URL
+from django.conf import settings
+
 
 admin.autodiscover()
 
@@ -37,7 +38,7 @@ urlpatterns = patterns(
     ),
     url(
         r'^favicon\.ico$',
-        RedirectView.as_view(url=STATIC_URL + 'img/favicon.ico')
+        RedirectView.as_view(url=settings.STATIC_URL + 'img/favicon.ico')
     ),
     url(
         r'^admin/',
