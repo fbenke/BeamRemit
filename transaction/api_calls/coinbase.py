@@ -41,14 +41,13 @@ def make_request(url, body=None):
         raise APIException()
 
 
-def generate_button(price, name, transaction_id, currency='GBP',):
+def generate_button(price, reference_number, transaction_id, currency='GBP',):
 
     # TODO: go through again and see if all are needed, as well as which ones should be in settings
     # see https://coinbase.com/api/doc/1.0/buttons.html for parameter description
     data = {
         'button': {
-            'name': 'your remittance to {}'.format(name),
-            'callback_url': settings.COINBASE_CALLBACK_URL,
+            'name': 'Remittance Ref. {}'.format(reference_number),
             'price_string': str(price),
             'price_currency_iso': currency,
             'subscription': False,
@@ -60,6 +59,10 @@ def generate_button(price, name, transaction_id, currency='GBP',):
             'custom': str(transaction_id),
             # secure custom parameter from any manipulation
             'custom_secure': True,
+            'auto_redirect': True,
+            'callback_url': settings.COINBASE_CALLBACK_URL,
+            'success_url': settings.CONBASE_SUCCESS_URL,
+            'cancel_url': settings.COINBASE_CANCEL_URL
         }
     }
 

@@ -178,7 +178,7 @@ class Transaction(models.Model):
     def generate_coinbase_button(self):
         self.coinbase_button_code = coinbase.generate_button(
             price=self.amount_gbp,
-            name=self.recipient.name,
+            reference_number=self.reference_number,
             transaction_id=self.id
         )
         self.save()
