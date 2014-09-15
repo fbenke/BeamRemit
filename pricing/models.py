@@ -36,7 +36,10 @@ class Pricing(models.Model):
 
     @staticmethod
     def get_current_pricing():
-        return Pricing.objects.get(end__isnull=True)
+        try:
+            return Pricing.objects.get(end__isnull=True)
+        except ObjectDoesNotExist:
+            log_error('ERROR Pricing - No pricing object found.')
 
     @staticmethod
     def end_previous_pricing():
@@ -46,4 +49,4 @@ class Pricing(models.Model):
             previous_pricing.save()
         except ObjectDoesNotExist:
             if Pricing.objects.all().exists():
-                log_error('ERROR - Failed to end previous pricing.')
+                log_error('ERROR Pricing - Failed to end previous pricing.')

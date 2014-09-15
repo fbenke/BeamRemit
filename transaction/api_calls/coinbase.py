@@ -6,7 +6,7 @@ import json
 
 from django.conf import settings
 
-from beam.utils import log_error
+from beam.utils import log_error, APIException
 
 
 def make_request(url, body=None):
@@ -37,18 +37,42 @@ def make_request(url, body=None):
         response = opener.open(req)
         return json.load(response)
     except urllib2.HTTPError as e:
-        log_error('ERROR - Coinbase: Failed to send request ({})'.format(repr(e)))
-        return None
+        log_error('ERROR - ' + 'Coinbase: Failed to send request ({})'.format(repr(e)))
+        raise APIException()
 
 
-def generate_receive_address(reference_no=None):
+def generate_button(price, name, transaction_id, currency='GBP',):
 
+    # TODO: go through again and see if all are needed, as well as which ones should be in settings
+    # see https://coinbase.com/api/doc/1.0/buttons.html for parameter description
     data = {
-        'address': {
-            'callback_url': settings.COINBASE_GENERATE_ADDRESS_CALLBACK_URL,
-            'label': reference_no
+        'button': {
+            'name': 'your remittance to {}'.format(name),
+            'callback_url': settings.COINBASE_CALLBACK_URL,
+            'price_string': str(price),
+            'price_currency_iso': currency,
+            'subscription': False,
+            # default value, opposed to 'donation'
+            'type': 'buy_now',
+            # description that will be added to the users transaction notes
+            'description': 'Beam - the cheapest, fastest way to send money to Ghana.',
+            # custom parameter to match with database record
+            'custom': str(transaction_id),
+            # secure custom parameter from any manipulation
+            'custom_secure': True,
         }
     }
 
-    # POST /api/v1/buttons
-    print make_request(settings.COINBASE_GENERATE_ADDRESS, body=json.dumps(data))
+    response = make_request(settings.COINBASE_GENERATE_BUTTON, body=json.dumps(data))
+
+    try:
+
+        if not response['success']:
+            log_error('ERROR - ' + 'Coinbase: Creating button was not successful ({})'.format(response))
+            raise APIException
+
+        return response['button']['code']
+
+    except KeyError:
+        log_error('ERROR - ' + 'Coinbase: Creating button was not successful ({})'.format(response))
+        raise APIException

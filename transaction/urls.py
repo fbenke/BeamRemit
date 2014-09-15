@@ -18,6 +18,11 @@ urlpatterns = patterns(
         name='list'
     ),
     url(
+        r'^confirm_payment/$',
+        views.ConfirmPayment.as_view(),
+        name='confirm_payment'
+    ),
+    url(
         r'^test/$',
         'transaction.views.test'
     )

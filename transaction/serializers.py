@@ -16,7 +16,7 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
         model = models.Transaction
         depth = 1
         read_only_fields = ()
-        read_and_write_fields = ('amount_btc', 'amount_ghs', 'recipient')
+        read_and_write_fields = ('amount_gbp', 'recipient')
         fields = read_only_fields + read_and_write_fields
 
     def __init__(self, user, *args, **kwargs):
@@ -32,14 +32,20 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
         transaction = models.Transaction(
             recipient=recipient,
             sender=self.user,
-            amount_btc=attrs['amount_btc'],
-            amount_ghs=attrs['amount_ghs']
+            amount_gbp=attrs['amount_gbp'],
         )
 
         return transaction
+
+    def validate(self, attrs):
+        'make sure that the recipient is verified'
+        if not self.user.profile.is_verified:
+            raise serializers.ValidationError('Sender is not verified')
+        return attrs
 
     def save(self, *args, **kwargs):
         with dbtransaction.atomic():
             self.object.recipient.save()
             self.object.recipient = models.Recipient.objects.get(id=self.object.recipient.id)
             self.object.save()
+        return models.Transaction.objects.get(id=self.object.id)

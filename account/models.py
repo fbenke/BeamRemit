@@ -49,5 +49,13 @@ class BeamProfile(UserenaBaseProfile):
         help_text='Country'
     )
 
+    @property
     def is_verified(self):
+        if (
+            self.user.email == '' or self.user.first_name == '' or
+            self.user.last_name == '' or not self.user.is_active or
+            self.date_of_birth is None or self.street == '' or
+            self.post_code == '' or self.city == '' or self.country == ''
+        ):
+            return False
         return True

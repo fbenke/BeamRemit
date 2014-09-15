@@ -239,5 +239,5 @@ COINBASE_BASE_URL = 'https://coinbase.com/api/v1/'
 COINBASE_API_KEY = os.environ.get('COINBASE_API_KEY')
 COINBASE_API_SECRET = os.environ.get('CONBASE_API_SECRET')
 # will be replaced by accounts in future
-COINBASE_GENERATE_ADDRESS = COINBASE_BASE_URL + 'account/generate_receive_address'
-COINBASE_GENERATE_ADDRESS_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + 'api/v1/transaction/received/'
+COINBASE_GENERATE_BUTTON = COINBASE_BASE_URL + 'buttons'
+COINBASE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/transaction/confirm_payment/'

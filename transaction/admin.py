@@ -19,9 +19,9 @@ class TransactionAdmin(admin.ModelAdmin):
         return obj.sender.email
 
     readonly_fields = (
-        'id', 'recipient', 'pricing', 'sender_email', 'amount_ghs', 'amount_btc',
-        'reference_number', 'initialized_at', 'paid_at', 'processed_at',
-        'cancelled_at', 'declined_at'
+        'id', 'recipient', 'pricing', 'sender_email', 'amount_gbp', 'amount_btc',
+        'amount_ghs', 'reference_number', 'initialized_at', 'coinbase_button_code',
+        'paid_at', 'processed_at', 'cancelled_at', 'declined_at', 'invalidated_at'
     )
 
     read_and_write_fields = ('state',)
