@@ -240,8 +240,9 @@ COINBASE_API_KEY = os.environ.get('COINBASE_API_KEY')
 COINBASE_API_SECRET = os.environ.get('CONBASE_API_SECRET')
 # will be replaced by accounts in future
 COINBASE_GENERATE_BUTTON = COINBASE_BASE_URL + 'buttons'
+
 # TODO: adjust these urls once the real site is up
 # COINBASE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/transaction/confirm_payment/'
-COINBASE_CALLBACK_URL = 'https://beamremit_dev.herokuapp.com/api/v1/transaction/confirm_payment/'
+COINBASE_CALLBACK_URL = 'https://beamremit-dev.herokuapp.com/api/v1/transaction/confirm_payment/'
 CONBASE_SUCCESS_URL = 'http://google.com'
 COINBASE_CANCEL_URL = 'http://facebook.com'

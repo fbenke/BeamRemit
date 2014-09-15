@@ -38,7 +38,7 @@ urlpatterns = patterns(
     ),
     url(
         r'^favicon\.ico$',
-        RedirectView.as_view(url=settings.STATIC_URL + 'img/favicon.ico')
+        RedirectView.as_view(url=settings.STATIC_URL + 'img/favicon.png')
     ),
     url(
         r'^admin/',
