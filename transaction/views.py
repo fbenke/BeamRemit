@@ -11,16 +11,17 @@ from rest_framework.views import APIView
 
 from userena.utils import get_protocol
 
+from beam.utils import APIException, log_error, send_sendgrid_mail
+
 from transaction import serializers
 from transaction.models import Transaction
 from transaction.api_calls import coinbase
-
-from beam.utils import APIException, log_error, send_sendgrid_mail
+from transaction.permissions import IsNoAdmin
 
 
 class CreateTransaction(GenericAPIView):
     serializer_class = serializers.CreateTransactionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsNoAdmin)
 
     def post_save(self, obj, created=True):
         obj.generate_coinbase_button()
