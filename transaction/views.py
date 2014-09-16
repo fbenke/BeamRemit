@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.contrib.sites.models import Site
-from django.utils import timezone
 
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -46,6 +45,7 @@ class CreateTransaction(GenericAPIView):
 
         except APIException:
             self.object.set_invalid()
+
             return Response({'detail': 'API Exception'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -71,11 +71,27 @@ class ConfirmPayment(APIView):
         '''
 
         try:
-            if request.DATA.get('order')['status'] == 'completed':
+
+            # mispayment received or no payment received within 10 min
+            if request.DATA.get('order')['status'] == 'expired' or\
+                    request.DATA.get('order')['event']['type'] == 'mispayment':
+                # invalidate transaction, if it is still in init state
+                try:
+                    transaction = Transaction.objects.get(
+                        id=int(request.DATA.get('order')['custom']),
+                        state=Transaction.INIT
+                    )
+                    transaction.set_invalid(commit=False)
+                except Transaction.DoesNotExist:
+                    pass
+                print 'expired'
+
+            # received valid payment, i.e. right amount within timeframe
+            # request is validated and set paid (even if it was in invalid state before)
+            if request.DATA.get('order')['event']['type'] == 'completed':
 
                 transaction = Transaction.objects.get(
-                    id=int(request.DATA.get('order')['custom']),
-                    state=Transaction.INIT
+                    id=int(request.DATA.get('order')['custom'])
                 )
 
                 if not transaction.coinbase_button_code == request.DATA.get('order')['button']['id']:
@@ -88,29 +104,23 @@ class ConfirmPayment(APIView):
 
                 transaction.coinbase_order_reference = request.DATA.get('order')['id']
                 transaction.amount_btc = request.DATA.get('order')['total_btc']['cents']
-                transaction.state = Transaction.PAID
-                transaction.paid_at = timezone.now()
-                # transaction.save()
+                transaction.set_paid(commit=False)
 
-            # no payment received withing 10 min
-            elif request.DATA.get('order')['status'] == 'expired':
+                send_sendgrid_mail(
+                    subject_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_SUBJECT,
+                    email_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_TEXT,
+                    context={
+                        'site': Site.objects.get_current(),
+                        'protocol': get_protocol()
+                    }
+                )
+                print 'yayy'
+
+            # received a mispayment, i.e. incorrect amount or too late
+            # in this case, a mispayment case mapped to a transaction must be created
+            elif request.DATA.get('order')['event']['type'] == 'mispayment':
                 # TODO
                 pass
-            # either payment with incorrect amount or received after 10 min time window
-            elif request.DATA.get('order')['status'] == 'mispaid':
-                # TODO
-                pass
-
-            send_sendgrid_mail(
-                subject_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_SUBJECT,
-                email_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_TEXT,
-                context={
-                    'site': Site.objects.get_current(),
-                    'protocol': get_protocol()
-                }
-            )
-
-            return Response(status=status.HTTP_200_OK)
 
         except Transaction.DoesNotExist:
             message = 'ERROR - Coinbase Callback: no transaction found for transaction id. {}'
@@ -121,7 +131,8 @@ class ConfirmPayment(APIView):
         except APIException:
             log_error(message.format(request.DATA))
 
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        # send status 200 in any case to stop coinbase from resending the request
+        return Response(status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])

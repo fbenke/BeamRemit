@@ -41,7 +41,6 @@ class Transaction(models.Model):
     INIT = 'INIT'
     PAID = 'PAID'
     PROCESSED = 'PROC'
-    DECLINED = 'DECL'
     CANCELLED = 'CANC'
     INVALID = 'INVD'
 
@@ -49,7 +48,6 @@ class Transaction(models.Model):
         (INIT, 'initialized'),
         (PAID, 'paid'),
         (CANCELLED, 'cancelled'),
-        (DECLINED, 'declined'),
         (PROCESSED, 'processed'),
         (INVALID, 'invalid')
     )
@@ -133,12 +131,6 @@ class Transaction(models.Model):
         blank=True,
         help_text='Time at which equivalent amount was sent to customer'
     )
-    declined_at = models.DateTimeField(
-        'Declined at',
-        null=True,
-        blank=True,
-        help_text='Time at which the transaction was declined by payment gateway'
-    )
     cancelled_at = models.DateTimeField(
         'Cancelled at',
         null=True,
@@ -163,15 +155,17 @@ class Transaction(models.Model):
 
         super(Transaction, self).save(*args, **kwargs)
 
-    def set_invalid(self):
+    def set_invalid(self, commit=True):
         self.state = Transaction.INVALID
-        self.declined_at = timezone.now()
-        self.save()
+        self.invalidated_at = timezone.now()
+        if commit:
+            self.save()
 
-    def set_declined(self):
-        self.state = Transaction.DECLINED
-        self.declined_at = timezone.now()
-        self.save()
+    def set_paid(self, commit=True):
+        self.state = Transaction.PAID
+        self.paid_at = timezone.now()
+        if commit:
+            self.save()
 
     def _generate_reference_number(self):
         self.reference_number = str(random.randint(10000, 999999))
