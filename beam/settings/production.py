@@ -233,6 +233,8 @@ else:
 MAIL_PASSWORD_RESET_SUBJECT = 'registration/password_reset_subject.txt'
 MAIL_PASSWORD_RESET_BODY = 'userena/emails/password_reset_message.txt'
 MAIL_PASSWORD_RESET_BODY_HTML = 'userena/emails/password_reset_message.txt'
+MAIL_NOTIFY_ADMIN_PAID_SUBJECT = 'email/transaction_paid_subject.txt'
+MAIL_NOTIFY_ADMIN_PAID_TEXT = 'email/transaction_paid_message.txt'
 
 # Coinbase Settings
 COINBASE_BASE_URL = 'https://coinbase.com/api/v1/'
@@ -244,5 +246,10 @@ COINBASE_GENERATE_BUTTON = COINBASE_BASE_URL + 'buttons'
 # TODO: adjust these urls once the real site is up
 # COINBASE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/transaction/confirm_payment/'
 COINBASE_CALLBACK_URL = 'https://beamremit-dev.herokuapp.com/api/v1/transaction/confirm_payment/'
-CONBASE_SUCCESS_URL = 'http://google.com'
-COINBASE_CANCEL_URL = 'http://facebook.com'
+CONBASE_SUCCESS_URL = 'https://beamremit-dev.herokuapp.com'
+COINBASE_CANCEL_URL = 'https://beamremit-dev.herokuapp.com'
+COINBASE_ITEM_DESCRIPTION = 'Beam - the cheapest, fastest way to send money to Ghana.'
+
+SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')
+SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
+SENDGRID_EMAIL_FROM = 'noreply@kitiwa.com'

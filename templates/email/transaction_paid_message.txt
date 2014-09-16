@@ -1,0 +1,7 @@
+{% load i18n %}
+Dear Admin,
+
+There are transactions on {{ protocol }}://{{ site.domain }}/admin waiting to be processed.
+
+Sincerely,
+The SendGridBot

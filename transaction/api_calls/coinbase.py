@@ -54,7 +54,7 @@ def generate_button(price, reference_number, transaction_id, currency='GBP',):
             # default value, opposed to 'donation'
             'type': 'buy_now',
             # description that will be added to the users transaction notes
-            'description': 'Beam - the cheapest, fastest way to send money to Ghana.',
+            'description': settings.COINBASE_ITEM_DESCRIPTION,
             # custom parameter to match with database record
             'custom': str(transaction_id),
             # secure custom parameter from any manipulation

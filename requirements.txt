@@ -17,6 +17,9 @@ gunicorn==19.1.1
 html2text==2014.7.3
 newrelic==2.26.0.22
 psycopg2==2.5.3
+sendgrid==1.1.1
 six==1.7.3
+smtpapi==0.1.2
 static3==0.5.1
+unittest2==0.5.1
 wsgiref==0.1.2

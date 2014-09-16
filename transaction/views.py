@@ -1,3 +1,7 @@
+from django.conf import settings
+from django.contrib.sites.models import Site
+from django.utils import timezone
+
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import GenericAPIView, ListAPIView
@@ -5,11 +9,13 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from userena.utils import get_protocol
+
 from transaction import serializers
 from transaction.models import Transaction
 from transaction.api_calls import coinbase
 
-from beam.utils import APIException
+from beam.utils import APIException, log_error, send_sendgrid_mail
 
 
 class CreateTransaction(GenericAPIView):
@@ -58,13 +64,63 @@ class ViewTransactions(ListAPIView):
 class ConfirmPayment(APIView):
 
     def post(self, request):
-        print request.DATA
+        '''
+        Payment callback from Coinbase, as described in
+        https://coinbase.com/docs/merchant_tools/callbacks
+        '''
 
-        # wallet_address = request.DATA.get('address')
-        # amount = request.DATA.get('amount')
-        # transaction_hash = request.DATA.get('transaction').get('hash')
+        try:
+            if request.DATA.get('order')['status'] == 'completed':
 
-        return Response(status=status.HTTP_200_OK)
+                transaction = Transaction.objects.get(
+                    id=int(request.DATA.get('order')['custom']),
+                    state=Transaction.INIT
+                )
+
+                if not transaction.coinbase_button_code == request.DATA.get('order')['button']['id']:
+                    message = 'ERROR - Coinbase Callback: button code mismatch {}'
+                    raise APIException
+
+                if not transaction.amount_gbp * 100 == request.DATA.get('order')['total_native']['cents']:
+                    message = 'ERROR - Coinbase Callback: native amount mismatch {}'
+                    raise APIException
+
+                transaction.coinbase_order_reference = request.DATA.get('order')['id']
+                transaction.amount_btc = request.DATA.get('order')['total_btc']['cents']
+                transaction.state = Transaction.PAID
+                transaction.paid_at = timezone.now()
+                # transaction.save()
+
+            # no payment received withing 10 min
+            elif request.DATA.get('order')['status'] == 'expired':
+                # TODO
+                pass
+            # either payment with incorrect amount or received after 10 min time window
+            elif request.DATA.get('order')['status'] == 'mispaid':
+                # TODO
+                pass
+
+            send_sendgrid_mail(
+                subject_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_SUBJECT,
+                email_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_TEXT,
+                context={
+                    'site': Site.objects.get_current(),
+                    'protocol': get_protocol()
+                }
+            )
+
+            return Response(status=status.HTTP_200_OK)
+
+        except Transaction.DoesNotExist:
+            message = 'ERROR - Coinbase Callback: no transaction found for transaction id. {}'
+            log_error(message.format(request.DATA))
+        except (KeyError, TypeError, ValueError) as e:
+            message = 'ERROR - Coinbase Callback: received invalid payment notification, {}, {}'
+            log_error(message.format(e, request.DATA))
+        except APIException:
+            log_error(message.format(request.DATA))
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
