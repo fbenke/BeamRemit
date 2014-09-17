@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 class ConfirmGoCoinPayment(APIView):
     def post(self, request):
-        print request
+        print request.DATA
 
         return Response(status=status.HTTP_200_OK)
 
