@@ -49,7 +49,8 @@ LOCAL_APPS = (
     'beam',
     'account',
     'pricing',
-    'transaction'
+    'transaction',
+    'btc_payment'
 )
 
 
@@ -236,20 +237,31 @@ MAIL_PASSWORD_RESET_BODY_HTML = 'userena/emails/password_reset_message.txt'
 MAIL_NOTIFY_ADMIN_PAID_SUBJECT = 'email/transaction_paid_subject.txt'
 MAIL_NOTIFY_ADMIN_PAID_TEXT = 'email/transaction_paid_message.txt'
 
-# Coinbase Settings
-COINBASE_BASE_URL = 'https://coinbase.com/api/v1/'
-COINBASE_API_KEY = os.environ.get('COINBASE_API_KEY')
-COINBASE_API_SECRET = os.environ.get('CONBASE_API_SECRET')
-# will be replaced by accounts in future
-COINBASE_GENERATE_BUTTON = COINBASE_BASE_URL + 'buttons'
 
+# Coinbase Settings
+# COINBASE_API_KEY = os.environ.get('COINBASE_API_KEY')
+# COINBASE_API_SECRET = os.environ.get('CONBASE_API_SECRET')
+# COINBASE_BASE_URL = 'https://coinbase.com/api/v1/'
+# COINBASE_GENERATE_BUTTON_URL = COINBASE_BASE_URL + 'buttons'
 # TODO: adjust these urls once the real site is up
 # COINBASE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/transaction/confirm_payment/'
-COINBASE_CALLBACK_URL = 'https://beamremit-dev.herokuapp.com/api/v1/transaction/confirm_payment/'
-CONBASE_SUCCESS_URL = 'https://beamremit-dev.herokuapp.com'
-COINBASE_CANCEL_URL = 'https://beamremit-dev.herokuapp.com'
-COINBASE_ITEM_DESCRIPTION = 'Beam - the cheapest, fastest way to send money to Ghana.'
+# COINBASE_CALLBACK_URL = 'https://beamremit-dev.herokuapp.com/api/v1/transaction/confirm_payment/'
+# CONBASE_SUCCESS_URL = 'https://beamremit-dev.herokuapp.com'
+# COINBASE_CANCEL_URL = 'https://beamremit-dev.herokuapp.com'
+# COINBASE_ITEM_DESCRIPTION = 'Beam - the cheapest, fastest way to send money to Ghana.'
 
+# GoCoin Settings
+# GOCOIN_API_ID = os.environ.get('GOCOIN_API_ID')
+# GOCOIN_API_SECRET = os.environ.get('GOCOIN_API_SECRET')
+# API Key with permission 'invoice_read_write'
+GOCOIN_API_KEY = os.environ.get('GOCOIN_API_KEY')
+GOCOIN_MERCHANT_ID = os.environ.get('GOCOIN_MERCHANT_ID')
+GOCOIN_BASE_URL = 'https://api.gocoin.com/api/v1/'
+GOCOIN_CREATE_INVOICE_URL = GOCOIN_BASE_URL + 'merchants/{}/invoices'.format(GOCOIN_MERCHANT_ID)
+GOCOIN_INVOICE_REDIRECT_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/#!/thanks'
+GOCOIN_INVOICE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/btc_payment/gocoin'
+
+# Sendrgrid Settings
 SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')
 SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
 SENDGRID_EMAIL_FROM = 'noreply@kitiwa.com'

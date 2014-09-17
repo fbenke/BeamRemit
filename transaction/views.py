@@ -1,29 +1,46 @@
-from django.conf import settings
-from django.contrib.sites.models import Site
+from django.db import transaction as dbtransaction
 
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from userena.utils import get_protocol
-
-from beam.utils import APIException, log_error, send_sendgrid_mail
+from beam.utils import APIException
 
 from transaction import serializers
 from transaction.models import Transaction
-from transaction.api_calls import coinbase
 from transaction.permissions import IsNoAdmin
+
+from btc_payment.api_calls import gocoin
+from btc_payment.models import GoCoinInvoice
 
 
 class CreateTransaction(GenericAPIView):
     serializer_class = serializers.CreateTransactionSerializer
     permission_classes = (IsAuthenticated, IsNoAdmin)
 
-    def post_save(self, obj, created=True):
-        obj.generate_coinbase_button()
+    def post_save(self, obj, created=False):
+
+        # TOD: remove code specific to a certain payment processor
+        result = gocoin.generate_invoice(
+            price=obj.amount_gbp,
+            reference_number=obj.reference_number,
+            transaction_id=obj.id,
+        )
+
+        gocoin_invoice = GoCoinInvoice(
+            transaction=obj,
+            invoice_id=result['invoice_id'],
+            btc_address=result['btc_address']
+        )
+
+        obj.amount_btc = result['amount_btc']
+
+        with dbtransaction.atomic():
+            gocoin_invoice.save()
+            obj.gocoin_invoice = GoCoinInvoice.objects.get(id=gocoin_invoice.id)
+            obj.save()
 
     def post(self, request):
 
@@ -36,9 +53,10 @@ class CreateTransaction(GenericAPIView):
 
                 self.post_save(self.object, created=True)
 
-                return Response(
-                    {'detail': 'success',
-                     'button_code': self.object.coinbase_button_code},
+                 # TOD: remove code specific to a certain payment processor
+                return Response({
+                    'detail': 'success',
+                    'invoice_id': self.object.gocoin_invoice.invoice_id},
                     status=status.HTTP_201_CREATED)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -62,81 +80,12 @@ class ViewTransactions(ListAPIView):
         return queryset
 
 
-class ConfirmPayment(APIView):
-
-    def post(self, request):
-        '''
-        Payment callback from Coinbase, as described in
-        https://coinbase.com/docs/merchant_tools/callbacks
-        '''
-
-        try:
-
-            # mispayment received or no payment received within 10 min
-            if request.DATA.get('order')['status'] == 'expired' or\
-                    request.DATA.get('order')['event']['type'] == 'mispayment':
-                # invalidate transaction, if it is still in init state
-                try:
-                    transaction = Transaction.objects.get(
-                        id=int(request.DATA.get('order')['custom']),
-                        state=Transaction.INIT
-                    )
-                    transaction.set_invalid(commit=False)
-                except Transaction.DoesNotExist:
-                    pass
-                print 'expired'
-
-            # received valid payment, i.e. right amount within timeframe
-            # request is validated and set paid (even if it was in invalid state before)
-            if request.DATA.get('order')['event']['type'] == 'completed':
-
-                transaction = Transaction.objects.get(
-                    id=int(request.DATA.get('order')['custom'])
-                )
-
-                if not transaction.coinbase_button_code == request.DATA.get('order')['button']['id']:
-                    message = 'ERROR - Coinbase Callback: button code mismatch {}'
-                    raise APIException
-
-                if not transaction.amount_gbp * 100 == request.DATA.get('order')['total_native']['cents']:
-                    message = 'ERROR - Coinbase Callback: native amount mismatch {}'
-                    raise APIException
-
-                transaction.coinbase_order_reference = request.DATA.get('order')['id']
-                transaction.amount_btc = request.DATA.get('order')['total_btc']['cents']
-                transaction.set_paid(commit=False)
-
-                send_sendgrid_mail(
-                    subject_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_SUBJECT,
-                    email_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_TEXT,
-                    context={
-                        'site': Site.objects.get_current(),
-                        'protocol': get_protocol()
-                    }
-                )
-                print 'yayy'
-
-            # received a mispayment, i.e. incorrect amount or too late
-            # in this case, a mispayment case mapped to a transaction must be created
-            elif request.DATA.get('order')['event']['type'] == 'mispayment':
-                # TODO
-                pass
-
-        except Transaction.DoesNotExist:
-            message = 'ERROR - Coinbase Callback: no transaction found for transaction id. {}'
-            log_error(message.format(request.DATA))
-        except (KeyError, TypeError, ValueError) as e:
-            message = 'ERROR - Coinbase Callback: received invalid payment notification, {}, {}'
-            log_error(message.format(e, request.DATA))
-        except APIException:
-            log_error(message.format(request.DATA))
-
-        # send status 200 in any case to stop coinbase from resending the request
-        return Response(status=status.HTTP_200_OK)
-
-
 @api_view(['GET'])
 def test(request):
-
-    coinbase.generate_button(2.00, 'Falk', 1)
+    gocoin.generate_invoice(
+        price=0.1,
+        reference_number='34253',
+        transaction_id=1,
+        currency='GBP'
+    )
     return Response()

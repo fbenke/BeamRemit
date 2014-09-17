@@ -37,6 +37,8 @@ def make_request(url, body=None):
         response = opener.open(req)
         return json.load(response)
     except urllib2.HTTPError as e:
+
+        #  TODO: track errors
         log_error('ERROR - ' + 'Coinbase: Failed to send request ({})'.format(repr(e)))
         raise APIException()
 
@@ -66,7 +68,7 @@ def generate_button(price, reference_number, transaction_id, currency='GBP',):
         }
     }
 
-    response = make_request(settings.COINBASE_GENERATE_BUTTON, body=json.dumps(data))
+    response = make_request(settings.COINBASE_GENERATE_BUTTON_URL, body=json.dumps(data))
 
     try:
 

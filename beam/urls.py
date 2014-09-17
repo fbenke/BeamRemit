@@ -4,7 +4,6 @@ from django.views.generic import TemplateView, RedirectView
 
 from django.conf import settings
 
-
 admin.autodiscover()
 
 urlpatterns = patterns(
@@ -25,6 +24,10 @@ urlpatterns = patterns(
     url(
         r'^api/v1/transaction/',
         include('transaction.urls', namespace='transaction')
+    ),
+    url(
+        r'^api/v1/btc_payment/',
+        include('btc_payment.urls', namespace='btc_payment')
     ),
     url(
         r'^robots\.txt$',
