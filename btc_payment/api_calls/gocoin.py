@@ -37,7 +37,6 @@ def generate_invoice(price, reference_number, transaction_id, currency='GBP'):
         'base_price_currency': currency,
         'callback_url': settings.GOCOIN_INVOICE_CALLBACK_URL,
         'redirect_url': settings.GOCOIN_INVOICE_REDIRECT_URL,
-        # optional pass through data, not displayed to the customer
         'user_defined_1': transaction_id
     }
 
