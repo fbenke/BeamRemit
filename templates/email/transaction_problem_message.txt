@@ -1,0 +1,7 @@
+{% load i18n %}
+Dear Admin,
+
+There is a problem that requires manual intervention with transaction {{ id }} (invoice state is {{ invoice_state }}) on {{ protocol }}://{{ site.domain }}/admin.
+
+Sincerely,
+The SendGridBot

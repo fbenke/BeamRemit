@@ -1,22 +1,110 @@
-# from django.conf import settings
-# from django.contrib.sites.models import Site
+from django.db import transaction as db_transaction
+from django.conf import settings
+from django.contrib.sites.models import Site
 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-# from userena.utils import get_protocol
+from userena.utils import get_protocol
 
-# from beam.utils import APIException, log_error, send_sendgrid_mail
+from beam.utils import APIException, log_error, send_sendgrid_mail
 
-# from transaction.models import Transaction
+from transaction.models import Transaction
+
+from btc_payment.models import GoCoinInvoice
 
 
 class ConfirmGoCoinPayment(APIView):
+
     def post(self, request):
-        print request.DATA
+        '''
+        Payment callback from GoCoin, as described invoice_id
+        http://help.gocoin.com/kb/api-notifications/invoice-event-webhooks
+        '''
+
+        # retrieve transaction associated with this callback
+        try:
+            transaction = Transaction.objects.get(
+                id=int(request.DATA.get('payload')['user_defined_1']),
+                gocoin_invoice__invoice_id=request.DATA.get('payload')['id']
+            )
+
+            if request.DATA.get('event') == 'invoice_payment_received':
+                # full payment received
+                if request.DATA.get('payload')['status'] == 'paid':
+
+                    transaction.gocoin_invoice.btc_usd = request.DATA.get('payload')['inverse_spot_rate']
+                    transaction.gocoin_invoice.sender_usd = request.DATA.get('payload')['usd_spot_rate']
+                    transaction.gocoin_invoice.state = GoCoinInvoice.PAID
+
+                    with db_transaction.atomic():
+                        transaction.gocoin_invoice.save()
+                        transaction.set_paid()
+
+                    send_sendgrid_mail(
+                        subject_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_SUBJECT,
+                        email_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_TEXT,
+                        context={
+                            'site': Site.objects.get_current(),
+                            'protocol': get_protocol()
+                        }
+                    )
+                # payment received, but does not fulfill the required amount
+                # TODO: what about overpaid?
+                elif request.DATA.get('payload')['status'] == 'underpaid':
+                    transaction.gocoin_invoice.state = GoCoinInvoice.UNDERPAID
+                    transaction.gocoin_invoice.save()
+                else:
+                    raise APIException
+
+            # transaction has been confirmed
+            elif request.DATA.get('event') == 'invoice_ready_to_ship'\
+                    and request.DATA.get('payload')['status'] == 'ready_to_ship':
+                transaction.gocoin_invoice.state = GoCoinInvoice.READY_TO_SHIP
+                transaction.gocoin_invoice.save()
+
+            # transaction requires manual intervention
+            elif request.DATA.get('event') == 'invoice_merchant_review' or\
+                    request.DATA.get('event') == 'invoice_invalid':
+
+                if request.DATA.get('payload')['status'] == 'invalid':
+                    transaction.gocoin_invoice.state = GoCoinInvoice.INVALID
+                elif request.DATA.get('payload')['status'] == 'merchant_review':
+                    transaction.gocoin_invoice.state = GoCoinInvoice.MERCHANT_REVIEW
+                else:
+                    raise APIException
+
+                transaction.state = Transaction.INVALID
+
+                with db_transaction.atomic():
+                    transaction.gocoin_invoice.save()
+                    transaction.set_invalid()
+
+                send_sendgrid_mail(
+                    subject_template_name=settings.MAIL_NOTIFY_ADMIN_PROBLEM_SUBJECT,
+                    email_template_name=settings.MAIL_NOTIFY_ADMIN_PROBLEM_TEXT,
+                    context={
+                        'site': Site.objects.get_current(),
+                        'protocol': get_protocol(),
+                        'id': transaction.id,
+                        'invoice_state': transaction.gocoin_invoice.state
+                    }
+                )
+            else:
+                raise APIException
+
+        except Transaction.DoesNotExist:
+            message = 'ERROR - GoCoin Callback: no transaction found for transaction id. {}'
+            log_error(message.format(request.DATA))
+        except (KeyError, TypeError, ValueError) as e:
+            message = 'ERROR - GoCoin Callback: received invalid payment notification, {}, {}'
+            log_error(message.format(e, request.DATA))
+        except APIException:
+            log_error('ERROR - GoCoin Callback: received unexpected payment notification')
 
         return Response(status=status.HTTP_200_OK)
+
 
 # class ConfirmPayment(APIView):
 

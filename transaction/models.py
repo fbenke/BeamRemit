@@ -40,11 +40,11 @@ class Transaction(models.Model):
     # Constants
     INIT = 'INIT'
     PAID = 'PAID'
+    INVALID = 'INVD'
     PROCESSED = 'PROC'
     CANCELLED = 'CANC'
-    INVALID = 'INVD'
 
-    TRANSACTION_STATUS = (
+    TRANSACTION_STATES = (
         (INIT, 'initialized'),
         (PAID, 'paid'),
         (CANCELLED, 'cancelled'),
@@ -97,7 +97,7 @@ class Transaction(models.Model):
     state = models.CharField(
         'State',
         max_length=4,
-        choices=TRANSACTION_STATUS,
+        choices=TRANSACTION_STATES,
         default=INIT,
         help_text='State of the transaction'
     )

@@ -7,9 +7,25 @@ from transaction.models import Transaction
 
 class GoCoinInvoice(models.Model):
 
+    UNPAID = 'UNPD'
+    PAID = 'PAID'
+    UNDERPAID = 'UNDP'
+    READY_TO_SHIP = 'SHIP'
+    INVALID = 'INVD'
+    MERCHANT_REVIEW = 'MRCH'
+
+    INVOICE_STATES = (
+        (UNPAID, 'unpaid'),
+        (PAID, 'paid'),
+        (UNDERPAID, 'underpaid'),
+        (READY_TO_SHIP, 'ready to ship'),
+        (INVALID, 'invalid'),
+        (MERCHANT_REVIEW, 'manual handling required')
+    )
+
     transaction = models.OneToOneField(
         Transaction,
-        related_name='gocoin_voice',
+        related_name='gocoin_invoice',
         help_text='Transaction associated with this payment'
     )
 
@@ -25,6 +41,25 @@ class GoCoinInvoice(models.Model):
         help_text='Wallet generated to receive this payment'
     )
 
+    btc_usd = models.FloatField(
+        'BTC to USD',
+        null=True,
+        help_text='exchange rate from BTC to USD applied for this payment'
+    )
+
+    sender_usd = models.FloatField(
+        'Sender Currency to USD',
+        null=True,
+        help_text='exchange rate from sender currency to USD applied for this payment'
+    )
+
+    state = models.CharField(
+        'State',
+        max_length=4,
+        choices=INVOICE_STATES,
+        default=UNPAID,
+        help_text='State of the Coinbase Invoice'
+    )
 
 # class Coinbase_Payment(models.Model):
 
