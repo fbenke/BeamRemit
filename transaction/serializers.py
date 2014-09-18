@@ -8,6 +8,13 @@ from transaction import models
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Transaction
+        depth = 1
+        read_only_fields = (
+            'recipient', 'amount_gbp', 'amount_btc', 'amount_ghs',
+            'reference_number', 'state', 'initialized_at', 'paid_at',
+            'processed_at'
+        )
+        fields = read_only_fields
 
 
 class CreateTransactionSerializer(serializers.ModelSerializer):

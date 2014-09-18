@@ -55,7 +55,6 @@ class CreateTransaction(GenericAPIView):
 
                  # TOD: remove code specific to a certain payment processor
                 return Response({
-                    'detail': 'success',
                     'invoice_id': self.object.gocoin_invoice.invoice_id},
                     status=status.HTTP_201_CREATED)
 
@@ -69,23 +68,20 @@ class CreateTransaction(GenericAPIView):
 
 class ViewTransactions(ListAPIView):
     serializer_class = serializers.TransactionSerializer
-    permission_classes = (IsAdminUser,)
-    paginate_by = 20
+    permission_classes = (IsAuthenticated, IsNoAdmin)
+
+    paginate_by = 10
 
     def get_queryset(self):
-        queryset = Transaction.objects.all()
+        user = self.request.user
+        queryset = Transaction.objects.filter(sender__id=user.id)
         state = self.request.QUERY_PARAMS.get('state', None)
         if state is not None:
             queryset = queryset.filter(state=state)
         return queryset
 
 
+# TODO: remove later
 @api_view(['GET'])
 def test(request):
-    gocoin.generate_invoice(
-        price=0.1,
-        reference_number='34253',
-        transaction_id=1,
-        currency='GBP'
-    )
     return Response()

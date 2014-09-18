@@ -20,7 +20,8 @@ class ConfirmGoCoinPayment(APIView):
     def post(self, request):
         '''
         Payment callback from GoCoin, as described invoice_id
-        http://help.gocoin.com/kb/api-notifications/invoice-event-webhooks
+        see http://help.gocoin.com/kb/api-notifications/invoice-event-webhooks and
+        http://help.gocoin.com/kb/api-invoices/invoice-states
         '''
 
         # retrieve transaction associated with this callback
