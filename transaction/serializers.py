@@ -19,11 +19,18 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 class CreateTransactionSerializer(serializers.ModelSerializer):
 
+    # Pricing has expired
+    PRICING_EXPIRED = 0
+    # Sender Profile is incomplete
+    SENDER_PROFILE_INCOMPLETE = 1
+
+    pricing_id = serializers.IntegerField('pricing_id')
+
     class Meta:
         model = models.Transaction
         depth = 1
         read_only_fields = ()
-        read_and_write_fields = ('amount_gbp', 'recipient')
+        read_and_write_fields = ('amount_gbp', 'recipient', 'pricing_id')
         fields = read_only_fields + read_and_write_fields
 
     def __init__(self, user, *args, **kwargs):
@@ -43,12 +50,6 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
         )
 
         return transaction
-
-    def validate(self, attrs):
-        'make sure that the recipient is verified'
-        if not self.user.profile.is_verified:
-            raise serializers.ValidationError('Sender is not verified')
-        return attrs
 
     def save(self, *args, **kwargs):
         with dbtransaction.atomic():

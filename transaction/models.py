@@ -1,4 +1,5 @@
 import random
+import math
 
 from django.db import models
 
@@ -138,6 +139,7 @@ class Transaction(models.Model):
         if not self.pk:
             self.pricing = Pricing.get_current_pricing()
             self._generate_reference_number()
+            self.amount_btc = self._calculate_ghs_price()
         else:
             original = Transaction.objects.get(pk=self.pk)
             if original.pricing != self.pricing:
@@ -159,3 +161,7 @@ class Transaction(models.Model):
 
     def _generate_reference_number(self):
         self.reference_number = str(random.randint(10000, 999999))
+
+    def _calculate_ghs_price(self):
+        raw_price = self.amount_gbp * self.pricing.gbp_ghs
+        self.amount_ghs = math.ceil(raw_price * 10) / 10

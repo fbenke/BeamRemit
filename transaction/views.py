@@ -2,7 +2,6 @@ from django.conf import settings
 from django.db import transaction as dbtransaction
 
 from rest_framework import status
-from rest_framework.decorators import api_view
 from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,7 +9,7 @@ from rest_framework.response import Response
 from beam.utils import APIException
 
 from transaction import serializers
-from transaction.models import Transaction
+from transaction.models import Transaction, Pricing
 from transaction.permissions import IsNoAdmin
 
 from beam import utils
@@ -54,6 +53,14 @@ class CreateTransaction(GenericAPIView):
 
         serializer = self.serializer_class(user=request.user, data=request.DATA)
 
+        if Pricing.get_current_pricing().id != request.DATA.get('pricing_id'):
+            # Pricing expired
+            return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.profile.is_complete:
+            # Sender Profile is incomplete
+            return Response({'detail': '1'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             if serializer.is_valid():
 
@@ -61,7 +68,7 @@ class CreateTransaction(GenericAPIView):
 
                 self.post_save(self.object, created=True)
 
-                 # TOD: remove code specific to a certain payment processor
+                # TODO: remove code specific to a certain payment processor
                 return Response({
                     'invoice_id': self.object.gocoin_invoice.invoice_id},
                     status=status.HTTP_201_CREATED)
@@ -70,8 +77,7 @@ class CreateTransaction(GenericAPIView):
 
         except APIException:
             self.object.set_invalid()
-
-            return Response({'detail': 'API Exception'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ViewTransactions(ListAPIView):
@@ -87,9 +93,3 @@ class ViewTransactions(ListAPIView):
         if state is not None:
             queryset = queryset.filter(state=state)
         return queryset
-
-
-# TODO: remove later
-@api_view(['GET'])
-def test(request):
-    return Response()

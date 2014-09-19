@@ -17,10 +17,4 @@ urlpatterns = patterns(
         views.ViewTransactions.as_view(),
         name='list'
     ),
-
-    url(
-        r'^test/$',
-        'transaction.views.test'
-    )
-
 )
