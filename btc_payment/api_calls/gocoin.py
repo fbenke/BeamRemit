@@ -28,7 +28,7 @@ def make_request(url, body=None):
         raise APIException
 
 
-def generate_invoice(price, reference_number, transaction_id, currency='GBP'):
+def generate_invoice(price, reference_number, transaction_id, signature, currency='GBP'):
 
     # see http://help.gocoin.com/kb/api-invoices/creating-an-invoice
     data = {
@@ -37,7 +37,8 @@ def generate_invoice(price, reference_number, transaction_id, currency='GBP'):
         'base_price_currency': currency,
         'callback_url': settings.GOCOIN_INVOICE_CALLBACK_URL,
         'redirect_url': settings.GOCOIN_INVOICE_REDIRECT_URL,
-        'user_defined_1': transaction_id
+        'user_defined_1': transaction_id,
+        'user_defined_2': signature,
     }
 
     response = make_request(settings.GOCOIN_CREATE_INVOICE_URL, body=json.dumps(data))
@@ -51,7 +52,6 @@ def generate_invoice(price, reference_number, transaction_id, currency='GBP'):
         result['amount_btc'] = data['price']
         result['btc_address'] = data['payment_address']
 
-        print data
         return result
 
     except KeyError:

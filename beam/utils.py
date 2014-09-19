@@ -1,5 +1,6 @@
 import logging
-
+import hmac
+import hashlib
 import sendgrid
 
 from django.contrib.auth.models import User
@@ -73,3 +74,7 @@ def send_sendgrid_mail(subject_template_name, email_template_name, context=None)
         sg.send(message)
     except sendgrid.SendGridError as e:
         log_error('ERROR - Sendgrid: Failed to send mail to admins ({})'.format(e))
+
+
+def generate_signature(message, key):
+    return hmac.new(key, message, hashlib.sha256).hexdigest()

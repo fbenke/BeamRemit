@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 
 from userena.utils import get_protocol
 
-from beam.utils import APIException, log_error, send_sendgrid_mail
+from beam.utils import APIException, log_error, send_sendgrid_mail, generate_signature
 
 from transaction.models import Transaction
 
@@ -32,6 +32,15 @@ class ConfirmGoCoinPayment(APIView):
                 id=int(request.DATA.get('payload')['user_defined_1']),
                 gocoin_invoice__invoice_id=request.DATA.get('payload')['id']
             )
+
+            # check signature in webhook
+            # see http://help.gocoin.com/kb/setup-integration/verify-webhook-authenticity-create-a-signature
+            message = str(request.DATA.get('payload')['user_defined_1']) +\
+                request.DATA.get('payload')['base_price'] + request.DATA.get('payload')['callback_url']
+            signature = generate_signature(message, settings.GOCOIN_API_KEY)
+
+            if request.DATA.get('payload')['user_defined_2'] != signature:
+                raise APIException
 
             if request.DATA.get('event') == 'invoice_payment_received':
                 # full payment received

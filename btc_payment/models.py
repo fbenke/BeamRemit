@@ -2,6 +2,7 @@ from django.db import models
 
 from transaction.models import Transaction
 
+
 # from beam.btc_payment.models import coinbase
 
 

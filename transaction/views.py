@@ -1,9 +1,10 @@
+from django.conf import settings
 from django.db import transaction as dbtransaction
 
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import GenericAPIView, ListAPIView
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from beam.utils import APIException
@@ -11,6 +12,8 @@ from beam.utils import APIException
 from transaction import serializers
 from transaction.models import Transaction
 from transaction.permissions import IsNoAdmin
+
+from beam import utils
 
 from btc_payment.api_calls import gocoin
 from btc_payment.models import GoCoinInvoice
@@ -23,10 +26,15 @@ class CreateTransaction(GenericAPIView):
     def post_save(self, obj, created=False):
 
         # TOD: remove code specific to a certain payment processor
+
+        message = (str(obj.id) + str(obj.amount_gbp) + settings.GOCOIN_INVOICE_CALLBACK_URL)
+        signature = utils.generate_signature(message, settings.GOCOIN_API_KEY)
+
         result = gocoin.generate_invoice(
             price=obj.amount_gbp,
             reference_number=obj.reference_number,
             transaction_id=obj.id,
+            signature=signature
         )
 
         gocoin_invoice = GoCoinInvoice(
