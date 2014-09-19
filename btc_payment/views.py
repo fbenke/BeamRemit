@@ -1,3 +1,5 @@
+import json
+
 from django.db import transaction as db_transaction
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -97,13 +99,13 @@ class ConfirmGoCoinPayment(APIView):
 
         except Transaction.DoesNotExist:
             message = 'ERROR - GoCoin Callback: no transaction found for transaction id. {}'
-            log_error(message.format(request.DATA))
+            log_error(message.format(json.dumps(request.DATA)))
         except (KeyError, TypeError, ValueError) as e:
             message = 'ERROR - GoCoin Callback: received invalid payment notification, {}, {}'
-            log_error(message.format(e, request.DATA))
+            log_error(message.format(e, json.dumps(request.DATA)))
         except APIException:
-            message = 'ERROR - GoCoin Callback: received unexpected payment notification{}'
-            log_error(message.format(request.DATA))
+            message = 'ERROR - GoCoin Callback: received unexpected payment notification, {}'
+            log_error(message.format(json.dumps(request.DATA)))
         return Response(status=status.HTTP_200_OK)
 
 
