@@ -84,7 +84,6 @@ class Transaction(models.Model):
 
     amount_ghs = models.FloatField(
         'GHS payed out to recipient',
-        null=True,
         help_text='GHS to be paid to Kitiwa'
     )
 

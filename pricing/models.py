@@ -26,9 +26,14 @@ class Pricing(models.Model):
         help_text='Percentage to be added over exchange rate. Value between 0 and 1.'
     )
 
-    ghs_usd = models.FloatField(
-        'GHS/USD Exchange Rate',
-        help_text='Amount of GHS you get for 1 USD'
+    gbp_ghs = models.FloatField(
+        'GBP to GHS Exchange Rate',
+        help_text='Exchange Rate from GBP to GHS without markup'
+    )
+
+    fee = models.FloatField(
+        'Fixed Fee',
+        help_text='Fixed Fee charged for the money transfer.'
     )
 
     def __unicode__(self):

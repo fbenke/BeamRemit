@@ -43,13 +43,13 @@ class GoCoinInvoice(models.Model):
     )
 
     btc_usd = models.FloatField(
-        'BTC to USD',
+        'BTC to USD Exchange Rate',
         null=True,
         help_text='exchange rate from BTC to USD applied for this payment'
     )
 
     sender_usd = models.FloatField(
-        'Sender Currency to USD',
+        'Sender Currency to USD Exchange Rate',
         null=True,
         help_text='exchange rate from sender currency to USD applied for this payment'
     )
