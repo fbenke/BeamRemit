@@ -102,8 +102,8 @@ class ConfirmGoCoinPayment(APIView):
             message = 'ERROR - GoCoin Callback: received invalid payment notification, {}, {}'
             log_error(message.format(e, request.DATA))
         except APIException:
-            log_error('ERROR - GoCoin Callback: received unexpected payment notification')
-
+            message = 'ERROR - GoCoin Callback: received unexpected payment notification{}'
+            log_error(message.format(request.DATA))
         return Response(status=status.HTTP_200_OK)
 
 
