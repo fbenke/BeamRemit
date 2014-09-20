@@ -24,6 +24,7 @@ class AccountTests(BeamAPITestCase):
     url_password_reset = reverse('account:password_reset')
     url_password_change = reverse('account:password_change')
     url_profile = reverse('account:profile')
+    url_activate_resend = reverse('account:activate_resend')
     plain_url_activate_retry = 'account:activate_retry'
     plain_url_email_change_confirm = 'account:email_confirm'
     plain_url_password_reset_confirm = 'account:password_reset_confirm'
@@ -148,6 +149,25 @@ class AccountTests(BeamAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.ACTIVATION_KEY_NOT_EXPIRED)
+
+    def test_activation_resend(self):
+        email = self.emails.next()
+        self._create_user(email=email)
+        response = self.client.post(self.url_activate_resend, {"email": email})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
+        url_activate = reverse(self.plain_url_activate, args=(activation_key,))
+        response = self.client.get(url_activate)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['token'] is not None)
+        self.assertTrue(response.data['id'] is not None)
+
+    def test_activation_resend_unknown_email(self):
+        email = self.emails.next()
+        response = self.client.post(self.url_activate_resend, {"email": email})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.EMAIL_UNKNOWN)
 
     def test_signin(self):
         email = self.emails.next()
@@ -314,6 +334,19 @@ class AccountTests(BeamAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['token'] is not None)
         self.assertTrue(response.data['id'] is not None)
+
+    def test_password_reset_fail_email_unknown(self):
+        email = self.emails.next()
+        response = self.client.post(self.url_password_reset, {'email': email})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.EMAIL_UNKNOWN)
+
+    def test_password_reset_fail_user_incative(self):
+        email = self.emails.next()
+        self._create_user(email)
+        response = self.client.post(self.url_password_reset, {'email': email})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.USER_ACCOUNT_DISABLED)
 
     def test_password_change(self):
         email = self.emails.next()

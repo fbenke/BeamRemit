@@ -17,6 +17,11 @@ urlpatterns = patterns(
         name='signup'
     ),
     url(
+        r'^activate/resend/$',
+        views.ActivationResend.as_view(),
+        name='activate_resend'
+    ),
+    url(
         r'^activate/(?P<activation_key>\w+)/$',
         views.Activation.as_view(),
         name='activate'

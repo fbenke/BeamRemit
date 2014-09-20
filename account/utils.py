@@ -1,6 +1,2 @@
-class EmailChangeException(Exception):
-    pass
-
-
-class PasswordResetException(Exception):
+class AccountException(Exception):
     pass

@@ -13,6 +13,7 @@ ACTIVATION_KEY_EXPIRED = '10'
 ACTIVATION_KEY_NOT_EXPIRED = '11'
 SIGNIN_WRONG_CREDENTIALS = '12'
 SIGNIN_MISSING_CREDENTIALS = '13'
+USER_ACCOUNT_ALREADY_ACTIVATED = '14'
 
 ERROR_MESSAGES = {
     INVALID_PARAMETERS: 'Invalid Parameters',
@@ -29,5 +30,6 @@ ERROR_MESSAGES = {
     ACTIVATION_KEY_INVALID: 'Invalid Activation Key',
     ACTIVATION_KEY_NOT_EXPIRED: 'ActivationKey is not expired',
     SIGNIN_WRONG_CREDENTIALS: 'Unable to login with provided credentials.',
-    SIGNIN_MISSING_CREDENTIALS: 'Must include "email" and "password"'
+    SIGNIN_MISSING_CREDENTIALS: 'Must include "email" and "password"',
+    USER_ACCOUNT_ALREADY_ACTIVATED: 'This account is is already activated.'
 }

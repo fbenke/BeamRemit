@@ -15,7 +15,7 @@ from beam.utils.general import log_error
 
 from account import constants
 from account import serializers
-from account.utils import EmailChangeException, PasswordResetException
+from account.utils import AccountException
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 
@@ -93,6 +93,38 @@ class ActivationRetry(APIView):
             return Response({'detail': constants.ACTIVATION_KEY_INVALID}, status.HTTP_400_BAD_REQUEST)
 
 
+class ActivationResend(APIView):
+
+    serializer_class = serializers.RequestEmailSerializer
+
+    def post(self, request):
+
+        try:
+
+            serializer = self.serializer_class(data=request.DATA)
+
+            if serializer.is_valid():
+
+                if serializer.object.is_active:
+                    raise AccountException(constants.USER_ACCOUNT_ALREADY_ACTIVATED)
+
+                new_key = UserenaSignup.objects.reissue_activation(
+                    serializer.object.userena_signup.activation_key
+                )
+
+                if new_key:
+                    return Response(status=status.HTTP_201_CREATED)
+                else:
+                    log_error('ERROR - activation key could not be generated for resend request for email {}'
+                              .format(serializer.object.email))
+                    return Response(status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except AccountException as e:
+            return Response({'detail': e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class Signin(APIView):
 
     serializer_class = serializers.AuthTokenSerializer
@@ -127,17 +159,17 @@ class Email_Change(APIView):
         try:
 
             if not new_email:
-                raise EmailChangeException(constants.INVALID_PARAMETERS)
+                raise AccountException(constants.INVALID_PARAMETERS)
             if new_email.lower() == user.email:
-                raise EmailChangeException(constants.EMAIL_NOT_CHANGED)
+                raise AccountException(constants.EMAIL_NOT_CHANGED)
             if get_user_model().objects.filter(email__iexact=new_email):
-                raise EmailChangeException(constants.EMAIL_IN_USE)
+                raise AccountException(constants.EMAIL_IN_USE)
 
             user.userena_signup.change_email(new_email)
 
             return Response()
 
-        except EmailChangeException as e:
+        except AccountException as e:
             return Response({'detail': e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -160,15 +192,13 @@ class PasswordReset(APIView):
     serializer_class = serializers.PasswordResetSerializer
 
     def post(self, request):
-        email = request.DATA.get('email', None)
-
         try:
-            if not email:
-                raise PasswordResetException(constants.INVALID_PARAMETERS)
-
             serializer = self.serializer_class(data=request.DATA)
 
             if serializer.is_valid():
+
+                if not serializer.object.is_active:
+                    raise AccountException(constants.USER_ACCOUNT_DISABLED)
 
                 serializer.save()
 
@@ -176,8 +206,7 @@ class PasswordReset(APIView):
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        except PasswordResetException as e:
-
+        except AccountException as e:
             return Response({'detail': e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
 

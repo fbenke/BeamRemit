@@ -20,7 +20,7 @@ from beam.utils.mails import send_mail
 
 from account import constants
 from account import models
-from account.utils import PasswordResetException
+from account.utils import AccountException
 
 PASSWORD_RE = r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$'
 
@@ -44,6 +44,21 @@ class PasswordSerializer(serializers.Serializer):
             if attrs['password1'] != attrs['password2']:
                 raise serializers.ValidationError(constants.PASSWORD_MISMATCH)
         return attrs
+
+
+class RequestEmailSerializer(serializers.Serializer):
+
+    email = fields.EmailField(label='Email')
+
+    def restore_object(self, attrs, instance=None):
+        try:
+            user = get_user_model().objects.get(email__iexact=attrs['email'])
+        except get_user_model().DoesNotExist:
+            raise AccountException(constants.EMAIL_UNKNOWN)
+        return user
+
+    def get_user(self):
+        return self.object
 
 
 class SignupSerializer(PasswordSerializer):
@@ -124,24 +139,13 @@ class AuthTokenSerializer(serializers.Serializer):
             raise serializers.ValidationError(constants.SIGNIN_MISSING_CREDENTIALS)
 
 
-class PasswordResetSerializer(serializers.Serializer):
+class PasswordResetSerializer(RequestEmailSerializer):
 
     '''
     Serializer for initiating password reset.
     Basically ports django.contrib.auth.forms.PasswordResetForm to a
     Serializer to work with Django Rest Framework.
     '''
-
-    email = fields.EmailField(label='Email')
-
-    def restore_object(self, attrs, instance=None):
-        try:
-            user = get_user_model().objects.get(email__iexact=attrs['email'])
-        except get_user_model().DoesNotExist:
-            raise PasswordResetException(constants.EMAIL_UNKNOWN)
-        if not user.is_active:
-            raise PasswordResetException(constants.USER_ACCOUNT_DISABLED)
-        return user
 
     def save(self):
 
