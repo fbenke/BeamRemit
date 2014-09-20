@@ -157,7 +157,6 @@ LOGGING = {
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Django Rest Framework
-
 REST_FRAMEWORK = {
     # if not specified otherwise, anyone can acess a view (this is the default)
     'DEFAULT_PERMISSION_CLASSES': (
@@ -169,13 +168,15 @@ REST_FRAMEWORK = {
     ),
     # input formats the API can handle
     'DEFAULT_PARSER_CLASSES': (
-        'rest_framework.parsers.JSONParser',
+        'beam.utils.parsers.CamelCaseJSONParser',
+        # 'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ),
     #  output formate supported by the API
     'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
+        'beam.utils.renderers.CamelCaseJSONRenderer',
+        # 'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     # throttling of requests
@@ -190,6 +191,7 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     )
 }
+
 
 # Django CORS headers
 if ENV == ENV_LOCAL:
@@ -238,6 +240,7 @@ MAIL_NOTIFY_ADMIN_PAID_SUBJECT = 'email/transaction_paid_subject.txt'
 MAIL_NOTIFY_ADMIN_PAID_TEXT = 'email/transaction_paid_message.txt'
 MAIL_NOTIFY_ADMIN_PROBLEM_SUBJECT = 'email/transaction_problem_subject.txt'
 MAIL_NOTIFY_ADMIN_PROBLEM_TEXT = 'email/transaction_problem_message.txt'
+MAIL_ACTIVATION_URL = 'activate/{}/'
 
 # GoCoin Settings
 # API Key with permission 'invoice_read_write'

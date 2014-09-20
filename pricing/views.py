@@ -7,7 +7,7 @@ from rest_framework import status
 from pricing.models import Pricing
 from pricing import serializers
 
-from beam.utils import log_error
+from beam.utils.general import log_error
 
 
 class PricingCurrent(RetrieveAPIView):

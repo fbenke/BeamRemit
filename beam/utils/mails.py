@@ -1,35 +1,11 @@
-import logging
-import hmac
-import hashlib
-import sendgrid
-
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import EmailMultiAlternatives
-from django.http import HttpResponse
 from django.template import loader
 
-from rest_framework.renderers import JSONRenderer
+from beam.utils.general import log_error
 
-from django.conf import settings
-
-
-class APIException(Exception):
-    pass
-
-
-class JSONResponse(HttpResponse):
-    """
-    An HttpResponse that renders its content into JSON.
-    """
-    def __init__(self, data, **kwargs):
-        content = JSONRenderer().render(data)
-        kwargs['content_type'] = 'application/json'
-        super(JSONResponse, self).__init__(content, **kwargs)
-
-
-def log_error(message):
-    logger = logging.getLogger('django')
-    logger.error(message)
+import sendgrid
 
 
 def send_mail(subject_template_name, email_template_name,
@@ -74,7 +50,3 @@ def send_sendgrid_mail(subject_template_name, email_template_name, context=None)
         sg.send(message)
     except sendgrid.SendGridError as e:
         log_error('ERROR - Sendgrid: Failed to send mail to admins ({})'.format(e))
-
-
-def generate_signature(message, key):
-    return hmac.new(key, message, hashlib.sha256).hexdigest()

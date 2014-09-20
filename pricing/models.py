@@ -2,7 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 
-from beam.utils import log_error
+from beam.utils.general import log_error
 
 
 class Pricing(models.Model):
