@@ -48,8 +48,7 @@ class AccountTests(BeamAPITestCase):
         url_activate = reverse(self.plain_url_activate, args=(activation_key,))
 
         # check if mail contains correct link
-        # TODO: replace `url_activate` with the real link later
-        self.assertTrue(url_activate in mailbox.outbox[0].body)
+        self.assertTrue(settings.MAIL_ACTIVATION_URL.format(activation_key) in mailbox.outbox[0].body)
         response = self.client.get(url_activate)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['token'] is not None)
@@ -260,8 +259,8 @@ class AccountTests(BeamAPITestCase):
         token, id = self._create_activated_user()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         data = {
-            'first_name': 'Falk',
-            'last_name': 'Benke',
+            'firstName': 'Falk',
+            'lastName': 'Benke',
             'profile': {'country': 'DE'}
         }
         response = self.client.patch(self.url_profile, data)
@@ -321,7 +320,7 @@ class AccountTests(BeamAPITestCase):
         token, _ = self._create_activated_user(email=email)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         data = {
-            'old_password': self.password,
+            'oldPassword': self.password,
             'password1': self.new_password,
             'password2': self.new_password
         }
