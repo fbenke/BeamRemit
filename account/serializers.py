@@ -1,12 +1,13 @@
+from hashlib import sha1 as sha_constructor
+import random
+import re
+
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.contrib.sites.models import Site
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
-
-from hashlib import sha1 as sha_constructor
-import random
 
 from userena import settings as userena_settings
 from userena.models import UserenaSignup
@@ -17,24 +18,22 @@ from rest_framework import fields
 
 from beam.utils import send_mail
 
-from account.utils import PasswordResetException
+from account import constants
 from account import models
+from account.utils import PasswordResetException
 
-USERNAME_RE = r'^[\.\w]+$'
 PASSWORD_RE = r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$'
 
 
 class PasswordSerializer(serializers.Serializer):
 
-    password1 = fields.RegexField(
-        label='Password',
-        regex=PASSWORD_RE,
-        error_messages={'invalid': 'Password must be at least 6 characters long, contain at least one upper case letter, one lower case letter, and one numeric digit.'}
-    )
+    password1 = fields.CharField(label='Password')
+    password2 = fields.CharField(label='Repeat password')
 
-    password2 = fields.CharField(
-        label='Repeat password'
-    )
+    def validate_password1(self, attrs, source):
+        if not re.match(PASSWORD_RE, attrs[source]):
+            raise serializers.ValidationError(constants.PASSWORD_FORMAT)
+        return attrs
 
     def validate(self, attrs):
         '''
@@ -43,7 +42,7 @@ class PasswordSerializer(serializers.Serializer):
 
         if 'password1' in attrs and 'password2' in attrs:
             if attrs['password1'] != attrs['password2']:
-                raise serializers.ValidationError('The two password fields didn\'t match.')
+                raise serializers.ValidationError(constants.PASSWORD_MISMATCH)
         return attrs
 
 
@@ -56,22 +55,17 @@ class SignupSerializer(PasswordSerializer):
     Validates that the requested username and e-mail is not already in use.
     Also requires the password to be entered twice.
     '''
-
-    email = fields.EmailField(
-        label='Email',
-    )
+    email = fields.EmailField(label='Email')
 
     def validate_email(self, attrs, source):
         'Validate that the e-mail address is unique.'
-        if get_user_model().objects.filter(email__iexact=attrs['email']):
+
+        if get_user_model().objects.filter(email__iexact=attrs[source]):
             if userena_settings.USERENA_ACTIVATION_REQUIRED and\
-               UserenaSignup.objects.filter(user__email__iexact=attrs['email'])\
+               UserenaSignup.objects.filter(user__email__iexact=attrs[source])\
                .exclude(activation_key=userena_settings.USERENA_ACTIVATED):
-                raise serializers.ValidationError(
-                    'This email is already in use but not confirmed. '
-                    'Please check your email for verification steps.'
-                )
-            raise serializers.ValidationError('This email is already in use.')
+                raise serializers.ValidationError(constants.EMAIL_IN_USE_UNCONFIRMED)
+            raise serializers.ValidationError(constants.EMAIL_IN_USE)
         return attrs
 
     def restore_object(self, attrs, instance=None):
@@ -121,13 +115,13 @@ class AuthTokenSerializer(serializers.Serializer):
             user = authenticate(identification=email, password=password)
             if user:
                 if not user.is_active:
-                    raise serializers.ValidationError('User account is disabled.')
+                    raise serializers.ValidationError(constants.USER_ACCOUNT_DISABLED)
                 attrs['user'] = user
                 return attrs
             else:
-                raise serializers.ValidationError('Unable to login with provided credentials.')
+                raise serializers.ValidationError(constants.SIGNIN_WRONG_CREDENTIALS)
         else:
-            raise serializers.ValidationError('Must include "email" and "password"')
+            raise serializers.ValidationError(constants.SIGNIN_MISSING_CREDENTIALS)
 
 
 class PasswordResetSerializer(serializers.Serializer):
@@ -144,9 +138,9 @@ class PasswordResetSerializer(serializers.Serializer):
         try:
             user = get_user_model().objects.get(email__iexact=attrs['email'])
         except get_user_model().DoesNotExist:
-            raise PasswordResetException('Email unknown')
+            raise PasswordResetException(constants.EMAIL_UNKNOWN)
         if not user.is_active:
-            raise PasswordResetException('Account deleted or not activated yet')
+            raise PasswordResetException(constants.USER_ACCOUNT_DISABLED)
         return user
 
     def save(self):
@@ -204,7 +198,7 @@ class ChangePasswordSerializer(SetPasswordSerializer):
 
         old_password = attrs[source]
         if not self.user.check_password(old_password):
-            raise serializers.ValidationError('Old Password is incorrect')
+            raise serializers.ValidationError(constants.PASSWORD_OLD_INCORRECT)
 
         return attrs
 

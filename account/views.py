@@ -13,13 +13,11 @@ from userena.utils import get_user_model
 
 from beam.utils import log_error
 
+from account import constants
 from account import serializers
 from account.utils import EmailChangeException, PasswordResetException
 
 'DRF implementation of the userena.views used for Beam Accounts.'
-
-RESPONSE_SUCCESS = 'Success'
-RESPONSE_INVD_PARAM = 'Invalid Parameters'
 
 
 class Signup(APIView):
@@ -31,7 +29,7 @@ class Signup(APIView):
         if serializer.is_valid():
             user = serializer.save()
             if user:
-                return Response({'detail': RESPONSE_SUCCESS}, status=status.HTTP_201_CREATED)
+                return Response(status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -57,18 +55,17 @@ class Activation(APIView):
                         'ERROR - User for activation key {} could not be found'.
                         format(activation_key)
                     )
-                    return Response({'detail': 'User not found'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    return Response(status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             # activation key expired
             else:
                 return Response(
-                    {'activation_key': activation_key,
-                     'detail': 'Activation Key has expired'},
+                    {'activation_key': activation_key, 'detail': constants.ACTIVATION_KEY_EXPIRED},
                     status.HTTP_400_BAD_REQUEST
                 )
         # invalid key
         except UserenaSignup.DoesNotExist:
-            return Response({'detail': 'Invalid Key'}, status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': constants.ACTIVATION_KEY_INVALID}, status.HTTP_400_BAD_REQUEST)
 
 
 class ActivationRetry(APIView):
@@ -81,23 +78,19 @@ class ActivationRetry(APIView):
             if UserenaSignup.objects.check_expired_activation(activation_key):
                 new_key = UserenaSignup.objects.reissue_activation(activation_key)
                 if new_key:
-                    return Response({'detail': RESPONSE_SUCCESS}, status.HTTP_201_CREATED)
+                    return Response(status=status.HTTP_201_CREATED)
                 else:
                     log_error(
                         'ERROR - activation key could not be generated for expired key {}'.
                         format(activation_key)
                     )
-                    return Response(
-                        {'detail': 'Key could not be generated'},
-                        status.HTTP_500_INTERNAL_SERVER_ERROR
-                    )
+                    return Response(status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
                 return Response(
-                    {'detail': 'Key is not expired'},
-                    status.HTTP_400_BAD_REQUEST
+                    {'detail': constants.ACTIVATION_KEY_NOT_EXPIRED}, status.HTTP_400_BAD_REQUEST
                 )
         except UserenaSignup.DoesNotExist:
-            return Response({'detail': 'Invalid Key'}, status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': constants.ACTIVATION_KEY_INVALID}, status.HTTP_400_BAD_REQUEST)
 
 
 class Signin(APIView):
@@ -120,7 +113,6 @@ class Signout(APIView):
     def post(self, request):
         if request.auth is not None:
             request.auth.delete()
-            return Response({'detail': RESPONSE_SUCCESS})
         return Response()
 
 
@@ -135,15 +127,15 @@ class Email_Change(APIView):
         try:
 
             if not new_email:
-                raise EmailChangeException(RESPONSE_INVD_PARAM)
+                raise EmailChangeException(constants.INVALID_PARAMETERS)
             if new_email.lower() == user.email:
-                raise EmailChangeException('You are already known under this email.')
+                raise EmailChangeException(constants.EMAIL_NOT_CHANGED)
             if get_user_model().objects.filter(email__iexact=new_email):
-                raise EmailChangeException('This email is already in use. Please supply a different email.')
+                raise EmailChangeException(constants.EMAIL_IN_USE)
 
             user.userena_signup.change_email(new_email)
 
-            return Response({'detail': RESPONSE_SUCCESS})
+            return Response()
 
         except EmailChangeException as e:
             return Response({'detail': e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
@@ -157,9 +149,9 @@ class EmailConfirm(APIView):
 
         user = UserenaSignup.objects.confirm_email(confirmation_key)
         if user:
-            return Response({'detail': 'Success'}, status.HTTP_200_OK)
+            return Response(status.HTTP_200_OK)
 
-        return Response({'detail': RESPONSE_INVD_PARAM}, status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': constants.INVALID_PARAMETERS}, status.HTTP_400_BAD_REQUEST)
 
 
 class PasswordReset(APIView):
@@ -172,7 +164,7 @@ class PasswordReset(APIView):
 
         try:
             if not email:
-                raise PasswordResetException(RESPONSE_INVD_PARAM)
+                raise PasswordResetException(constants.INVALID_PARAMETERS)
 
             serializer = self.serializer_class(data=request.DATA)
 
@@ -180,7 +172,7 @@ class PasswordReset(APIView):
 
                 serializer.save()
 
-                return Response({'detail': RESPONSE_SUCCESS})
+                return Response()
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -214,9 +206,9 @@ class PasswordResetConfirm(APIView):
         token = kwargs['token']
 
         if self._get_user(uidb64, token):
-            return Response({'detail': RESPONSE_SUCCESS})
+            return Response()
 
-        return Response({'detail': RESPONSE_INVD_PARAM}, status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': constants.INVALID_PARAMETERS}, status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, *args, **kwargs):
 
@@ -226,14 +218,14 @@ class PasswordResetConfirm(APIView):
         user = self._get_user(uidb64, token)
 
         if not user:
-            return Response({'detail': RESPONSE_INVD_PARAM})
+            return Response({'detail': constants.INVALID_PARAMETERS})
 
         serializer = self.serializer_class(user=user, data=request.DATA)
 
         if serializer.is_valid():
 
             serializer.save()
-            return Response({'detail': RESPONSE_SUCCESS})
+            return Response()
 
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -272,7 +264,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
     def update(self, request, *args, **kwargs):
         response = super(ProfileView, self).update(request, args, kwargs)
         if response.status_code == status.HTTP_200_OK:
-            response.data = {'detail': 'success'}
+            response.data = {}
         return response
 
     def destroy(self, request, *args, **kwargs):
