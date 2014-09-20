@@ -1,11 +1,13 @@
-{% load i18n %}{% autoescape off %}{% load url from future %}
+{% load i18n %}
+{% autoescape off %}
+{% load account_extras %}
 <html>
 <body>
     {% if not without_usernames %}<p>{% blocktrans with user.username as username %}Dear {{ username }},</p>{% endblocktrans %}{% endif %}
     {% blocktrans with site.name as site %}<p>Thank you for signing up at {{ site }}.</p>{% endblocktrans %}
     <p>
         {% trans "To activate your account, please click on the link below:" %}<br />
-        {{ protocol }}://{{ site.domain }}{% url 'account:activate' activation_key %}
+        {{ protocol }}://{{ site.domain }}/{% activation_link activation_key%}
     </p>
     <p>
         {% trans "Thanks for using our site!" %}<br />
