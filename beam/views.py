@@ -1,5 +1,5 @@
 from rest_framework import status
-from beam.utils import JSONResponse
+from beam.utils.general import JSONResponse
 
 
 def page_not_found(request):

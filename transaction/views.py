@@ -6,13 +6,12 @@ from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from beam.utils import APIException
+from beam.utils.exceptions import APIException
+from beam.utils.security import generate_signature
 
 from transaction import serializers
 from transaction.models import Transaction, Pricing
 from transaction.permissions import IsNoAdmin
-
-from beam import utils
 
 from btc_payment.api_calls import gocoin
 from btc_payment.models import GoCoinInvoice
@@ -27,7 +26,7 @@ class CreateTransaction(GenericAPIView):
         # TOD: remove code specific to a certain payment processor
 
         message = (str(obj.id) + str(obj.amount_gbp) + settings.GOCOIN_INVOICE_CALLBACK_URL)
-        signature = utils.generate_signature(message, settings.GOCOIN_API_KEY)
+        signature = generate_signature(message, settings.GOCOIN_API_KEY)
 
         result = gocoin.generate_invoice(
             price=obj.amount_gbp,

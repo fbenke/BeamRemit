@@ -16,7 +16,7 @@ from userena.utils import get_user_model, get_protocol
 from rest_framework import serializers
 from rest_framework import fields
 
-from beam.utils import send_mail
+from beam.utils.mails import send_mail
 
 from account import constants
 from account import models

@@ -11,7 +11,7 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from userena.models import UserenaSignup
 from userena.utils import get_user_model
 
-from beam.utils import log_error
+from beam.utils.general import log_error
 
 from account import constants
 from account import serializers

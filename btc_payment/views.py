@@ -10,7 +10,10 @@ from rest_framework.views import APIView
 
 from userena.utils import get_protocol
 
-from beam.utils import APIException, log_error, send_sendgrid_mail, generate_signature
+from beam.utils.general import log_error
+from beam.utils.exceptions import APIException
+from beam.utils.mails import send_sendgrid_mail
+from beam.utils.security import generate_signature
 
 from transaction.models import Transaction
 

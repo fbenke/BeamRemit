@@ -6,7 +6,8 @@ import json
 
 from django.conf import settings
 
-from beam.utils import log_error, APIException
+from beam.utils.general import log_error
+from beam.utils.exceptions import APIException
 
 
 def make_request(url, body=None):
