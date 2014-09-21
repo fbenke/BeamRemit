@@ -37,7 +37,7 @@ def generate_invoice(price, reference_number, transaction_id, signature, currenc
         'base_price': price,
         'base_price_currency': currency,
         'callback_url': settings.GOCOIN_INVOICE_CALLBACK_URL,
-        'redirect_url': settings.GOCOIN_INVOICE_REDIRECT_URL,
+        'redirect_url': settings.GOCOIN_INVOICE_REDIRECT_URL.format(transaction_id),
         'user_defined_1': transaction_id,
         'user_defined_2': signature,
     }
