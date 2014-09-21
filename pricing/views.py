@@ -11,7 +11,15 @@ class PricingCurrent(APIView):
 
     def _serialize(self):
 
-        return self.comparison.price_comparison
+        response_dict = {}
+
+        response_dict['pricing_id'] = self.pricing.id
+        response_dict['beam_rate'] = self.pricing.calculate_exchange_rate()
+        response_dict['beam_fee'] = self.pricing.fee
+        response_dict['comparison'] = self.comparison.price_comparison
+        response_dict['comparison_retrieved'] = self.comparison.start
+
+        return response_dict
 
     def get(self, request, *args, **kwargs):
 
@@ -22,5 +30,4 @@ class PricingCurrent(APIView):
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(self._serialize())
-
 
