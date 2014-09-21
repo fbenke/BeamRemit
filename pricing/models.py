@@ -1,6 +1,10 @@
+import collections
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
+
+from jsonfield import JSONField
 
 from beam.utils.general import log_error
 
@@ -55,3 +59,26 @@ class Pricing(models.Model):
         except ObjectDoesNotExist:
             if Pricing.objects.all().exists():
                 log_error('ERROR Pricing - Failed to end previous pricing.')
+
+
+class Comparison(models.Model):
+
+    comparison = JSONField(
+        'Price Comparison',
+        load_kwargs={'object_pairs_hook': collections.OrderedDict},
+        help_text='JSON description of selected competitor\'s pricing structure'
+    )
+
+    start = models.DateTimeField(
+        'Start Time',
+        auto_now_add=True,
+        help_text='Time at which the prices were retrieved'
+    )
+
+    end = models.DateTimeField(
+        'End Time',
+        blank=True,
+        null=True,
+        help_text='Time at which comparison ended. If null, it represents the current pricing structure. ' +
+                  'Only one row in this table can have a null value for this column.'
+    )

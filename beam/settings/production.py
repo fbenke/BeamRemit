@@ -75,29 +75,24 @@ MIDDLEWARE_CLASSES = PRODUCTION_MIDDLEWARE + (
 
 # Site types in Env
 SITE_API = 0
-SITE_ADMIN = 1
-SITE_USER = 2
+SITE_USER = 1
 
 # ENV to URL mapping
 ENV_SITE_MAPPING = {
     ENV_LOCAL: {
         SITE_API: os.environ.get('LOCAL_SITE_API'),
-        SITE_ADMIN: os.environ.get('LOCAL_SITE_ADMIN'),
         SITE_USER: os.environ.get('LOCAL_SITE_USER')
     },
     ENV_DEV: {
         SITE_API: 'api-dev.beamremit.com',
-        SITE_ADMIN: 'admin-dev.beamremit.com',
         SITE_USER: 'dev.beamremit.com'
     },
     ENV_VIP: {
         SITE_API: 'api-vip.beamremit.com',
-        SITE_ADMIN: 'admin-vip.beamremit.com',
         SITE_USER: 'vip.beamremit.com'
     },
     ENV_PROD: {
         SITE_API: 'api.beamremit.com',
-        SITE_ADMIN: 'admin.beamremit.com',
         SITE_USER: 'beamremit.com'
     }
 }
@@ -197,10 +192,7 @@ REST_FRAMEWORK = {
 if ENV == ENV_LOCAL:
     CORS_ORIGIN_ALLOW_ALL = True
 else:
-    CORS_ORIGIN_WHITELIST = (
-        ENV_SITE_MAPPING[ENV][SITE_ADMIN],
-        ENV_SITE_MAPPING[ENV][SITE_USER]
-    )
+    CORS_ORIGIN_WHITELIST = (ENV_SITE_MAPPING[ENV][SITE_USER], )
 
 # Userena Settings
 AUTHENTICATION_BACKENDS = (

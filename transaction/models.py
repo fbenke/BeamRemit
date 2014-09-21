@@ -13,10 +13,15 @@ from pricing.models import Pricing
 
 class Recipient(models.Model):
 
-    name = models.CharField(
+    first_name = models.CharField(
+        'First Name',
+        max_length=50,
+        help_text='First name of recipient'
+    )
+    last_name = models.CharField(
         'Full Name',
         max_length=50,
-        help_text='Full name of recipient'
+        help_text='Last name of recipient'
     )
     phone_number = models.CharField(
         'Mobile Money Phone Number',
@@ -30,7 +35,7 @@ class Recipient(models.Model):
     )
 
     def __unicode__(self):
-        return '{}'.format(self.name)
+        return '{}'.format(self.last_name)
 
 
 class Transaction(models.Model):

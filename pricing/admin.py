@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from pricing.models import Pricing
+from pricing.models import Pricing, Comparison
 
 from pricing import forms
 
@@ -10,9 +10,7 @@ class PricingAdmin(admin.ModelAdmin):
     form = forms.PricingForm
 
     readonly_fields = ('id', 'start', 'end')
-
     read_and_write_fields = ('markup', 'gbp_ghs', 'fee')
-
     fields = readonly_fields + read_and_write_fields
 
     list_display = ('id', 'start', 'end', 'markup', 'gbp_ghs', 'fee')
@@ -22,3 +20,14 @@ class PricingAdmin(admin.ModelAdmin):
         obj.save()
 
 admin.site.register(Pricing, PricingAdmin)
+
+
+class ComparisonAdmin(admin.ModelAdmin):
+
+    readonly_fields = ('id', 'start', 'end')
+    read_and_write_fields = ('comparison', )
+    fields = readonly_fields + read_and_write_fields
+
+    list_display = ('id', 'start', 'end')
+
+admin.site.register(Comparison, ComparisonAdmin)

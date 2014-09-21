@@ -5,10 +5,10 @@ from transaction.models import Recipient, Transaction
 
 class RecipientAdmin(admin.ModelAdmin):
 
-    readonly_fields = ('id', 'name', 'phone_number', 'notification_email')
+    readonly_fields = ('id', 'first_name', 'last_name', 'phone_number', 'notification_email')
     read_and_write_fields = ()
     fields = readonly_fields + read_and_write_fields
-    list_display = ('id', 'name', 'phone_number')
+    list_display = ('id', 'first_name', 'last_name', 'phone_number')
 
 admin.site.register(Recipient, RecipientAdmin)
 
