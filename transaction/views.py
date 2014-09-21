@@ -90,7 +90,7 @@ class ViewTransactions(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         queryset = Transaction.objects.filter(sender__id=user.id)
-        transaction_id = self.request.QUERY_PARAMS.get('transaction_id', None)
+        transaction_id = self.request.QUERY_PARAMS.get('transactionId', None)
         if transaction_id is not None:
             queryset = queryset.filter(id=transaction_id)
         return queryset
