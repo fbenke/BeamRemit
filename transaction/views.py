@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import transaction as dbtransaction
 
 from rest_framework import status
-from rest_framework.generics import GenericAPIView, ListAPIView
+from rest_framework.generics import GenericAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -90,7 +90,14 @@ class ViewTransactions(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         queryset = Transaction.objects.filter(sender__id=user.id)
-        transaction_id = self.request.QUERY_PARAMS.get('transactionId', None)
-        if transaction_id is not None:
-            queryset = queryset.filter(id=transaction_id)
+        return queryset
+
+
+class GetTransaction(RetrieveAPIView):
+    serializer_class = serializers.TransactionSerializer
+    permission_classes = (IsAuthenticated, IsNoAdmin)
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Transaction.objects.filter(sender__id=user.id)
         return queryset
