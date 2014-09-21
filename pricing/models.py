@@ -9,6 +9,24 @@ from jsonfield import JSONField
 from beam.utils.general import log_error
 
 
+def get_current_object(cls):
+    try:
+        return cls.objects.get(end__isnull=True)
+    except ObjectDoesNotExist:
+        log_error('ERROR {} - No pricing object found.'.format(cls))
+        raise ObjectDoesNotExist
+
+
+def end_previous_object(cls):
+    try:
+        previous_object = cls.objects.get(end__isnull=True)
+        previous_object.end = timezone.now()
+        previous_object.save()
+    except ObjectDoesNotExist:
+        if cls.objects.all().exists():
+            log_error('ERROR {} - Failed to end previous pricing.').format(cls)
+
+
 class Pricing(models.Model):
 
     start = models.DateTimeField(
@@ -43,27 +61,10 @@ class Pricing(models.Model):
     def __unicode__(self):
         return '{}'.format(self.id)
 
-    @staticmethod
-    def get_current_pricing():
-        try:
-            return Pricing.objects.get(end__isnull=True)
-        except ObjectDoesNotExist:
-            log_error('ERROR Pricing - No pricing object found.')
-
-    @staticmethod
-    def end_previous_pricing():
-        try:
-            previous_pricing = Pricing.objects.get(end__isnull=True)
-            previous_pricing.end = timezone.now()
-            previous_pricing.save()
-        except ObjectDoesNotExist:
-            if Pricing.objects.all().exists():
-                log_error('ERROR Pricing - Failed to end previous pricing.')
-
 
 class Comparison(models.Model):
 
-    comparison = JSONField(
+    price_comparison = JSONField(
         'Price Comparison',
         load_kwargs={'object_pairs_hook': collections.OrderedDict},
         help_text='JSON description of selected competitor\'s pricing structure'

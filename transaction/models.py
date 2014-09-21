@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from userena.utils import get_user_model
 
-from pricing.models import Pricing
+from pricing.models import Pricing, get_current_object
 
 
 class Recipient(models.Model):
@@ -142,7 +142,7 @@ class Transaction(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.pricing = Pricing.get_current_pricing()
+            self.pricing = get_current_object(Pricing)
             self._generate_reference_number()
             self.amount_btc = self._calculate_ghs_price()
         else:

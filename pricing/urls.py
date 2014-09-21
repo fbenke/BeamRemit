@@ -12,10 +12,4 @@ urlpatterns = patterns(
         views.PricingCurrent.as_view(),
         name='current'
     ),
-    # url(
-    #     r'^comparison/$',
-    #     views.PriceComparison.as_view(),
-    #     name='comparison'
-    # ),
-
 )

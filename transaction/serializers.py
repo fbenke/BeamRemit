@@ -39,7 +39,8 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
 
     def restore_object(self, attrs, instance=None):
         recipient = models.Recipient(
-            name=attrs['recipient'].name,
+            first_name=attrs['recipient'].first_name,
+            last_name=attrs['recipient'].last_name,
             phone_number=attrs['recipient'].phone_number,
             notification_email=attrs['recipient'].notification_email
         )

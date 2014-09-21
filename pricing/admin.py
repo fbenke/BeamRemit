@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from pricing.models import Pricing, Comparison
+from pricing.models import Pricing, Comparison, end_previous_object
 
 from pricing import forms
 
@@ -16,7 +16,8 @@ class PricingAdmin(admin.ModelAdmin):
     list_display = ('id', 'start', 'end', 'markup', 'gbp_ghs', 'fee')
 
     def save_model(self, request, obj, form, change):
-        Pricing.end_previous_pricing()
+        if not obj.id:
+            end_previous_object(Pricing)
         obj.save()
 
 admin.site.register(Pricing, PricingAdmin)
@@ -25,9 +26,14 @@ admin.site.register(Pricing, PricingAdmin)
 class ComparisonAdmin(admin.ModelAdmin):
 
     readonly_fields = ('id', 'start', 'end')
-    read_and_write_fields = ('comparison', )
+    read_and_write_fields = ('price_comparison', )
     fields = readonly_fields + read_and_write_fields
 
     list_display = ('id', 'start', 'end')
+
+    def save_model(self, request, obj, form, change):
+        if not obj.id:
+            end_previous_object(Comparison)
+        obj.save()
 
 admin.site.register(Comparison, ComparisonAdmin)

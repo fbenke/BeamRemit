@@ -16,6 +16,8 @@ from transaction.permissions import IsNoAdmin
 from btc_payment.api_calls import gocoin
 from btc_payment.models import GoCoinInvoice
 
+from pricing.models import get_current_object
+
 
 class CreateTransaction(GenericAPIView):
     serializer_class = serializers.CreateTransactionSerializer
@@ -52,7 +54,7 @@ class CreateTransaction(GenericAPIView):
 
         serializer = self.serializer_class(user=request.user, data=request.DATA)
 
-        if Pricing.get_current_pricing().id != request.DATA.get('pricing_id'):
+        if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
             # Pricing expired
             return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
 
