@@ -15,6 +15,15 @@ class PricingAdmin(admin.ModelAdmin):
 
     list_display = ('id', 'start', 'end', 'markup', 'gbp_ghs', 'fee')
 
+    # remove linsk to forbid editing (change to built in solution in Django 1.7)
+    def __init__(self, *args, **kwargs):
+        super(PricingAdmin, self).__init__(*args, **kwargs)
+        self.list_display_links = (None, )
+
+    # this would remove the list-view altogether
+    # def has_change_permission(self, request, obj=None):
+    #     return False
+
     def save_model(self, request, obj, form, change):
         if not obj.id:
             end_previous_object(Pricing)
@@ -30,6 +39,11 @@ class ComparisonAdmin(admin.ModelAdmin):
     fields = readonly_fields + read_and_write_fields
 
     list_display = ('id', 'start', 'end')
+
+    # remove linsk to forbid editing (change to built in solution in Django 1.7)
+    def __init__(self, *args, **kwargs):
+        super(ComparisonAdmin, self).__init__(*args, **kwargs)
+        self.list_display_links = (None, )
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
