@@ -2,7 +2,6 @@ import json
 
 from django.db import transaction as db_transaction
 from django.conf import settings
-from django.contrib.sites.models import Site
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -63,7 +62,7 @@ class ConfirmGoCoinPayment(APIView):
                         subject_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_SUBJECT,
                         email_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_TEXT,
                         context={
-                            'site': Site.objects.get_current(),
+                            'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                             'protocol': get_protocol()
                         }
                     )
@@ -102,7 +101,7 @@ class ConfirmGoCoinPayment(APIView):
                     subject_template_name=settings.MAIL_NOTIFY_ADMIN_PROBLEM_SUBJECT,
                     email_template_name=settings.MAIL_NOTIFY_ADMIN_PROBLEM_TEXT,
                     context={
-                        'site': Site.objects.get_current(),
+                        'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                         'protocol': get_protocol(),
                         'id': transaction.id,
                         'invoice_state': transaction.gocoin_invoice.state
