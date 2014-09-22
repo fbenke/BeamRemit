@@ -204,7 +204,11 @@ AUTHENTICATION_BACKENDS = (
 AUTH_PROFILE_MODULE = 'account.BeamProfile'
 USERENA_WITHOUT_USERNAMES = True
 USERENA_ACTIVATION_DAYS = 1
-USERENA_USE_HTTPS = (ENV != ENV_LOCAL)
+
+# TODO: change this to SSL once we have the certificate
+# USERENA_USE_HTTPS = (ENV != ENV_LOCAL)
+USERENA_USE_HTTPS = False
+
 # disable userena admin customizations to allow our own ones
 USERENA_REGISTER_USER = False
 USERENA_REGISTER_PROFILE = False
@@ -248,6 +252,7 @@ GOCOIN_API_KEY = os.environ.get('GOCOIN_API_KEY')
 GOCOIN_MERCHANT_ID = os.environ.get('GOCOIN_MERCHANT_ID')
 GOCOIN_BASE_URL = 'https://api.gocoin.com/api/v1/'
 GOCOIN_CREATE_INVOICE_URL = GOCOIN_BASE_URL + 'merchants/{}/invoices'.format(GOCOIN_MERCHANT_ID)
+# TODO: change this to SSL once we have the certificate
 GOCOIN_INVOICE_REDIRECT_URL = 'http://' + ENV_SITE_MAPPING[ENV][SITE_USER] + '/#!/txn/complete/{}'
 GOCOIN_INVOICE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/btc_payment/gocoin/'
 
