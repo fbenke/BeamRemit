@@ -232,7 +232,15 @@ MAIL_NOTIFY_ADMIN_PAID_SUBJECT = 'email/transaction_paid_subject.txt'
 MAIL_NOTIFY_ADMIN_PAID_TEXT = 'email/transaction_paid_message.txt'
 MAIL_NOTIFY_ADMIN_PROBLEM_SUBJECT = 'email/transaction_problem_subject.txt'
 MAIL_NOTIFY_ADMIN_PROBLEM_TEXT = 'email/transaction_problem_message.txt'
-MAIL_ACTIVATION_URL = 'auth/activate/{}/'
+MAIL_ACTIVATION_URL = '#!/auth/activate/{}/'
+
+# Sendrgrid Settings
+SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')
+SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
+SENDGRID_EMAIL_FROM = 'noreply@beamremit.com'
+
+# from btc_payment.models import GoCoinInvoice
+# PAYMENT_PROCESSOR_CLASS = GoCoinInvoice
 
 # GoCoin Settings
 # API Key with permission 'invoice_read_write'
@@ -242,11 +250,6 @@ GOCOIN_BASE_URL = 'https://api.gocoin.com/api/v1/'
 GOCOIN_CREATE_INVOICE_URL = GOCOIN_BASE_URL + 'merchants/{}/invoices'.format(GOCOIN_MERCHANT_ID)
 GOCOIN_INVOICE_REDIRECT_URL = 'http://' + ENV_SITE_MAPPING[ENV][SITE_USER] + '/#!/txn/complete/{}'
 GOCOIN_INVOICE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/btc_payment/gocoin/'
-
-# Sendrgrid Settings
-SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')
-SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
-SENDGRID_EMAIL_FROM = 'noreply@beamremit.com'
 
 # Coinbase Settings
 # COINBASE_API_KEY = os.environ.get('COINBASE_API_KEY')

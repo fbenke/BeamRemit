@@ -62,6 +62,7 @@ class GoCoinInvoice(models.Model):
         help_text='State of the Coinbase Invoice'
     )
 
+
 # class Coinbase_Payment(models.Model):
 
 #     transaction = models.OneToOneField(

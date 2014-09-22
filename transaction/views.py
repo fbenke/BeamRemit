@@ -27,7 +27,7 @@ class CreateTransaction(GenericAPIView):
 
         # TOD: remove code specific to a certain payment processor
 
-        message = (str(obj.id) + str(obj.amount_gbp) + settings.GOCOIN_INVOICE_CALLBACK_URL)
+        message = (str(obj.id) + str(obj.amount_gbp + obj.pricing.fee) + settings.GOCOIN_INVOICE_CALLBACK_URL)
         signature = generate_signature(message, settings.GOCOIN_API_KEY)
 
         result = gocoin.generate_invoice(

@@ -90,7 +90,7 @@ class Transaction(models.Model):
 
     amount_ghs = models.FloatField(
         'GHS payed out to recipient',
-        help_text='GHS to be paid to Kitiwa'
+        help_text='GHS to be paid to Beam'
     )
 
     reference_number = models.CharField(

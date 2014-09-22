@@ -45,7 +45,9 @@ class ConfirmGoCoinPayment(APIView):
             if request.DATA.get('payload')['user_defined_2'] != signature:
                 raise APIException
 
-            if request.DATA.get('event') == 'invoice_payment_received':
+            if request.DATA.get('event') == 'invoice_created':
+                pass
+            elif request.DATA.get('event') == 'invoice_payment_received':
                 # full payment received
                 if request.DATA.get('payload')['status'] == 'paid':
 
