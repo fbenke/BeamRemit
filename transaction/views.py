@@ -31,7 +31,7 @@ class CreateTransaction(GenericAPIView):
         signature = generate_signature(message, settings.GOCOIN_API_KEY)
 
         result = gocoin.generate_invoice(
-            price=obj.amount_gbp,
+            price=obj.amount_gbp + obj.pricing.fee,
             reference_number=obj.reference_number,
             transaction_id=obj.id,
             signature=signature
