@@ -40,6 +40,7 @@ def generate_invoice(price, reference_number, transaction_id, signature, currenc
         'redirect_url': settings.GOCOIN_INVOICE_REDIRECT_URL.format(transaction_id),
         'user_defined_1': transaction_id,
         'user_defined_2': signature,
+        'user_defined_3': reference_number
     }
 
     response = make_request(settings.GOCOIN_CREATE_INVOICE_URL, body=json.dumps(data))

@@ -77,8 +77,8 @@ class Transaction(models.Model):
     )
 
     amount_gbp = models.FloatField(
-        'British Pound received',
-        help_text='GBP amount the Sender is charged'
+        'British Pound sent',
+        help_text='GBP amount sent (does not include fees)'
     )
 
     amount_btc = models.FloatField(
