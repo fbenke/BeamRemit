@@ -69,8 +69,9 @@ class CreateTransaction(GenericAPIView):
                 self.post_save(self.object, created=True)
 
                 # TODO: remove code specific to a certain payment processor
-                return Response({
-                    'invoice_id': self.object.gocoin_invoice.invoice_id},
+                return Response(
+                    {'invoice_id': self.object.gocoin_invoice.invoice_id,
+                     'amount_ghs': self.object.amount_ghs},
                     status=status.HTTP_201_CREATED)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
