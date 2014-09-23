@@ -241,7 +241,7 @@ MAIL_ACTIVATION_URL = '#!/auth/activate/{}/'
 # Sendrgrid Settings
 SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')
 SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
-SENDGRID_EMAIL_FROM = 'noreply@beamremit.com'
+SENDGRID_EMAIL_FROM = 'hello@beamremit.com'
 
 # from btc_payment.models import GoCoinInvoice
 # PAYMENT_PROCESSOR_CLASS = GoCoinInvoice
