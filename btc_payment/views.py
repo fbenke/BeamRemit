@@ -47,6 +47,7 @@ class ConfirmGoCoinPayment(APIView):
             if request.DATA.get('event') == 'invoice_created':
                 transaction.gocoin_invoice.btc_usd = request.DATA.get('payload')['inverse_spot_rate']
                 transaction.gocoin_invoice.sender_usd = request.DATA.get('payload')['usd_spot_rate']
+                transaction.gocoin_invoice.save()
 
             elif request.DATA.get('event') == 'invoice_payment_received':
                 # full payment received, this includes overpaid
