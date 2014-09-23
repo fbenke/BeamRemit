@@ -24,7 +24,7 @@ class TransactionAdmin(admin.ModelAdmin):
         'cancelled_at', 'invalidated_at'
     )
 
-    read_and_write_fields = ('state',)
+    read_and_write_fields = ('state', 'comments')
     fields = read_and_write_fields + readonly_fields
     list_display = ('id', 'sender_email', 'reference_number', 'state')
     list_display_links = ('id', 'sender_email')

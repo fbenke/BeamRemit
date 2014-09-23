@@ -137,6 +137,12 @@ class Transaction(models.Model):
         help_text='Time at which payment was set invalid'
     )
 
+    comments = models.TextField(
+        'Comments',
+        blank=True,
+        help_text='Leave comments when manually solving problems with this transaction'
+    )
+
     def __unicode__(self):
         return '{}'.format(self.id)
 
