@@ -45,13 +45,13 @@ class ConfirmGoCoinPayment(APIView):
                 raise APIException
 
             if request.DATA.get('event') == 'invoice_created':
-                pass
+                transaction.gocoin_invoice.btc_usd = request.DATA.get('payload')['inverse_spot_rate']
+                transaction.gocoin_invoice.sender_usd = request.DATA.get('payload')['usd_spot_rate']
+
             elif request.DATA.get('event') == 'invoice_payment_received':
                 # full payment received, this includes overpaid
                 if request.DATA.get('payload')['status'] == 'paid':
 
-                    transaction.gocoin_invoice.btc_usd = request.DATA.get('payload')['inverse_spot_rate']
-                    transaction.gocoin_invoice.sender_usd = request.DATA.get('payload')['usd_spot_rate']
                     transaction.gocoin_invoice.state = GoCoinInvoice.PAID
 
                     with db_transaction.atomic():
@@ -76,8 +76,10 @@ class ConfirmGoCoinPayment(APIView):
             # transaction has been confirmed
             elif request.DATA.get('event') == 'invoice_ready_to_ship'\
                     and request.DATA.get('payload')['status'] == 'ready_to_ship':
-                transaction.gocoin_invoice.state = GoCoinInvoice.READY_TO_SHIP
-                transaction.gocoin_invoice.save()
+                # special case payment was received late, but is confirmed now
+                if transaction.state != Transaction.INVALID:
+                    transaction.gocoin_invoice.state = GoCoinInvoice.READY_TO_SHIP
+                    transaction.gocoin_invoice.save()
 
             # transaction requires manual intervention
             elif request.DATA.get('event') == 'invoice_merchant_review' or\
