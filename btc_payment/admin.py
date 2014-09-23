@@ -11,6 +11,6 @@ class GoCoinInvoiceAdmin(admin.ModelAdmin):
     )
     read_and_write_fields = ()
     fields = readonly_fields + read_and_write_fields
-    list_display = ('id', 'invoice_id')
+    list_display = ('id', 'invoice_id', 'transaction', 'state')
 
 admin.site.register(GoCoinInvoice, GoCoinInvoiceAdmin)
