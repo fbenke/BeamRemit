@@ -253,7 +253,7 @@ GOCOIN_MERCHANT_ID = os.environ.get('GOCOIN_MERCHANT_ID')
 GOCOIN_BASE_URL = 'https://api.gocoin.com/api/v1/'
 GOCOIN_CREATE_INVOICE_URL = GOCOIN_BASE_URL + 'merchants/{}/invoices'.format(GOCOIN_MERCHANT_ID)
 # TODO: change this to SSL once we have the certificate
-GOCOIN_INVOICE_REDIRECT_URL = 'http://' + ENV_SITE_MAPPING[ENV][SITE_USER] + '/#!/txn/complete/{}'
+GOCOIN_INVOICE_REDIRECT_URL = 'http://' + ENV_SITE_MAPPING[ENV][SITE_USER] + '/send/complete/{}'
 GOCOIN_INVOICE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/btc_payment/gocoin/'
 
 # Coinbase Settings

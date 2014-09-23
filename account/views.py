@@ -76,9 +76,10 @@ class ActivationRetry(APIView):
 
         try:
             if UserenaSignup.objects.check_expired_activation(activation_key):
+                user = UserenaSignup.objects.get(activation_key=activation_key).user
                 new_key = UserenaSignup.objects.reissue_activation(activation_key)
                 if new_key:
-                    return Response(status=status.HTTP_201_CREATED)
+                    return Response({'email': user.email}, status=status.HTTP_201_CREATED)
                 else:
                     log_error(
                         'ERROR - activation key could not be generated for expired key {}'.
