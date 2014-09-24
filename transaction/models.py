@@ -174,5 +174,5 @@ class Transaction(models.Model):
         self.reference_number = str(random.randint(10000, 999999))
 
     def _calculate_ghs_price(self):
-        raw_price = self.amount_gbp * self.pricing.gbp_ghs()
+        raw_price = self.amount_gbp * self.pricing.exchange_rate
         self.amount_ghs = math.ceil(raw_price * 10) / 10

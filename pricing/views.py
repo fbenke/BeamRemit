@@ -14,7 +14,7 @@ class PricingCurrent(APIView):
         response_dict = {}
 
         response_dict['pricing_id'] = self.pricing.id
-        response_dict['beam_rate'] = self.pricing.calculate_exchange_rate()
+        response_dict['beam_rate'] = self.pricing.exchange_rate
         response_dict['beam_fee'] = self.pricing.fee
         response_dict['comparison'] = self.comparison.price_comparison
         response_dict['comparison_retrieved'] = self.comparison.start

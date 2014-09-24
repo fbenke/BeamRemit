@@ -61,7 +61,8 @@ class Pricing(models.Model):
     def __unicode__(self):
         return '{}'.format(self.id)
 
-    def calculate_exchange_rate(self):
+    @property
+    def exchange_rate(self):
         return self.gbp_ghs * (1 - self.markup)
 
 
