@@ -58,7 +58,8 @@ INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
 # SSL Redirects
 if ENV != ENV_LOCAL:
-    PRODUCTION_MIDDLEWARE = ('sslify.middleware.SSLifyMiddleware',)
+    PRODUCTION_MIDDLEWARE = ()
+    # PRODUCTION_MIDDLEWARE = ('sslify.middleware.SSLifyMiddleware',)
 else:
     # No automatic redirects on local
     PRODUCTION_MIDDLEWARE = ()
