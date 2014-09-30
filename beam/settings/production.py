@@ -58,8 +58,7 @@ INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
 # SSL Redirects
 if ENV != ENV_LOCAL:
-    PRODUCTION_MIDDLEWARE = ()
-    # PRODUCTION_MIDDLEWARE = ('sslify.middleware.SSLifyMiddleware',)
+    PRODUCTION_MIDDLEWARE = ('sslify.middleware.SSLifyMiddleware',)
 else:
     # No automatic redirects on local
     PRODUCTION_MIDDLEWARE = ()
@@ -206,9 +205,7 @@ AUTH_PROFILE_MODULE = 'account.BeamProfile'
 USERENA_WITHOUT_USERNAMES = True
 USERENA_ACTIVATION_DAYS = 1
 
-# TODO: change this to SSL once we have the certificate
-# USERENA_USE_HTTPS = (ENV != ENV_LOCAL)
-USERENA_USE_HTTPS = False
+USERENA_USE_HTTPS = (ENV != ENV_LOCAL)
 
 # disable userena admin customizations to allow our own ones
 USERENA_REGISTER_USER = False
@@ -253,8 +250,7 @@ GOCOIN_API_KEY = os.environ.get('GOCOIN_API_KEY')
 GOCOIN_MERCHANT_ID = os.environ.get('GOCOIN_MERCHANT_ID')
 GOCOIN_BASE_URL = 'https://api.gocoin.com/api/v1/'
 GOCOIN_CREATE_INVOICE_URL = GOCOIN_BASE_URL + 'merchants/{}/invoices'.format(GOCOIN_MERCHANT_ID)
-# TODO: change this to SSL once we have the certificate
-GOCOIN_INVOICE_REDIRECT_URL = 'http://' + ENV_SITE_MAPPING[ENV][SITE_USER] + '/#!/send/complete/{}'
+GOCOIN_INVOICE_REDIRECT_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_USER] + '/#!/send/complete/{}'
 GOCOIN_INVOICE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/btc_payment/gocoin/'
 
 # Coinbase Settings
