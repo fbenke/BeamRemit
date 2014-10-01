@@ -1,8 +1,12 @@
+from django.conf import settings
 from django.db import models
+from django.db import transaction as dbtransaction
 
 from transaction.models import Transaction
 
+from beam.utils.security import generate_signature
 
+from btc_payment.api_calls import gocoin
 # from beam.btc_payment.models import coinbase
 
 
@@ -62,6 +66,36 @@ class GoCoinInvoice(models.Model):
         help_text='State of the Coinbase Invoice'
     )
 
+    @staticmethod
+    def initiate(transaction):
+
+        message = (str(transaction.id) + str(transaction.amount_gbp + transaction.pricing.fee) +
+                   settings.GOCOIN_INVOICE_CALLBACK_URL)
+        signature = generate_signature(message, settings.GOCOIN_API_KEY)
+
+        result = gocoin.generate_invoice(
+            price=transaction.amount_gbp + transaction.pricing.fee,
+            reference_number=transaction.reference_number,
+            transaction_id=transaction.id,
+            signature=signature
+        )
+
+        gocoin_invoice = GoCoinInvoice(
+            transaction=transaction,
+            invoice_id=result['id'],
+            btc_address=result['payment_address'],
+            btc_usd=result['inverse_spot_rate'],
+            sender_usd=result['usd_spot_rate']
+        )
+
+        transaction.amount_btc = result['price']
+
+        with dbtransaction.atomic():
+            gocoin_invoice.save()
+            transaction.gocoin_invoice = GoCoinInvoice.objects.get(id=gocoin_invoice.id)
+            transaction.save()
+
+        return gocoin_invoice.invoice_id
 
 # class Coinbase_Payment(models.Model):
 

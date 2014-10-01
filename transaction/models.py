@@ -82,15 +82,15 @@ class Transaction(models.Model):
     )
 
     amount_btc = models.FloatField(
-        'Satoshi received',
+        'Bitcoins sent',
         null=True,
         blank=True,
-        help_text='BTCs equivalent of GBP amount, determined by Coinbase'
+        help_text='BTCs equivalent of GBP amount, determined by Payment Processor'
     )
 
     amount_ghs = models.FloatField(
         'GHS payed out to recipient',
-        help_text='GHS to be paid to Beam'
+        help_text='GHS to be paid to recipient'
     )
 
     reference_number = models.CharField(

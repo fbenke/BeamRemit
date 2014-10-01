@@ -45,17 +45,4 @@ def generate_invoice(price, reference_number, transaction_id, signature, currenc
 
     response = make_request(settings.GOCOIN_CREATE_INVOICE_URL, body=json.dumps(data))
 
-    data = json.load(response)
-
-    try:
-
-        result = {}
-        result['invoice_id'] = data['id']
-        result['amount_btc'] = data['price']
-        result['btc_address'] = data['payment_address']
-
-        return result
-
-    except KeyError:
-        log_error('ERROR - ' + 'Coinbase: Creating button was not successful ({})'.format(response))
-        raise APIException
+    return json.load(response)

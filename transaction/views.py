@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.db import transaction as dbtransaction
 
 from rest_framework import status
 from rest_framework.generics import GenericAPIView, ListAPIView, RetrieveAPIView
@@ -7,14 +6,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from beam.utils.exceptions import APIException
-from beam.utils.security import generate_signature
+
 
 from transaction import serializers
 from transaction.models import Transaction, Pricing
 from transaction.permissions import IsNoAdmin
-
-from btc_payment.api_calls import gocoin
-from btc_payment.models import GoCoinInvoice
 
 from pricing.models import get_current_object
 
@@ -25,29 +21,7 @@ class CreateTransaction(GenericAPIView):
 
     def post_save(self, obj, created=False):
 
-        # TOD: remove code specific to a certain payment processor
-        message = (str(obj.id) + str(obj.amount_gbp + obj.pricing.fee) + settings.GOCOIN_INVOICE_CALLBACK_URL)
-        signature = generate_signature(message, settings.GOCOIN_API_KEY)
-
-        result = gocoin.generate_invoice(
-            price=obj.amount_gbp + obj.pricing.fee,
-            reference_number=obj.reference_number,
-            transaction_id=obj.id,
-            signature=signature
-        )
-
-        gocoin_invoice = GoCoinInvoice(
-            transaction=obj,
-            invoice_id=result['invoice_id'],
-            btc_address=result['btc_address']
-        )
-
-        obj.amount_btc = result['amount_btc']
-
-        with dbtransaction.atomic():
-            gocoin_invoice.save()
-            obj.gocoin_invoice = GoCoinInvoice.objects.get(id=gocoin_invoice.id)
-            obj.save()
+        self.invoice_id = settings.PAYMENT_PROCESSOR.initiate(obj)
 
     def post(self, request):
 
@@ -68,9 +42,8 @@ class CreateTransaction(GenericAPIView):
 
                 self.post_save(self.object, created=True)
 
-                # TODO: remove code specific to a certain payment processor
                 return Response(
-                    {'invoice_id': self.object.gocoin_invoice.invoice_id,
+                    {'invoice_id': self.invoice_id,
                      'amount_ghs': self.object.amount_ghs},
                     status=status.HTTP_201_CREATED)
 

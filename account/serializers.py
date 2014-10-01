@@ -225,7 +225,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        read_only_fields = ('id', 'email', )
-        read_and_write_fields = ('first_name', 'last_name', 'profile', )
+        read_only_fields = ('email', )
+        read_and_write_fields = ('first_name', 'last_name', 'profile')
 
         fields = read_only_fields + read_and_write_fields
