@@ -72,7 +72,7 @@ class Transaction(models.Model):
 
     pricing = models.ForeignKey(
         Pricing,
-        related_name='transactions',
+        related_name='transaction',
         help_text='Pricing information to enable conversion of btc to ghs'
     )
 

@@ -14,6 +14,9 @@ from transaction.permissions import IsNoAdmin
 
 from pricing.models import get_current_object
 
+mod = __import__('btc_payment.models', fromlist=[settings.PAYMENT_PROCESSOR])
+payment_class = getattr(mod, settings.PAYMENT_PROCESSOR)
+
 
 class CreateTransaction(GenericAPIView):
     serializer_class = serializers.CreateTransactionSerializer
@@ -21,7 +24,7 @@ class CreateTransaction(GenericAPIView):
 
     def post_save(self, obj, created=False):
 
-        self.invoice_id = settings.GoCoinInvoice.initiate(obj)
+        self.invoice_id = payment_class.initiate(obj)
 
     def post(self, request):
 

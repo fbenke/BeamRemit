@@ -58,8 +58,10 @@ INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
 # SSL Redirects
 if ENV != ENV_LOCAL:
+    PROTOCOL = 'https://'
     PRODUCTION_MIDDLEWARE = ('sslify.middleware.SSLifyMiddleware',)
 else:
+    PROTOCOL = 'http://'
     # No automatic redirects on local
     PRODUCTION_MIDDLEWARE = ()
 
@@ -194,6 +196,10 @@ if ENV == ENV_LOCAL:
 else:
     CORS_ORIGIN_WHITELIST = (ENV_SITE_MAPPING[ENV][SITE_USER], )
 
+# Base URLS for the apps
+API_BASE_URL = PROTOCOL + ENV_SITE_MAPPING[ENV][SITE_API]
+USER_BASE_URL = PROTOCOL + ENV_SITE_MAPPING[ENV][SITE_USER]
+
 # Userena Settings
 AUTHENTICATION_BACKENDS = (
     'userena.backends.UserenaAuthenticationBackend',
@@ -204,13 +210,10 @@ AUTHENTICATION_BACKENDS = (
 AUTH_PROFILE_MODULE = 'account.BeamProfile'
 USERENA_WITHOUT_USERNAMES = True
 USERENA_ACTIVATION_DAYS = 1
-
 USERENA_USE_HTTPS = (ENV != ENV_LOCAL)
-
 # disable userena admin customizations to allow our own ones
 USERENA_REGISTER_USER = False
 USERENA_REGISTER_PROFILE = False
-
 ANONYMOUS_USER_ID = -1
 SITE_ID = 0
 
@@ -241,8 +244,8 @@ SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')
 SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
 SENDGRID_EMAIL_FROM = 'hello@beamremit.com'
 
-# from btc_payment.models import GoCoinInvoice
-# PAYMENT_PROCESSOR = GoCoinInvoice
+# Payment Processors
+PAYMENT_PROCESSOR = 'GoCoinInvoice'
 
 # GoCoin Settings
 # API Key with permission 'invoice_read_write'
@@ -250,8 +253,8 @@ GOCOIN_API_KEY = os.environ.get('GOCOIN_API_KEY')
 GOCOIN_MERCHANT_ID = os.environ.get('GOCOIN_MERCHANT_ID')
 GOCOIN_BASE_URL = 'https://api.gocoin.com/api/v1/'
 GOCOIN_CREATE_INVOICE_URL = GOCOIN_BASE_URL + 'merchants/{}/invoices'.format(GOCOIN_MERCHANT_ID)
-GOCOIN_INVOICE_REDIRECT_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_USER] + '/#!/send/complete/{}'
-GOCOIN_INVOICE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/btc_payment/gocoin/'
+GOCOIN_INVOICE_REDIRECT_URL = USER_BASE_URL + '/#!/send/complete/{}'
+GOCOIN_INVOICE_CALLBACK_URL = API_BASE_URL + '/api/v1/btc_payment/gocoin/'
 
 # Coinbase Settings
 # COINBASE_API_KEY = os.environ.get('COINBASE_API_KEY')
