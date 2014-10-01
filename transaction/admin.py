@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import admin
+from django.utils import timezone
 
 from transaction.models import Recipient, Transaction
 
@@ -16,6 +17,13 @@ admin.site.register(Recipient, RecipientAdmin)
 
 class TransactionAdmin(admin.ModelAdmin):
 
+    def save_model(self, request, obj, form, change):
+        if obj.state == Transaction.PROCESSED:
+            obj.processed_at = timezone.now()
+        elif obj.state == Transaction.CANCELLED:
+            obj.cancelled_at = timezone.now()
+        obj.save()
+
     def sender_url(self, obj):
         path = settings.API_BASE_URL + '/admin/account/beamprofile'
         return '<a href="{}/{}/">{}</a>'.format(path, obj.sender.profile.id, obj.sender.email)
@@ -27,6 +35,9 @@ class TransactionAdmin(admin.ModelAdmin):
         return '<a href="{}/{}/">{}</a>'.format(path, obj.pricing.id, obj.pricing.id)
     pricing_url.allow_tags = True
     pricing_url.short_description = 'pricing'
+
+    def sender_email(self, obj):
+        return obj.sender.email
 
     def recipient_url(self, obj):
         path = settings.API_BASE_URL + '/admin/transaction/recipient'
@@ -41,8 +52,8 @@ class TransactionAdmin(admin.ModelAdmin):
     )
 
     read_and_write_fields = ('state', 'comments')
-    fields = read_and_write_fields + readonly_fields
+    fields = readonly_fields + read_and_write_fields
 
-    list_display = ('id', 'sender_url', 'reference_number', 'state')
+    list_display = ('id', 'sender_email', 'reference_number', 'state')
 
 admin.site.register(Transaction, TransactionAdmin)

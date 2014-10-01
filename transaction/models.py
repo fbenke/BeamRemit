@@ -104,7 +104,12 @@ class Transaction(models.Model):
         max_length=4,
         choices=TRANSACTION_STATES,
         default=INIT,
-        help_text='State of the transaction'
+        help_text='State of the transaction. ' +
+                  'Init - Payment initiated. ' +
+                  'Paid - BTC with Beam. ' +
+                  'Processed (manual) - Payout completed by Beam. ' +
+                  'Invalid - Error communicated by payment processor.' +
+                  'Cancelled (manual) - Cancelled by Beam, because we could not complete MM payout'
     )
 
     initialized_at = models.DateTimeField(
