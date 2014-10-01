@@ -241,8 +241,8 @@ SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')
 SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
 SENDGRID_EMAIL_FROM = 'hello@beamremit.com'
 
-from btc_payment.models import GoCoinInvoice
-PAYMENT_PROCESSOR = GoCoinInvoice
+# from btc_payment.models import GoCoinInvoice
+# PAYMENT_PROCESSOR = GoCoinInvoice
 
 # GoCoin Settings
 # API Key with permission 'invoice_read_write'

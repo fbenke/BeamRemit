@@ -21,7 +21,7 @@ class CreateTransaction(GenericAPIView):
 
     def post_save(self, obj, created=False):
 
-        self.invoice_id = settings.PAYMENT_PROCESSOR.initiate(obj)
+        self.invoice_id = settings.GoCoinInvoice.initiate(obj)
 
     def post(self, request):
 
