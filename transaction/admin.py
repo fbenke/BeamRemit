@@ -47,13 +47,17 @@ class TransactionAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         'id', 'recipient_url', 'pricing_url', 'sender_url', 'amount_gbp', 'amount_btc',
-        'amount_ghs', 'reference_number', 'initialized_at', 'paid_at',
-        'processed_at', 'cancelled_at', 'invalidated_at',
+        'amount_ghs', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
+        'cancelled_at', 'invalidated_at',
     )
 
     read_and_write_fields = ('state', 'comments')
     fields = readonly_fields + read_and_write_fields
 
     list_display = ('id', 'sender_email', 'reference_number', 'state')
+
+    list_filter = ('state', 'initialized_at')
+
+    search_fields = ('id', 'reference_number')
 
 admin.site.register(Transaction, TransactionAdmin)
