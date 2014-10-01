@@ -33,7 +33,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
     )
 
     read_and_write_fields = ()
-        
+
     fields = readonly_fields + read_and_write_fields
 
     list_display = ('user_email', 'country', 'city')

@@ -60,4 +60,6 @@ class TransactionAdmin(admin.ModelAdmin):
 
     search_fields = ('id', 'reference_number')
 
+    list_per_page = 20
+
 admin.site.register(Transaction, TransactionAdmin)
