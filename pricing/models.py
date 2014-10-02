@@ -24,7 +24,7 @@ def end_previous_object(cls):
         previous_object.save()
     except ObjectDoesNotExist:
         if cls.objects.all().exists():
-            log_error('ERROR {} - Failed to end previous pricing.').format(cls)
+            log_error('ERROR {} - Failed to end previous pricing.'.format(cls))
 
 
 class Pricing(models.Model):

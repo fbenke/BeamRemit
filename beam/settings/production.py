@@ -47,10 +47,11 @@ THIRD_PARTY_APPS = (
 
 LOCAL_APPS = (
     'beam',
+    'state',
     'account',
     'pricing',
     'transaction',
-    'btc_payment'
+    'btc_payment',
 )
 
 

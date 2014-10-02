@@ -28,8 +28,6 @@ class CreateTransaction(GenericAPIView):
 
     def post(self, request):
 
-        serializer = self.serializer_class(user=request.user, data=request.DATA)
-
         if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
             # Pricing expired
             return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
@@ -37,6 +35,8 @@ class CreateTransaction(GenericAPIView):
         if not request.user.profile.is_complete:
             # Sender Profile is incomplete
             return Response({'detail': '1'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer_class(user=request.user, data=request.DATA)
 
         try:
             if serializer.is_valid():
