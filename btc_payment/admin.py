@@ -21,4 +21,6 @@ class GoCoinInvoiceAdmin(admin.ModelAdmin):
 
     list_display = ('id', 'invoice_id', 'transaction_url', 'state')
 
+    list_filter = ('state', )
+
 admin.site.register(GoCoinInvoice, GoCoinInvoiceAdmin)
