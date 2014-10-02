@@ -1,4 +1,7 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+
+from beam.utils.general import log_error
 
 
 class State(models.Model):
@@ -32,3 +35,11 @@ class State(models.Model):
         choices=APP_STATES,
         default=RUNNING
     )
+
+
+def get_current_state():
+    try:
+        return State.objects.get(end__isnull=True).state
+    except ObjectDoesNotExist:
+        log_error('ERROR State - No state object found.')
+        raise ObjectDoesNotExist

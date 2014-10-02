@@ -14,6 +14,9 @@ from transaction.permissions import IsNoAdmin
 
 from pricing.models import get_current_object
 
+from state.models import State, get_current_state
+
+
 mod = __import__('btc_payment.models', fromlist=[settings.PAYMENT_PROCESSOR])
 payment_class = getattr(mod, settings.PAYMENT_PROCESSOR)
 
@@ -27,6 +30,12 @@ class CreateTransaction(GenericAPIView):
         self.invoice_id = payment_class.initiate(obj)
 
     def post(self, request):
+
+        if get_current_state() == State.OUT_OF_CASH:
+            return Response({'detail': '2'})
+
+        if get_current_state() == State.OUTSIDE_BIZ_HOURS:
+            return Response({'detail': '3'})
 
         if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
             # Pricing expired
