@@ -7,7 +7,7 @@
 
 {% trans "Please confirm this email address by clicking on the link below:" %}
 
-{{ protocol }}://{{ site.domain }}/{% password_reset_link confirmation_key%}
+{{ protocol }}://{{ site.domain }}/{% email_change_link confirmation_key%}
 
 {% trans "Thanks for using our site!" %}
 
