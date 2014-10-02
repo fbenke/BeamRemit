@@ -58,6 +58,12 @@ class GoCoinInvoice(models.Model):
         help_text='exchange rate from sender currency to USD applied for this payment'
     )
 
+    balance_due = models.FloatField(
+        'Balance Due',
+        null=True,
+        help_text='GoCoin allows several BTC payments for one item, which are added up. Negative balance means "overpaid"'
+    )
+
     state = models.CharField(
         'State',
         max_length=4,

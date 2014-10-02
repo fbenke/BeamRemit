@@ -52,6 +52,7 @@ class ConfirmGoCoinPayment(APIView):
                 if request.DATA.get('payload')['status'] == 'paid':
 
                     transaction.gocoin_invoice.state = GoCoinInvoice.PAID
+                    transaction.gocoin_invoice.balance_due = request.DATA.get('payload')['crypto_balance_due']
 
                     with db_transaction.atomic():
                         transaction.gocoin_invoice.save()

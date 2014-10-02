@@ -14,7 +14,7 @@ class GoCoinInvoiceAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         'transaction_url', 'invoice_id', 'btc_address', 'btc_usd',
-        'sender_usd', 'state'
+        'sender_usd', 'state', 'balance_due'
     )
     read_and_write_fields = ()
     fields = readonly_fields + read_and_write_fields
