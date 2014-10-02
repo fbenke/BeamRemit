@@ -6,6 +6,8 @@ from rest_framework import status
 
 from pricing.models import Pricing, Comparison, get_current_object
 
+from state.models import get_current_state
+
 
 class PricingCurrent(APIView):
 
@@ -18,6 +20,7 @@ class PricingCurrent(APIView):
         response_dict['beam_fee'] = self.pricing.fee
         response_dict['comparison'] = self.comparison.price_comparison
         response_dict['comparison_retrieved'] = self.comparison.start
+        response_dict['operationMode'] = get_current_state()
 
         return response_dict
 
@@ -30,4 +33,3 @@ class PricingCurrent(APIView):
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(self._serialize())
-
