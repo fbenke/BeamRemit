@@ -238,6 +238,7 @@ MAIL_NOTIFY_ADMIN_PAID_TEXT = 'email/transaction_paid_message.txt'
 MAIL_NOTIFY_ADMIN_PROBLEM_SUBJECT = 'email/transaction_problem_subject.txt'
 MAIL_NOTIFY_ADMIN_PROBLEM_TEXT = 'email/transaction_problem_message.txt'
 MAIL_ACTIVATION_URL = '#!/auth/activate/{}/'
+MAIL_EMAIL_CHANGE_CONFIRM = '#!/settings/email/{}/'
 
 # Sendrgrid Settings
 SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')

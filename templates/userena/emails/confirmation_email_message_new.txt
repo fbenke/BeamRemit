@@ -1,4 +1,5 @@
-{% load i18n %}{% autoescape off %}{% load url from future %}
+{% load i18n %}{% autoescape off %}
+{% load account_extras %}
 {% if not without_usernames %}{% blocktrans with user.username as username %}Dear {{ username }},{% endblocktrans %}
 {% endif %}
 {% blocktrans with site.name as site %}You requested a change of your email address at {{ site }}.{% endblocktrans %}
@@ -6,7 +7,7 @@
 
 {% trans "Please confirm this email address by clicking on the link below:" %}
 
-{{ protocol }}://{{ site.domain }}{% url 'account:email_confirm' confirmation_key %}
+{{ protocol }}://{{ site.domain }}/{% password_reset_link confirmation_key%}
 
 {% trans "Thanks for using our site!" %}
 

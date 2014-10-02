@@ -1,4 +1,6 @@
-{% load i18n %}{% autoescape off %}{% load url from future %}
+{% load i18n %}
+{% autoescape off %}
+{% load account_extras %}
 <html>
 <body>
     {% if not without_usernames %}<p>{% blocktrans with user.username as username %}Dear {{ username }},</p>{% endblocktrans %}{% endif %}
@@ -7,7 +9,8 @@
     </p>
     <p>
         {% trans "Please confirm this email address by clicking on the link below:" %}<br>
-        {{ protocol }}://{{ site.domain }}{% url 'account:email_confirm' confirmation_key %}
+        {{ protocol }}://{{ site.domain }}/{% password_reset_link confirmation_key%}
+
     </p>
     <p>
         {% trans "Thanks for using our site!" %}<br />
