@@ -167,14 +167,12 @@ REST_FRAMEWORK = {
     # input formats the API can handle
     'DEFAULT_PARSER_CLASSES': (
         'beam.utils.parsers.CamelCaseJSONParser',
-        # 'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ),
     #  output formate supported by the API
     'DEFAULT_RENDERER_CLASSES': (
         'beam.utils.renderers.CamelCaseJSONRenderer',
-        # 'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     # throttling of requests
@@ -241,6 +239,12 @@ MAIL_NOTIFY_ADMIN_PROBLEM_TEXT = 'email/transaction_problem_message.txt'
 MAIL_ACTIVATION_URL = '#!/auth/activate/{}/'
 MAIL_EMAIL_CHANGE_CONFIRM_URL = '#!/settings/email/{}/'
 MAIL_PASSWORD_RESET_URL = '#!/auth/forgot/{}-{}/'
+
+# AWS Settings
+AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY')
+AWS_SECRET_KEY = os.environ.get('AWS_SECRET_KEY')
+AWS_BUCKET_NAME = 'beamverification'
+AWS_PRESIGNED_URL_EXPIRATION = 3600
 
 # Sendrgrid Settings
 SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')

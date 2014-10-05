@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.utils.http import urlsafe_base64_decode
 
@@ -7,6 +8,8 @@ from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
+
+from boto.s3.connection import S3Connection
 
 from userena.models import UserenaSignup
 from userena.utils import get_user_model
@@ -318,3 +321,29 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
         # any post-delete routine
         self.post_delete(obj)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class Test(APIView):
+
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+
+        file_type = request.GET.get('s3_object_type')
+        key = str(self.request.user.id)
+
+        conn = S3Connection(
+            aws_access_key_id=settings.AWS_ACCESS_KEY,
+            aws_secret_access_key=settings.AWS_SECRET_KEY
+        )
+        url = conn.generate_url(
+            settings.AWS_PRESIGNED_URL_EXPIRATION,
+            'PUT',
+            bucket=settings.AWS_BUCKET_NAME,
+            key='{}.{}'.format(key, file_type)
+        )
+
+        # TODO: Store url for user
+        # 'url': url.rsplit('?')[0]}
+
+        return Response({'signed_request': url})
