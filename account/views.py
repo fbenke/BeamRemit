@@ -9,12 +9,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
-from boto.s3.connection import S3Connection
-
 from userena.models import UserenaSignup
 from userena.utils import get_user_model
 
 from beam.utils.general import log_error
+
+from boto.s3.connection import S3Connection
 
 from account import constants
 from account import serializers
@@ -329,21 +329,20 @@ class Test(APIView):
 
     def get(self, request):
 
-        file_type = request.GET.get('s3_object_type')
-        key = str(self.request.user.id)
-
         conn = S3Connection(
             aws_access_key_id=settings.AWS_ACCESS_KEY,
             aws_secret_access_key=settings.AWS_SECRET_KEY
         )
+
         url = conn.generate_url(
-            settings.AWS_PRESIGNED_URL_EXPIRATION,
+            settings.AWS_PRESIGNED_URL_UPLOAD_EXPIRATION,
             'PUT',
             bucket=settings.AWS_BUCKET_NAME,
-            key='{}.{}'.format(key, file_type)
+            key=self.request.user.id,
+            response_headers={
+                'response-content-type': 'image/png'
+            }
         )
 
-        # TODO: Store url for user
-        # 'url': url.rsplit('?')[0]}
-
         return Response({'signed_request': url})
+

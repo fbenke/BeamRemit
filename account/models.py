@@ -9,6 +9,17 @@ from userena.models import UserenaBaseProfile
 class BeamProfile(UserenaBaseProfile):
     ''' represents a sender user profile '''
 
+    # Constants
+    PDF = 'application/pdf'
+    PNG = 'image/png'
+    JPEG = 'image/jpeg'
+
+    CONTENT_TYPES = (
+        (PDF, 'pdf'),
+        (PNG, 'png'),
+        (JPEG, 'jpeg')
+    )
+
     user = models.OneToOneField(
         User,
         unique=True,
@@ -49,6 +60,25 @@ class BeamProfile(UserenaBaseProfile):
         help_text='Country'
     )
 
+    aws_passport_content_type = models.CharField(
+        'Passport Document Format',
+        max_length=15,
+        blank=True,
+        choices=CONTENT_TYPES,
+        help_text='File type of passport document on aws'
+    )
+    aws_proof_of_residence_content_type = models.CharField(
+        'Proof of Residence Document Format',
+        max_length=15,
+        blank=True,
+        choices=CONTENT_TYPES,
+        help_text='File type of passport document on aws'
+    )
+
+    passport_verified = models.BooleanField(default=False)
+
+    proof_of_residence_verified = models.BooleanField(default=False)
+
     @property
     def is_complete(self):
         if (
@@ -56,6 +86,7 @@ class BeamProfile(UserenaBaseProfile):
             self.user.last_name == '' or not self.user.is_active or
             self.date_of_birth is None or self.street == '' or
             self.post_code == '' or self.city == '' or self.country == ''
+            or not self.passport_verified or not self.utility_bill_verified
         ):
             return False
         return True

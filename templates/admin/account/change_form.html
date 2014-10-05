@@ -1,0 +1,18 @@
+{% extends "admin/change_form.html" %}
+{% load account_extras %}
+
+{% block after_related_objects %}
+
+<div class="form-row">
+
+	{% if original.aws_proof_of_residence_content_type %}
+		<a href="{% aws_document_link "passport"  original.aws_proof_of_residence_content_type original.user.id %}" target="_blank" class="viewsitelink">See Passport Document</a>
+	{% endif%}
+
+	{% if original.aws_passport_content_type %}
+		<a href="{% aws_document_link "utility" original.aws_passport_content_type original.user.id %}" target="_blank" class="viewsitelink">See Proof of Residence</a>
+	{% endif%}
+
+</div>
+{% endblock %}
+

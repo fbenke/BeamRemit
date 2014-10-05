@@ -70,7 +70,7 @@ urlpatterns = patterns(
         r'^test/$',
         views.Test.as_view(),
         name='test'
-    ),
+    )
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)

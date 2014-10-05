@@ -32,7 +32,10 @@ class BeamProfileAdmin(admin.ModelAdmin):
         'street', 'post_code', 'city', 'country'
     )
 
-    read_and_write_fields = ()
+    read_and_write_fields = (
+        'aws_passport_content_type', 'aws_proof_of_residence_content_type',
+        'passport_verified', 'proof_of_residence_verified'
+    )
 
     fields = readonly_fields + read_and_write_fields
 
