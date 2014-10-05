@@ -35,7 +35,7 @@ class Recipient(models.Model):
     )
 
     def __unicode__(self):
-        return '{}'.format(self.last_name)
+        return '{} {}'.format(self.first_name, self.last_name)
 
 
 class Transaction(models.Model):
@@ -77,12 +77,12 @@ class Transaction(models.Model):
     )
 
     amount_gbp = models.FloatField(
-        'British Pound sent',
-        help_text='GBP amount sent (does not include fees)'
+        'Remittance amount in GBP',
+        help_text='Amount of GBP sent via Beam (does not include fees)'
     )
 
     amount_btc = models.FloatField(
-        'Bitcoins sent',
+        'Bitcoins paid to Beam',
         null=True,
         blank=True,
         help_text='BTCs equivalent of GBP amount, determined by Payment Processor'

@@ -7,7 +7,10 @@ from transaction.models import Recipient, Transaction
 
 class RecipientAdmin(admin.ModelAdmin):
 
-    readonly_fields = ('id', 'first_name', 'last_name', 'phone_number', 'notification_email')
+    def amount_ghs_to_be_paid(self, obj):
+        return obj.transactions.get(recipient=obj.id).amount_ghs
+
+    readonly_fields = ('id', 'first_name', 'last_name', 'phone_number', 'notification_email', 'amount_ghs_to_be_paid')
     read_and_write_fields = ()
     fields = readonly_fields + read_and_write_fields
     list_display = ('id', 'first_name', 'last_name', 'phone_number')
@@ -45,9 +48,12 @@ class TransactionAdmin(admin.ModelAdmin):
     recipient_url.allow_tags = True
     recipient_url.short_description = 'recipient'
 
+    def british_pound_paid_to_beam(self, obj):
+        return obj.amount_gbp + obj.pricing.fee
+
     readonly_fields = (
-        'id', 'recipient_url', 'pricing_url', 'sender_url', 'amount_gbp', 'amount_btc',
-        'amount_ghs', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
+        'id', 'recipient_url', 'pricing_url', 'sender_url', 'amount_gbp', 'british_pound_paid_to_beam',
+        'amount_btc', 'amount_ghs', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
         'cancelled_at', 'invalidated_at',
     )
 
