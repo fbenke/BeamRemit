@@ -63,7 +63,8 @@ class ConfirmGoCoinPayment(APIView):
                         email_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_TEXT,
                         context={
                             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
-                            'protocol': get_protocol()
+                            'protocol': get_protocol(),
+                            'id': transaction.id
                         }
                     )
                 # payment received, but does not fulfill the required amount
