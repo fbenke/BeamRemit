@@ -24,9 +24,14 @@ class BeamProfile(UserenaBaseProfile):
     )
 
     PASSPORT = 'passport'
-    PROOF_OF_RESIDENCE = 'por'
+    PROOF_OF_RESIDENCE = 'proof_of_residence'
 
     DOCUMENT_TYPES = (PASSPORT, PROOF_OF_RESIDENCE)
+
+    DOCUMENT_FIELD_MAPPING = {
+        PASSPORT: 'passport_state',
+        PROOF_OF_RESIDENCE: 'proof_of_residence_state'
+    }
 
     user = models.OneToOneField(
         User,
@@ -82,14 +87,19 @@ class BeamProfile(UserenaBaseProfile):
         default=EMPTY
     )
 
+    def get_document_states(self, documents=DOCUMENT_TYPES):
+        states = {}
+        for d in documents:
+            if d not in self.DOCUMENT_TYPES:
+                raise AccountException
+            states[d] = getattr(self, self.DOCUMENT_FIELD_MAPPING[d])
+        return states
+
     def update_document_states(self, documents):
         for d in documents:
-            if d == self.DOCUMENT_TYPES.PROOF_OF_RESIDENCE:
-                self.proof_of_residence_state = self.UPLOADED
-            elif d == self.DOCUMENT_TYPES.PASSPORT:
-                self.passport_state = self.UPLOADED
-            else:
+            if d not in self.DOCUMENT_TYPES:
                 raise AccountException
+            setattr(self, self.DOCUMENT_FIELD_MAPPING[d], self.UPLOADED)
         self.save()
 
     @property
@@ -108,6 +118,7 @@ class BeamProfile(UserenaBaseProfile):
     @property
     def is_verified(self):
         if (
+            not self.is_complete or
             self.passport_state != self.VERIFIED or
             self.proof_of_residence_state != self.VERIFIED
         ):

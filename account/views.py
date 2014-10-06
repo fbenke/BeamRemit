@@ -373,4 +373,12 @@ class UploadComplete(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+
 class VerificationStatus(APIView):
+
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+
+        return Response(request.user.profile.get_document_states())
+
