@@ -329,8 +329,9 @@ class GenerateAWSLink(APIView):
     def get(self, request):
 
         document_type = request.QUERY_PARAMS.get('document_type')
+        content_type = request.QUERY_PARAMS.get('content_type')
         key = '{}_{}'.format(document_type, self.request.user.id)
-        url = generate_aws_url('PUT', key)
+        url = generate_aws_url('PUT', key, content_type)
         return Response({'url': url}, status=status.HTTP_201_CREATED)
 
 
