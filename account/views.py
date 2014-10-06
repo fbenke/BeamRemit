@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.utils.http import urlsafe_base64_decode
 
@@ -9,9 +10,10 @@ from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
 from userena.models import UserenaSignup
-from userena.utils import get_user_model
+from userena.utils import get_user_model, get_protocol
 
 from beam.utils.general import log_error
+from beam.utils.mails import send_sendgrid_mail
 
 from account import constants
 from account import serializers
@@ -337,8 +339,23 @@ class UploadComplete(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
-        documents = request.QUERY_PARAMS.get('document')
-        documents = documents.split(',')
-        for d in documents:
-            pass
-        return Response()
+        try:
+            documents = request.QUERY_PARAMS.get('document')
+            documents = documents.split(',')
+            request.user.profile.update_model(documents)
+
+            send_sendgrid_mail(
+                subject_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_SUBJECT,
+                email_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_TEXT,
+                context={
+                    'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
+                    'protocol': get_protocol(),
+                    'id': request.user.profile.id
+                }
+            )
+            return Response()
+        except (AccountException, AttributeError):
+            return Response(
+                {'detail': constants.INVALID_PARAMETERS},
+                status=status.HTTP_400_BAD_REQUEST
+            )

@@ -34,7 +34,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
 
     read_and_write_fields = (
         'aws_passport_content_type', 'aws_proof_of_residence_content_type',
-        'passport_verified', 'proof_of_residence_verified'
+        'passport_state', 'proof_of_residence_state'
     )
 
     fields = readonly_fields + read_and_write_fields

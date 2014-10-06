@@ -5,6 +5,8 @@ from django_countries.fields import CountryField
 
 from userena.models import UserenaBaseProfile
 
+from account.utils import AccountException
+
 
 class BeamProfile(UserenaBaseProfile):
     ''' represents a sender user profile '''
@@ -18,6 +20,16 @@ class BeamProfile(UserenaBaseProfile):
         (PDF, 'pdf'),
         (PNG, 'png'),
         (JPEG, 'jpeg')
+    )
+
+    EMPTY = 'EMP'
+    UPLOADED = 'UPL'
+    VERIFIED = 'VER'
+
+    DOCUMENT_STATES = (
+        (EMPTY, 'not provided'),
+        (UPLOADED, 'uploaded'),
+        (VERIFIED, 'verified')
     )
 
     user = models.OneToOneField(
@@ -75,9 +87,29 @@ class BeamProfile(UserenaBaseProfile):
         help_text='File type of passport document on aws'
     )
 
-    passport_verified = models.BooleanField(default=False)
+    passport_state = models.CharField(
+        'Passport Status',
+        max_length=3,
+        choices=DOCUMENT_STATES,
+        default=EMPTY
+    )
 
-    proof_of_residence_verified = models.BooleanField(default=False)
+    proof_of_residence_state = models.CharField(
+        'Passport Status',
+        max_length=3,
+        choices=DOCUMENT_STATES,
+        default=EMPTY
+    )
+
+    def update_model(self, documents):
+        for d in documents:
+            if d == 'por':
+                self.proof_of_residence_state = self.UPLOADED
+            elif d == 'passport':
+                self.passport_state = self.UPLOADED
+            else:
+                raise AccountException
+        self.save()
 
     @property
     def is_complete(self):
@@ -86,7 +118,8 @@ class BeamProfile(UserenaBaseProfile):
             self.user.last_name == '' or not self.user.is_active or
             self.date_of_birth is None or self.street == '' or
             self.post_code == '' or self.city == '' or self.country == ''
-            or not self.passport_verified or not self.proof_of_residence_verified
+            or self.passport_state != self.VERIFIED
+            or self.proof_of_residence_state != self.VERIFIED
         ):
             return False
         return True
