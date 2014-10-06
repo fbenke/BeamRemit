@@ -6,11 +6,11 @@
 <div class="form-row">
 
 	{% if original.passport_state != 'EMP' %}
-		<a href="{% aws_document_link "passport"  original.aws_passport_content_type original.user.id %}" target="_blank" class="viewsitelink">See Passport Document</a>
+		<a href="{% aws_document_link "passport" original.user.id %}" target="_blank" class="viewsitelink">See Passport Document</a>
 	{% endif%}
 
 	{% if original.proof_of_residence_state != 'EMP' %}
-		<a href="{% aws_document_link "por" original.aws_proof_of_residence_content_type original.user.id %}" target="_blank" class="viewsitelink">See Proof of Residence</a>
+		<a href="{% aws_document_link "por" original.user.id %}" target="_blank" class="viewsitelink">See Proof of Residence</a>
 	{% endif%}
 
 </div>

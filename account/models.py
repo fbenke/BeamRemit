@@ -11,17 +11,6 @@ from account.utils import AccountException
 class BeamProfile(UserenaBaseProfile):
     ''' represents a sender user profile '''
 
-    # Constants
-    PDF = 'application/pdf'
-    PNG = 'image/png'
-    JPEG = 'image/jpeg'
-
-    CONTENT_TYPES = (
-        (PDF, 'pdf'),
-        (PNG, 'png'),
-        (JPEG, 'jpeg')
-    )
-
     EMPTY = 'EMP'
     UPLOADED = 'UPL'
     VERIFIED = 'VER'
@@ -77,21 +66,6 @@ class BeamProfile(UserenaBaseProfile):
         help_text='Country'
     )
 
-    aws_passport_content_type = models.CharField(
-        'Passport Document Format',
-        max_length=15,
-        blank=True,
-        choices=CONTENT_TYPES,
-        help_text='File type of passport document on aws'
-    )
-    aws_proof_of_residence_content_type = models.CharField(
-        'Proof of Residence Document Format',
-        max_length=15,
-        blank=True,
-        choices=CONTENT_TYPES,
-        help_text='File type of passport document on aws'
-    )
-
     passport_state = models.CharField(
         'Passport Status',
         max_length=3,
@@ -100,7 +74,7 @@ class BeamProfile(UserenaBaseProfile):
     )
 
     proof_of_residence_state = models.CharField(
-        'Passport Status',
+        'Proof of Residence Status',
         max_length=3,
         choices=DOCUMENT_STATES,
         default=EMPTY

@@ -332,16 +332,18 @@ class GenerateAWSLink(APIView):
 
         document_type = request.QUERY_PARAMS.get('documenttype', None)
         content_type = request.QUERY_PARAMS.get('contenttype', None)
-        if not document_type \
-                or document_type not in BeamProfile.DOCUMENT_TYPES \
-                or not content_type:
-            return Response(
-                {'detail': constants.INVALID_PARAMETERS},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+
+        if (not document_type or not content_type or document_type
+                not in BeamProfile.DOCUMENT_TYPES):
+        
+            return Response({'detail': constants.INVALID_PARAMETERS},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        headers = {'ContentMD5': '',
+                   'Content-Type': content_type}
 
         key = '{}_{}'.format(document_type, self.request.user.id)
-        url = generate_aws_url('PUT', key, content_type)
+        url = generate_aws_url('PUT', key, headers)
         return Response({'url': url}, status=status.HTTP_201_CREATED)
 
 
