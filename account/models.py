@@ -32,6 +32,11 @@ class BeamProfile(UserenaBaseProfile):
         (VERIFIED, 'verified')
     )
 
+    PASSPORT = 'passport'
+    PROOF_OF_RESIDENCE = 'por'
+
+    DOCUMENT_TYPES = (PASSPORT, PROOF_OF_RESIDENCE)
+
     user = models.OneToOneField(
         User,
         unique=True,
@@ -103,9 +108,9 @@ class BeamProfile(UserenaBaseProfile):
 
     def update_model(self, documents):
         for d in documents:
-            if d == 'por':
+            if d == self.DOCUMENT_TYPES.PROOF_OF_RESIDENCE:
                 self.proof_of_residence_state = self.UPLOADED
-            elif d == 'passport':
+            elif d == self.DOCUMENT_TYPES.PASSPORT:
                 self.passport_state = self.UPLOADED
             else:
                 raise AccountException
@@ -118,8 +123,17 @@ class BeamProfile(UserenaBaseProfile):
             self.user.last_name == '' or not self.user.is_active or
             self.date_of_birth is None or self.street == '' or
             self.post_code == '' or self.city == '' or self.country == ''
-            or self.passport_state != self.VERIFIED
-            or self.proof_of_residence_state != self.VERIFIED
+            or self.passport_state == self.EMPTY
+            or self.proof_of_residence_state == self.EMPTY
+        ):
+            return False
+        return True
+
+    @property
+    def is_verified(self):
+        if (
+            self.passport_state != self.VERIFIED or
+            self.proof_of_residence_state != self.VERIFIED
         ):
             return False
         return True
