@@ -17,7 +17,9 @@ from beam.utils.mails import send_sendgrid_mail
 
 from account import constants
 from account import serializers
+from account.models import BeamProfile
 from account.utils import AccountException, generate_aws_url
+
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 
@@ -328,8 +330,16 @@ class GenerateAWSLink(APIView):
 
     def get(self, request):
 
-        document_type = request.QUERY_PARAMS.get('document_type')
-        content_type = request.QUERY_PARAMS.get('content_type')
+        document_type = request.QUERY_PARAMS.get('documenttype', None)
+        content_type = request.QUERY_PARAMS.get('contenttype', None)
+        if not document_type \
+                or document_type not in BeamProfile.DOCUMENT_TYPES \
+                or not content_type:
+            return Response(
+                {'detail': constants.INVALID_PARAMETERS},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         key = '{}_{}'.format(document_type, self.request.user.id)
         url = generate_aws_url('PUT', key, content_type)
         return Response({'url': url}, status=status.HTTP_201_CREATED)

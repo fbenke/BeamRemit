@@ -39,6 +39,10 @@ class CreateTransaction(GenericAPIView):
             # Sender Profile is incomplete
             return Response({'detail': '1'}, status=status.HTTP_400_BAD_REQUEST)
 
+        if not request.user.profile.is_verified:
+            # Sender Profile awaits verification
+            return Response({'detail': '2'}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.serializer_class(user=request.user, data=request.DATA)
 
         try:
