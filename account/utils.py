@@ -3,7 +3,7 @@ from django.conf import settings
 from boto.s3.connection import S3Connection
 
 
-def generate_aws_url(method, key, response_headers=None):
+def generate_aws_url(method, key, content_type, response_headers=None):
 
     if method == 'GET':
         expiration = settings.AWS_PRESIGNED_URL_VIEW_EXPIRATION
@@ -20,6 +20,10 @@ def generate_aws_url(method, key, response_headers=None):
         method,
         bucket=settings.AWS_BUCKET_NAME,
         key=key,
+        headers={
+            'ContentMD5': '',
+            'Content-Type': content_type
+        },
         response_headers=response_headers
     )
 
