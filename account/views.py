@@ -339,8 +339,7 @@ class GenerateAWSLink(APIView):
             return Response({'detail': constants.INVALID_PARAMETERS},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        headers = {'ContentMD5': '',
-                   'Content-Type': content_type}
+        headers = {'Content-Type': content_type}
 
         key = '{}_{}'.format(document_type, self.request.user.id)
         url = generate_aws_url('PUT', key, headers)
@@ -353,7 +352,7 @@ class UploadComplete(APIView):
 
     def post(self, request):
         try:
-            documents = request.QUERY_PARAMS.get('document')
+            documents = request.POST.get('document')
             documents = documents.split(',')
             request.user.profile.update_document_states(documents)
 
@@ -381,4 +380,3 @@ class VerificationStatus(APIView):
     def get(self, request):
 
         return Response(request.user.profile.get_document_states())
-
