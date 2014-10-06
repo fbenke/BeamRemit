@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.utils.http import urlsafe_base64_decode
 
@@ -14,11 +13,9 @@ from userena.utils import get_user_model
 
 from beam.utils.general import log_error
 
-from boto.s3.connection import S3Connection
-
 from account import constants
 from account import serializers
-from account.utils import AccountException
+from account.utils import AccountException, generate_aws_url
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 
@@ -323,26 +320,25 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class Test(APIView):
+class GenerateAWSLink(APIView):
 
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request):
 
-        conn = S3Connection(
-            aws_access_key_id=settings.AWS_ACCESS_KEY,
-            aws_secret_access_key=settings.AWS_SECRET_KEY
-        )
+        document_type = request.QUERY_PARAMS.get('document_type')
+        key = '{}_{}'.format(document_type, self.request.user.id)
+        url = generate_aws_url('PUT', key)
+        return Response({'url': url}, status=status.HTTP_201_CREATED)
 
-        url = conn.generate_url(
-            settings.AWS_PRESIGNED_URL_UPLOAD_EXPIRATION,
-            'PUT',
-            bucket=settings.AWS_BUCKET_NAME,
-            key=self.request.user.id,
-            response_headers={
-                'response-content-type': 'image/png'
-            }
-        )
 
-        return Response({'signed_request': url})
+class UploadComplete(APIView):
 
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        documents = request.QUERY_PARAMS.get('document')
+        documents = documents.split(',')
+        for d in documents:
+            pass
+        return Response()

@@ -6,12 +6,6 @@ from account import views
 urlpatterns = patterns(
     '',
     url(
-        r'^profile/$',
-        views.ProfileView.as_view(),
-        name='profile'
-    ),
-
-    url(
         r'^signup/$',
         views.Signup.as_view(),
         name='signup'
@@ -67,10 +61,20 @@ urlpatterns = patterns(
         name='password_change'
     ),
     url(
-        r'^test/$',
-        views.Test.as_view(),
+        r'^profile/$',
+        views.ProfileView.as_view(),
+        name='profile'
+    ),
+    url(
+        r'^aws/$',
+        views.GenerateAWSLink.as_view(),
+        name='aws'
+    ),
+    url(
+        r'^upload_complete/$',
+        views.UploadComplete.as_view(),
         name='test'
-    )
+    ),
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)
