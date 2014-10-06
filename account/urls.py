@@ -73,8 +73,13 @@ urlpatterns = patterns(
     url(
         r'^upload_complete/$',
         views.UploadComplete.as_view(),
-        name='test'
+        name='upload_complete'
     ),
+    url(
+        r'^verification_status/$',
+        views.VerificationStatus.as_view(),
+        name='verification_status'
+    )
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)

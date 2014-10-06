@@ -335,7 +335,7 @@ class GenerateAWSLink(APIView):
 
         if (not document_type or not content_type or document_type
                 not in BeamProfile.DOCUMENT_TYPES):
-        
+
             return Response({'detail': constants.INVALID_PARAMETERS},
                             status=status.HTTP_400_BAD_REQUEST)
 
@@ -372,3 +372,5 @@ class UploadComplete(APIView):
                 {'detail': constants.INVALID_PARAMETERS},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+class VerificationStatus(APIView):

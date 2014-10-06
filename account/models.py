@@ -14,11 +14,13 @@ class BeamProfile(UserenaBaseProfile):
     EMPTY = 'EMP'
     UPLOADED = 'UPL'
     VERIFIED = 'VER'
+    FAILED = 'FAL'
 
     DOCUMENT_STATES = (
         (EMPTY, 'not provided'),
         (UPLOADED, 'uploaded'),
-        (VERIFIED, 'verified')
+        (VERIFIED, 'verified'),
+        (FAILED, 'failed')
     )
 
     PASSPORT = 'passport'
