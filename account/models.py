@@ -106,7 +106,7 @@ class BeamProfile(UserenaBaseProfile):
         default=EMPTY
     )
 
-    def update_model(self, documents):
+    def update_document_states(self, documents):
         for d in documents:
             if d == self.DOCUMENT_TYPES.PROOF_OF_RESIDENCE:
                 self.proof_of_residence_state = self.UPLOADED

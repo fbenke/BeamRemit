@@ -349,7 +349,7 @@ class UploadComplete(APIView):
         try:
             documents = request.QUERY_PARAMS.get('document')
             documents = documents.split(',')
-            request.user.profile.update_model(documents)
+            request.user.profile.update_document_states(documents)
 
             send_sendgrid_mail(
                 subject_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_SUBJECT,
