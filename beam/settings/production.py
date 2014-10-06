@@ -247,9 +247,21 @@ MAIL_PASSWORD_RESET_URL = '#!/auth/forgot/{}-{}/'
 # AWS Settings
 AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY')
 AWS_SECRET_KEY = os.environ.get('AWS_SECRET_KEY')
-AWS_BUCKET_NAME = 'beamverification'
 AWS_PRESIGNED_URL_UPLOAD_EXPIRATION = 120
 AWS_PRESIGNED_URL_VIEW_EXPIRATION = 3600
+
+AWS_BUCKET_DEV = 'beamverification-dev'
+AWS_BUCKET_VIP = 'beamverification-vip'
+AWS_BUCKET_PROD = 'beamverification'
+
+ENV_BUCKET_MAPPING = {
+    ENV_LOCAL: AWS_BUCKET_DEV,
+    ENV_DEV: AWS_BUCKET_DEV,
+    ENV_VIP: AWS_BUCKET_VIP,
+    ENV_PROD: AWS_BUCKET_PROD,
+}
+
+AWS_BUCKET = ENV_BUCKET_MAPPING[ENV]
 
 # Sendrgrid Settings
 SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')

@@ -87,11 +87,9 @@ class BeamProfile(UserenaBaseProfile):
         default=EMPTY
     )
 
-    def get_document_states(self, documents=DOCUMENT_TYPES):
+    def get_document_states(self):
         states = {}
-        for d in documents:
-            if d not in self.DOCUMENT_TYPES:
-                raise AccountException
+        for d in self.DOCUMENT_TYPES:
             states[d] = getattr(self, self.DOCUMENT_FIELD_MAPPING[d])
         return states
 

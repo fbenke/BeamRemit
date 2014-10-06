@@ -18,7 +18,7 @@ def generate_aws_url(method, key, headers=None):
     url = conn.generate_url(
         expiration,
         method,
-        bucket=settings.AWS_BUCKET_NAME,
+        bucket=settings.AWS_BUCKET,
         key=key,
         headers=headers
     )
