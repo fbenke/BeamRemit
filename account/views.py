@@ -352,7 +352,7 @@ class UploadComplete(APIView):
 
     def post(self, request):
         try:
-            documents = request.POST.get('document')
+            documents = request.DATA.get('document')
             documents = documents.split(',')
             request.user.profile.update_document_states(documents)
 
