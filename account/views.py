@@ -346,6 +346,9 @@ class GenerateAWSLink(APIView):
         if request.user.profile.get_document_state(document_type)\
                 not in (BeamProfile.EMPTY, BeamProfile.FAILED):
 
+            log_error('ERROR Generate AWS Link - Unexpected Request from user id: {}'.
+                      format(request.user.id))
+
             return Response(
                 {'detail': constants.DOCUMENT_ALREADY_UPLOADED},
                 status=status.HTTP_400_BAD_REQUEST)
@@ -361,22 +364,35 @@ class UploadComplete(APIView):
 
     def post(self, request):
         try:
-            documents = request.DATA.get('document')
-            documents = documents.split(',')
-            request.user.profile.update_document_states(documents)
+            document = request.DATA.get('document')
 
-            # user has provied all information required for verification
-            # if request.user.profile.is_complete():
-            #     send_sendgrid_mail(
-            #         subject_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_SUBJECT,
-            #         email_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_TEXT,
-            #         context={
-            #             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
-            #             'protocol': get_protocol(),
-            #             'id': request.user.profile.id
-            #         }
-            #     )
+            # allow state change only if the current status is 'declied' or 'empty'
+            if request.user.profile.get_document_state(document)\
+                    not in (BeamProfile.EMPTY, BeamProfile.FAILED):
+
+                log_error('ERROR Document Upload Complete - Unexpected Request from user id: {}'.
+                          format(request.user.id))
+
+                return Response(
+                    {'detail': constants.DOCUMENT_ALREADY_UPLOADED},
+                    status=status.HTTP_400_BAD_REQUEST)
+
+            request.user.profile.update_document_state(document)
+
+            # notify admins that a document needs to be verified
+            send_sendgrid_mail(
+                subject_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_SUBJECT,
+                email_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_TEXT,
+                context={
+                    'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
+                    'protocol': get_protocol(),
+                    'id': request.user.profile.id,
+                    'document': document
+                }
+            )
+
             return Response()
+
         except (AccountException, AttributeError):
             return Response(
                 {'detail': constants.INVALID_PARAMETERS},

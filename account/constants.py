@@ -32,5 +32,6 @@ ERROR_MESSAGES = {
     ACTIVATION_KEY_NOT_EXPIRED: 'ActivationKey is not expired',
     SIGNIN_WRONG_CREDENTIALS: 'Unable to login with provided credentials.',
     SIGNIN_MISSING_CREDENTIALS: 'Must include "email" and "password"',
-    USER_ACCOUNT_ALREADY_ACTIVATED: 'This account is is already activated.'
+    USER_ACCOUNT_ALREADY_ACTIVATED: 'This account is is already activated.',
+    DOCUMENT_ALREADY_UPLOADED: 'This document has already been uploaded.'
 }

@@ -96,11 +96,10 @@ class BeamProfile(UserenaBaseProfile):
             states[d] = getattr(self, self.DOCUMENT_FIELD_MAPPING[d])
         return states
 
-    def update_document_states(self, documents):
-        for d in documents:
-            if d not in self.DOCUMENT_TYPES:
-                raise AccountException
-            setattr(self, self.DOCUMENT_FIELD_MAPPING[d], self.UPLOADED)
+    def update_document_state(self, document):
+        if document not in self.DOCUMENT_TYPES:
+            raise AccountException
+        setattr(self, self.DOCUMENT_FIELD_MAPPING[document], self.UPLOADED)
         self.save()
 
     @property
