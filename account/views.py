@@ -354,7 +354,7 @@ class GenerateAWSLink(APIView):
                 status=status.HTTP_400_BAD_REQUEST)
 
         # allow upload only if the profile is complete
-        if not request.user.profile.is_complete():
+        if not request.user.profile.is_complete:
 
             log_error('ERROR Generate AWS Link - User {}} has not completed their profile'.
                       format(request.user.id))
@@ -388,7 +388,7 @@ class UploadComplete(APIView):
                     status=status.HTTP_400_BAD_REQUEST)
 
             # allow state change only if the profile is complete
-            if not request.user.profile.is_complete():
+            if not request.user.profile.is_complete:
 
                 log_error('ERROR Document Upload Complete - User {} has not completed their profile'.
                           format(request.user.id))
