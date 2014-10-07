@@ -333,6 +333,7 @@ class GenerateAWSLink(APIView):
         document_type = request.QUERY_PARAMS.get('documenttype', None)
         content_type = request.QUERY_PARAMS.get('contenttype', None)
 
+        # check if parameters are complete
         if (not document_type or not content_type or document_type
                 not in BeamProfile.DOCUMENT_TYPES):
 
@@ -341,7 +342,15 @@ class GenerateAWSLink(APIView):
 
         headers = {'Content-Type': content_type}
 
-        key = '{}_{}'.format(document_type, self.request.user.id)
+        # allow upload only if the current status is 'declied' or 'empty'
+        if request.user.profile.get_document_state(document_type)\
+                not in (BeamProfile.EMPTY, BeamProfile.FAILED):
+
+            return Response(
+                {'detail': constants.DOCUMENT_ALREADY_UPLOADED},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        key = '{}_{}'.format(document_type, request.user.id)
         url = generate_aws_url('PUT', key, headers)
         return Response({'url': url}, status=status.HTTP_201_CREATED)
 

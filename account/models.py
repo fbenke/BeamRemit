@@ -87,6 +87,9 @@ class BeamProfile(UserenaBaseProfile):
         default=EMPTY
     )
 
+    def get_document_state(self, document):
+        return getattr(self, self.DOCUMENT_FIELD_MAPPING[document])
+
     def get_document_states(self):
         states = {}
         for d in self.DOCUMENT_TYPES:
