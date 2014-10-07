@@ -107,8 +107,6 @@ class BeamProfile(UserenaBaseProfile):
             self.user.last_name == '' or not self.user.is_active or
             self.date_of_birth is None or self.street == '' or
             self.post_code == '' or self.city == '' or self.country == ''
-            or self.passport_state == self.EMPTY
-            or self.proof_of_residence_state == self.EMPTY
         ):
             return False
         return True
