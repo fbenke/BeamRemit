@@ -356,15 +356,17 @@ class UploadComplete(APIView):
             documents = documents.split(',')
             request.user.profile.update_document_states(documents)
 
-            send_sendgrid_mail(
-                subject_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_SUBJECT,
-                email_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_TEXT,
-                context={
-                    'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
-                    'protocol': get_protocol(),
-                    'id': request.user.profile.id
-                }
-            )
+            # user has provied all information required for verification
+            # if request.user.profile.is_complete():
+            #     send_sendgrid_mail(
+            #         subject_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_SUBJECT,
+            #         email_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_TEXT,
+            #         context={
+            #             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
+            #             'protocol': get_protocol(),
+            #             'id': request.user.profile.id
+            #         }
+            #     )
             return Response()
         except (AccountException, AttributeError):
             return Response(
@@ -378,5 +380,6 @@ class VerificationStatus(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request):
-
-        return Response(request.user.profile.get_document_states())
+        data = request.user.profile.get_document_states()
+        data['is_complete'] = request.user.profile.is_complete
+        return Response(data)
