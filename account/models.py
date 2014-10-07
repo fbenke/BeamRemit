@@ -16,7 +16,9 @@ class BeamProfile(UserenaBaseProfile):
     VERIFIED = 'VER'
     FAILED = 'FAL'
 
-    DOCUMENT_STATES = (
+    DOCUMENT_STATES = (EMPTY, UPLOADED, VERIFIED, FAILED)
+
+    DOCUMENT_STATE_CHOICES = (
         (EMPTY, 'not provided'),
         (UPLOADED, 'uploaded'),
         (VERIFIED, 'verified'),
@@ -76,14 +78,14 @@ class BeamProfile(UserenaBaseProfile):
     passport_state = models.CharField(
         'Passport Status',
         max_length=3,
-        choices=DOCUMENT_STATES,
+        choices=DOCUMENT_STATE_CHOICES,
         default=EMPTY
     )
 
     proof_of_residence_state = models.CharField(
         'Proof of Residence Status',
         max_length=3,
-        choices=DOCUMENT_STATES,
+        choices=DOCUMENT_STATE_CHOICES,
         default=EMPTY
     )
 
@@ -96,10 +98,10 @@ class BeamProfile(UserenaBaseProfile):
             states[d] = getattr(self, self.DOCUMENT_FIELD_MAPPING[d])
         return states
 
-    def update_document_state(self, document):
-        if document not in self.DOCUMENT_TYPES:
-            raise AccountException
-        setattr(self, self.DOCUMENT_FIELD_MAPPING[document], self.UPLOADED)
+    def update_document_state(self, document, state):
+        if document not in self.DOCUMENT_TYPES or state not in self.DOCUMENT_STATES:
+            raise AccountException()
+        setattr(self, self.DOCUMENT_FIELD_MAPPING[document], state)
         self.save()
 
     @property

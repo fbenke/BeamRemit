@@ -296,9 +296,27 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
         return get_user_model().objects.get(id=user.id)
 
     def update(self, request, *args, **kwargs):
+
         response = super(ProfileView, self).update(request, args, kwargs)
+
         if response.status_code == status.HTTP_200_OK:
+
+            changed_params = request.DATA.keys() + request.DATA.get('profile').keys()
+
+            passport_params = ['first_name', 'last_name', 'date_of_birth']
+            por_params = ['street', 'post_code', 'city', 'country']
+
+            # need to reupload passport
+            if (list(set(passport_params) & set(changed_params))):
+                request.user.profile.update_document_state(BeamProfile.PASSPORT, BeamProfile.EMPTY)
+
+            # need to reupload proof of residence
+            if (list(set(por_params) & set(changed_params))):
+                request.user.profile.update_document_state(BeamProfile.PROOF_OF_RESIDENCE, BeamProfile.EMPTY)
+
+            # clear response data
             response.data = {}
+
         return response
 
     def destroy(self, request, *args, **kwargs):
@@ -397,7 +415,7 @@ class UploadComplete(APIView):
                     {'detail': constants.USER_PROFILE_INCOMPLETE},
                     status=status.HTTP_400_BAD_REQUEST)
 
-            request.user.profile.update_document_state(document)
+            request.user.profile.update_document_state(document, BeamProfile.UPLOAD)
 
             # notify admins that a document needs to be verified
             send_sendgrid_mail(
@@ -413,7 +431,7 @@ class UploadComplete(APIView):
 
             return Response()
 
-        except (AccountException, AttributeError):
+        except (AccountException, AttributeError, KeyError):
             return Response(
                 {'detail': constants.INVALID_PARAMETERS},
                 status=status.HTTP_400_BAD_REQUEST

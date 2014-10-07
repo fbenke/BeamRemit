@@ -1,6 +1,6 @@
 Dear Admin,
 
-A document has been uploaded for verfication on {{ domain }} (type: {{document}}). Please go to {{ protocol }}://{{ domain }}/admin/account/beamprofile/{{ id }}.
+A {{document}} document has been uploaded for verfication on {{ domain }}. Please go to {{ protocol }}://{{ domain }}/admin/account/beamprofile/{{ id }}.
 
 Sincerely,
 The SendGridBot
