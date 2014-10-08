@@ -1,0 +1,11 @@
+Dear Beam User,
+
+the {{ document }} you have uploaded has been approved.
+
+If you have any questions, please read our FAQ or contact us via {{ support }}. Our support staff will be more than happy to assist you.
+
+Thanks for using our site!
+
+Sincerely,
+
+The Beam Team

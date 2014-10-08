@@ -27,10 +27,6 @@ admin.site.register(Pricing, PricingAdmin)
 
 class ComparisonAdmin(admin.ModelAdmin):
 
-    # readonly_fields = ('id', 'start', 'end')
-    # read_and_write_fields = ('price_comparison', )
-    # fields = readonly_fields + read_and_write_fields
-
     def get_readonly_fields(self, request, obj=None):
         if obj:
             return ('id', 'start', 'end', 'price_comparison')

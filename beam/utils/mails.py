@@ -7,6 +7,9 @@ from beam.utils.general import log_error
 
 import sendgrid
 
+# TODO: come up with unified way to send mails
+# maybe custom backend?
+
 
 def send_mail(subject_template_name, email_template_name,
               context, from_email, to_email, html_email_template_name=None):

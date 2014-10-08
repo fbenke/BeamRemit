@@ -232,6 +232,10 @@ else:
 MAIL_PASSWORD_RESET_SUBJECT = 'registration/password_reset_subject.txt'
 MAIL_PASSWORD_RESET_BODY = 'userena/emails/password_reset_message.txt'
 MAIL_PASSWORD_RESET_BODY_HTML = 'userena/emails/password_reset_message.txt'
+MAIL_VERIFICATION_SUCCESSFUL_SUBJECT = 'email/verification_successful_subject.txt'
+MAIL_VERIFICATION_SUCCESSFUL_TEXT = 'email/verification_successful_message.txt'
+MAIL_VERIFICATION_FAILED_SUBJECT = 'email/verification_failed_subject.txt'
+MAIL_VERIFICATION_FAILED_TEXT = 'email/verification_failed_message.txt'
 MAIL_NOTIFY_ADMIN_PAID_SUBJECT = 'email/transaction_paid_subject.txt'
 MAIL_NOTIFY_ADMIN_PAID_TEXT = 'email/transaction_paid_message.txt'
 MAIL_NOTIFY_ADMIN_PROBLEM_SUBJECT = 'email/transaction_problem_subject.txt'
@@ -239,10 +243,12 @@ MAIL_NOTIFY_ADMIN_PROBLEM_TEXT = 'email/transaction_problem_message.txt'
 MAIL_NOTIFY_ADMIN_DOC_UPLOADED_SUBJECT = 'email/doc_uploaded_subject.txt'
 MAIL_NOTIFY_ADMIN_DOC_UPLOADED_TEXT = 'email/doc_uploaded_message.txt'
 
+
 # User-Facing URLs in Email templates
 MAIL_ACTIVATION_URL = '#!/auth/activate/{}/'
 MAIL_EMAIL_CHANGE_CONFIRM_URL = '#!/settings/email/{}/'
 MAIL_PASSWORD_RESET_URL = '#!/auth/forgot/{}-{}/'
+MAIL_VERIFICATION_SITE = '#!/verify'
 
 # AWS Settings
 AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY')

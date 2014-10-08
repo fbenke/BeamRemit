@@ -11,13 +11,19 @@ from account.utils import AccountException
 class BeamProfile(UserenaBaseProfile):
     ''' represents a sender user profile '''
 
+    PASSPORT = 'passport'
+    PROOF_OF_RESIDENCE = 'proof_of_residence'
+    DOCUMENT_TYPES = (PASSPORT, PROOF_OF_RESIDENCE)
+    DOCUMENT_DESCRIPTION = {
+        PASSPORT: 'Passport',
+        PROOF_OF_RESIDENCE: 'Proof of Residence'
+    }
+
     EMPTY = 'EMP'
     UPLOADED = 'UPL'
     VERIFIED = 'VER'
     FAILED = 'FAL'
-
     DOCUMENT_STATES = (EMPTY, UPLOADED, VERIFIED, FAILED)
-
     DOCUMENT_STATE_CHOICES = (
         (EMPTY, 'not provided'),
         (UPLOADED, 'uploaded'),
@@ -25,14 +31,19 @@ class BeamProfile(UserenaBaseProfile):
         (FAILED, 'failed')
     )
 
-    PASSPORT = 'passport'
-    PROOF_OF_RESIDENCE = 'proof_of_residence'
+    PASSPORT_FIELD = 'passport_state'
+    PROOF_OF_RESIDENCE_FIELD = 'proof_of_residence_state'
 
-    DOCUMENT_TYPES = (PASSPORT, PROOF_OF_RESIDENCE)
+    DOCUMENT_FIELDS = (PASSPORT_FIELD, PROOF_OF_RESIDENCE_FIELD)
 
     DOCUMENT_FIELD_MAPPING = {
-        PASSPORT: 'passport_state',
-        PROOF_OF_RESIDENCE: 'proof_of_residence_state'
+        PASSPORT: PASSPORT_FIELD,
+        PROOF_OF_RESIDENCE: PROOF_OF_RESIDENCE_FIELD
+    }
+
+    FIELD_DOCUMENT_MAPPING = {
+        PASSPORT_FIELD: PASSPORT,
+        PROOF_OF_RESIDENCE_FIELD: PROOF_OF_RESIDENCE
     }
 
     user = models.OneToOneField(

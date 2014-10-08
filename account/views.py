@@ -360,6 +360,16 @@ class GenerateAWSLink(APIView):
 
         headers = {'Content-Type': content_type}
 
+        # allow upload only if the profile information is complete
+        if not request.user.profile.information_complete:
+
+            log_error('ERROR Generate AWS Link - User {}} has not completed their profile'.
+                      format(request.user.id))
+
+            return Response(
+                {'detail': constants.USER_PROFILE_INCOMPLETE},
+                status=status.HTTP_400_BAD_REQUEST)
+
         # allow upload only if the current status is 'declied' or 'empty'
         if request.user.profile.get_document_state(document_type)\
                 not in (BeamProfile.EMPTY, BeamProfile.FAILED):
@@ -369,16 +379,6 @@ class GenerateAWSLink(APIView):
 
             return Response(
                 {'detail': constants.DOCUMENT_ALREADY_UPLOADED},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        # allow upload only if the profile information is complete
-        if not request.user.profile.information_complete:
-
-            log_error('ERROR Generate AWS Link - User {}} has not completed their profile'.
-                      format(request.user.id))
-
-            return Response(
-                {'detail': constants.USER_PROFILE_INCOMPLETE},
                 status=status.HTTP_400_BAD_REQUEST)
 
         key = '{}_{}'.format(document_type, request.user.id)
@@ -394,6 +394,16 @@ class UploadComplete(APIView):
         try:
             document = request.DATA.get('document')
 
+            # allow state change only if the profile information is complete
+            if not request.user.profile.information_complete:
+
+                log_error('ERROR Document Upload Complete - User {} has not completed their profile'.
+                          format(request.user.id))
+
+                return Response(
+                    {'detail': constants.USER_PROFILE_INCOMPLETE},
+                    status=status.HTTP_400_BAD_REQUEST)
+
             # allow state change only if the current status is 'declied' or 'empty'
             if request.user.profile.get_document_state(document)\
                     not in (BeamProfile.EMPTY, BeamProfile.FAILED):
@@ -403,16 +413,6 @@ class UploadComplete(APIView):
 
                 return Response(
                     {'detail': constants.DOCUMENT_ALREADY_UPLOADED},
-                    status=status.HTTP_400_BAD_REQUEST)
-
-            # allow state change only if the profile information is complete
-            if not request.user.profile.information_complete:
-
-                log_error('ERROR Document Upload Complete - User {} has not completed their profile'.
-                          format(request.user.id))
-
-                return Response(
-                    {'detail': constants.USER_PROFILE_INCOMPLETE},
                     status=status.HTTP_400_BAD_REQUEST)
 
             request.user.profile.update_document_state(document, BeamProfile.UPLOADED)
@@ -425,7 +425,7 @@ class UploadComplete(APIView):
                     'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                     'protocol': get_protocol(),
                     'id': request.user.profile.id,
-                    'document': document
+                    'document': BeamProfile.DOCUMENT_DESCRIPTION[document]
                 }
             )
 

@@ -1,0 +1,13 @@
+Dear Beam User,
+
+we regret to inform you that your uploaded {{ document }} has been denied.
+
+Please resubmit this document as described on our verification page: {{ protocol }}://{{ site.domain }}/{{ verification }}.
+
+If you have any questions, please read our FAQ or contact us via {{ support }}. Our support staff will be more than happy to assist you.
+
+Thanks for using our site!
+
+Sincerely,
+
+The Beam Team

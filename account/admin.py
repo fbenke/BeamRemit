@@ -1,19 +1,19 @@
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.sites.models import Site
 
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.admin import TokenAdmin
 
 from userena.admin import UserenaAdmin
-from userena.utils import get_user_model
+from userena.utils import get_user_model, get_protocol
 
-from account.models import BeamProfile
-from account import forms
+from beam.utils.mails import send_mail
+
+from account.models import BeamProfile as Profile
 
 
 class BeamProfileAdmin(admin.ModelAdmin):
-
-    form = forms.ProfileModelForm
 
     def user_url(self, obj):
         path = settings.API_BASE_URL + '/admin/auth/user'
@@ -43,10 +43,48 @@ class BeamProfileAdmin(admin.ModelAdmin):
 
     list_display_links = ('user_email',)
 
-    # def save_model(self, request, obj, form, change):
-    #     if obj.passport_state == BeamProfile.VERIFIED:
-    #         end_previous_object(Pricing)
-    #         obj.save()
+    def save_model(self, request, obj, form, change):
+
+        changed_fields = list(set(Profile.DOCUMENT_FIELDS) & set(form.changed_data))
+
+        for field in changed_fields:
+            
+            # document was rejected
+            if getattr(obj, field) == Profile.VERIFIED:
+                # notify user
+                send_mail(
+                    subject_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_SUBJECT,
+                    email_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_TEXT,
+                    context={
+                        'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
+                        'protocol': get_protocol(),
+                        'document': Profile.DOCUMENT_DESCRIPTION[Profile.FIELD_DOCUMENT_MAPPING[field]],
+                        'site': Site.objects.get_current(),
+                        'support': settings.SENDGRID_EMAIL_FROM
+                    },
+                    from_email=settings.SENDGRID_EMAIL_FROM,
+                    to_email=obj.user.email
+                )
+
+            # document was rejected
+            elif getattr(obj, field) == Profile.FAILED:
+                # notify user
+                send_mail(
+                    subject_template_name=settings.MAIL_VERIFICATION_FAILED_SUBJECT,
+                    email_template_name=settings.MAIL_VERIFICATION_FAILED_TEXT,
+                    context={
+                        'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
+                        'protocol': get_protocol(),
+                        'document': Profile.DOCUMENT_DESCRIPTION[Profile.FIELD_DOCUMENT_MAPPING[field]],
+                        'site': Site.objects.get_current(),
+                        'verification': settings.MAIL_VERIFICATION_SITE,
+                        'support': settings.SENDGRID_EMAIL_FROM
+                    },
+                    from_email=settings.SENDGRID_EMAIL_FROM,
+                    to_email=obj.user.email
+                )
+
+        obj.save()
 
 
 class CustomUserenaAdmin(UserenaAdmin):
@@ -80,4 +118,4 @@ except admin.sites.NotRegistered:
     pass
 admin.site.register(Token, CustomTokenAdmin)
 
-admin.site.register(BeamProfile, BeamProfileAdmin)
+admin.site.register(Profile, BeamProfileAdmin)
