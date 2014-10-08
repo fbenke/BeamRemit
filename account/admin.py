@@ -8,9 +8,12 @@ from userena.admin import UserenaAdmin
 from userena.utils import get_user_model
 
 from account.models import BeamProfile
+from account import forms
 
 
 class BeamProfileAdmin(admin.ModelAdmin):
+
+    form = forms.ProfileModelForm
 
     def user_url(self, obj):
         path = settings.API_BASE_URL + '/admin/auth/user'
