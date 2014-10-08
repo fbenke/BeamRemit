@@ -11,19 +11,28 @@ from account.utils import AccountException
 class BeamProfile(UserenaBaseProfile):
     ''' represents a sender user profile '''
 
-    PASSPORT = 'passport'
-    PROOF_OF_RESIDENCE = 'proof_of_residence'
+    PASSPORT = 'PAS'
+    PROOF_OF_RESIDENCE = 'POR'
+
     DOCUMENT_TYPES = (PASSPORT, PROOF_OF_RESIDENCE)
+
     DOCUMENT_DESCRIPTION = {
         PASSPORT: 'Passport',
         PROOF_OF_RESIDENCE: 'Proof of Residence'
     }
 
+    DOCUMENT_TYPE_CHOICES = (
+        (PASSPORT, DOCUMENT_DESCRIPTION[PASSPORT]),
+        (PROOF_OF_RESIDENCE, DOCUMENT_DESCRIPTION[PROOF_OF_RESIDENCE])
+    )
+
     EMPTY = 'EMP'
     UPLOADED = 'UPL'
     VERIFIED = 'VER'
     FAILED = 'FAL'
+    
     DOCUMENT_STATES = (EMPTY, UPLOADED, VERIFIED, FAILED)
+
     DOCUMENT_STATE_CHOICES = (
         (EMPTY, 'not provided'),
         (UPLOADED, 'uploaded'),
@@ -109,12 +118,23 @@ class BeamProfile(UserenaBaseProfile):
             states[d] = getattr(self, self.DOCUMENT_FIELD_MAPPING[d])
         return states
 
-    def update_document_state(self, document, state):
-        if (document not in self.DOCUMENT_TYPES) or (state not in self.DOCUMENT_STATES):
+    def update_document_state(self, document, state, user='user', reason=''):
 
+        if (document not in self.DOCUMENT_TYPES) or (state not in self.DOCUMENT_STATES):
             raise AccountException()
+
         setattr(self, self.DOCUMENT_FIELD_MAPPING[document], state)
+
+        record = DocumentStatusChange(
+            profile=self,
+            changed_by=user,
+            document_type=document,
+            changed_to=state,
+            reason=reason
+        )
+
         self.save()
+        record.save()
 
     @property
     def information_complete(self):
@@ -145,3 +165,57 @@ class BeamProfile(UserenaBaseProfile):
         ):
             return False
         return True
+
+
+class DocumentStatusChange(models.Model):
+
+    class Meta:
+        ordering = ['-changed_at']
+
+    # TODO: add valid reasons
+    REASONS = (
+        ('CRE', 'Credit Card not accepted'),
+        ('PHO', 'Phone Bill not accepted'),
+        ('QUA', 'Low Resolution Document'),
+        ('MIS', 'Miscellaneous')
+    )
+
+    profile = models.ForeignKey(
+        BeamProfile,
+        related_name='document_status_change',
+        help_text='Profile associated with that document status change.'
+    )
+
+    changed_by = models.CharField(
+        'Changed by',
+        max_length=50,
+        help_text='Who initiated document status change'
+    )
+
+    document_type = models.CharField(
+        'Document Type',
+        max_length=3,
+        choices=BeamProfile.DOCUMENT_TYPE_CHOICES,
+        help_text='Document type for which status has changed'
+    )
+
+    changed_at = models.DateTimeField(
+        'Changed at',
+        auto_now_add=True,
+        help_text='Time at which document status was changed'
+    )
+
+    changed_to = models.CharField(
+        'Changed to',
+        max_length=3,
+        choices=BeamProfile.DOCUMENT_STATE_CHOICES,
+        help_text='New document status'
+    )
+
+    reason = models.CharField(
+        'Reason',
+        max_length=3,
+        choices=REASONS,
+        blank=True,
+        help_text='Reason for rejection. Only used when state changes to \'failed\''
+    )

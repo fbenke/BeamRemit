@@ -2,9 +2,17 @@
 {% load account_extras %}
 
 {% block extrahead %}
+
 <script> 
-// add some javascript here
+	// make the inline section collapsed
+	// var selector = "h2:contains('Document status changes')";
+	// $(selector).parent().addClass("collapsed");
+	// $(selector).append(" (<a class=\"collapse-toggle\" id=\"customcollapser\" href=\"#\"> Show </a>)");
+	// $("#customcollapser").click(function() {
+	//     $(selector).parent().toggleClass("collapsed");
+	// });
 </script>
+
 {% endblock %}
 
 {% block after_related_objects %}
@@ -12,11 +20,11 @@
 <div class="form-row">
 
 	{% if original.passport_state != 'EMP' %}
-		<a href="{% aws_document_link "passport" original.user.id %}" target="_blank" class="viewsitelink">See Passport Document</a>
+		<a href="{% aws_document_link "PAS" original.user.id %}" target="_blank" class="viewsitelink">See Passport Document</a>
 	{% endif%}
 
 	{% if original.proof_of_residence_state != 'EMP' %}
-		<a href="{% aws_document_link "proof_of_residence" original.user.id %}" target="_blank" class="viewsitelink">See Proof of Residence</a>
+		<a href="{% aws_document_link "POR" original.user.id %}" target="_blank" class="viewsitelink">See Proof of Residence</a>
 	{% endif%}
 
 </div>

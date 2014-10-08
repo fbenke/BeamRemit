@@ -12,6 +12,15 @@ from beam.utils.mails import send_mail
 
 from account import forms
 from account.models import BeamProfile as Profile
+from account.models import DocumentStatusChange
+
+
+class DocumentStatusChangeInline(admin.TabularInline):
+    model = DocumentStatusChange
+    readonly_fields = ('changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
+    extra = 0
+    max_num = 10
+    can_delete = False
 
 
 class BeamProfileAdmin(admin.ModelAdmin):
@@ -33,26 +42,24 @@ class BeamProfileAdmin(admin.ModelAdmin):
     def user_name(self, obj):
         return '{} {}'.format(obj.user.first_name, obj.user.last_name)
 
-    DOCUMENT_CHECKBOX_MAPPING = {
-        Profile.PASSPORT_FIELD: 'send_passport_mail',
-        Profile.PROOF_OF_RESIDENCE_FIELD: 'send_proof_of_residence_mail'
-    }
-
     readonly_fields = (
         'user_url', 'user_email', 'user_name', 'date_of_birth',
         'street', 'post_code', 'city', 'country'
     )
 
     read_and_write_fields = (
-        'passport_state', 'send_passport_mail',
-        'proof_of_residence_state', 'send_proof_of_residence_mail'
+        'passport_state', 'send_passport_mail', 'passport_reason',
+        'proof_of_residence_state', 'send_proof_of_residence_mail',
+        'proof_of_residence_reason'
     )
 
     fields = readonly_fields + read_and_write_fields
 
     list_display = ('user_email', 'country', 'city')
 
-    list_display_links = ('user_email',)
+    list_display_links = ('user_email', )
+
+    inlines = (DocumentStatusChangeInline, )
 
     def save_model(self, request, obj, form, change):
 
@@ -60,9 +67,23 @@ class BeamProfileAdmin(admin.ModelAdmin):
 
         for field in changed_fields:
 
+            # create a record documenting the file change
+
+            if getattr(obj, field) == Profile.FAILED:
+                reason = form.cleaned_data.get(form.DOCUMENT_FIELD[field][1])
+            else:
+                reason = ''
+
+            obj.update_document_state(
+                document=Profile.FIELD_DOCUMENT_MAPPING[field],
+                state=getattr(obj, field),
+                user=request.user.username,
+                reason=reason
+            )
+
             # document was approved and user shall be notified
             if getattr(obj, field) == Profile.VERIFIED and\
-                    form.cleaned_data.get(self.DOCUMENT_CHECKBOX_MAPPING[field], None):
+                    form.cleaned_data.get(form.DOCUMENT_FIELD[field][0], None):
 
                 send_mail(
                     subject_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_SUBJECT,
@@ -80,7 +101,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
 
             # document was rejected and user shall be notified
             elif getattr(obj, field) == Profile.FAILED and\
-                    form.cleaned_data.get(self.DOCUMENT_CHECKBOX_MAPPING[field], None):
+                    form.cleaned_data.get(form.DOCUMENT_FIELD[field][0], None):
 
                 send_mail(
                     subject_template_name=settings.MAIL_VERIFICATION_FAILED_SUBJECT,
@@ -98,6 +119,21 @@ class BeamProfileAdmin(admin.ModelAdmin):
                 )
 
         obj.save()
+
+admin.site.register(Profile, BeamProfileAdmin)
+
+
+class DocumentStatusChangeAdmin(admin.ModelAdmin):
+
+    def user(self, obj):
+        return obj.profile.user.email
+
+    readonly_fields = ('user', 'changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
+    fields = readonly_fields
+    list_display = ('user', 'changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
+    list_filter = ('document_type', 'changed_at', 'changed_to', 'reason')
+
+admin.site.register(DocumentStatusChange, DocumentStatusChangeAdmin)
 
 
 class CustomUserenaAdmin(UserenaAdmin):
@@ -131,4 +167,4 @@ except admin.sites.NotRegistered:
     pass
 admin.site.register(Token, CustomTokenAdmin)
 
-admin.site.register(Profile, BeamProfileAdmin)
+
