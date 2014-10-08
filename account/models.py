@@ -128,7 +128,7 @@ class BeamProfile(UserenaBaseProfile):
     @property
     def documents_verified(self):
         if (
-            not self.is_complete or
+            not self.information_complete or
             self.passport_state != self.VERIFIED or
             self.proof_of_residence_state != self.VERIFIED
         ):
