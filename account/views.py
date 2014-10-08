@@ -444,5 +444,5 @@ class VerificationStatus(APIView):
 
     def get(self, request):
         data = request.user.profile.get_document_states()
-        data['is_complete'] = request.user.profile.is_complete
+        data['information_complete'] = request.user.profile.information_complete
         return Response(data)
