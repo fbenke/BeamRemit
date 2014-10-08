@@ -99,8 +99,6 @@ class BeamProfile(UserenaBaseProfile):
         return states
 
     def update_document_state(self, document, state):
-        print document
-        print state
         if (document not in self.DOCUMENT_TYPES) or (state not in self.DOCUMENT_STATES):
 
             raise AccountException()
