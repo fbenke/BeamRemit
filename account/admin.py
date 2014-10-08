@@ -43,6 +43,11 @@ class BeamProfileAdmin(admin.ModelAdmin):
 
     list_display_links = ('user_email',)
 
+    # def save_model(self, request, obj, form, change):
+    #     if obj.passport_state == BeamProfile.VERIFIED:
+    #         end_previous_object(Pricing)
+    #         obj.save()
+
 
 class CustomUserenaAdmin(UserenaAdmin):
 

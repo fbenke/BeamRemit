@@ -99,13 +99,16 @@ class BeamProfile(UserenaBaseProfile):
         return states
 
     def update_document_state(self, document, state):
-        if document not in self.DOCUMENT_TYPES or state not in self.DOCUMENT_STATES:
+        print document
+        print state
+        if (document not in self.DOCUMENT_TYPES) or (state not in self.DOCUMENT_STATES):
+
             raise AccountException()
         setattr(self, self.DOCUMENT_FIELD_MAPPING[document], state)
         self.save()
 
     @property
-    def is_complete(self):
+    def information_complete(self):
         if (
             self.user.email == '' or self.user.first_name == '' or
             self.user.last_name == '' or not self.user.is_active or
@@ -116,7 +119,16 @@ class BeamProfile(UserenaBaseProfile):
         return True
 
     @property
-    def is_verified(self):
+    def documents_provided(self):
+        if (
+            self.passport_state in (self.EMPTY, self.FAILED) or
+            self.proof_of_residence_state in (self.EMPTY, self.FAILED)
+        ):
+            return False
+        return True
+
+    @property
+    def documents_verified(self):
         if (
             not self.is_complete or
             self.passport_state != self.VERIFIED or

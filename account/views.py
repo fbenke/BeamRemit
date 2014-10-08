@@ -415,7 +415,7 @@ class UploadComplete(APIView):
                     {'detail': constants.USER_PROFILE_INCOMPLETE},
                     status=status.HTTP_400_BAD_REQUEST)
 
-            request.user.profile.update_document_state(document, BeamProfile.UPLOAD)
+            request.user.profile.update_document_state(document, BeamProfile.UPLOADED)
 
             # notify admins that a document needs to be verified
             send_sendgrid_mail(

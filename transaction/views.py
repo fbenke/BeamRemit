@@ -31,16 +31,16 @@ class CreateTransaction(GenericAPIView):
 
     def post(self, request):
 
+        # Pricing expired
         if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
-            # Pricing expired
             return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not request.user.profile.is_complete:
-            # Sender Profile is incomplete
+        
+        # Sender Profile is incomplete
+        if not request.user.profile.information_complete or not request.user.profile.documents_provided:
             return Response({'detail': '1'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.profile.is_verified:
-            # Sender Profile awaits verification
+        # Sender Profile is complete, documents await verification
+        if not request.user.profile.documents_verified:
             return Response({'detail': '2'}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.serializer_class(user=request.user, data=request.DATA)
