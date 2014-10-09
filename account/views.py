@@ -428,7 +428,7 @@ class UploadComplete(APIView):
                     'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                     'protocol': get_protocol(),
                     'id': request.user.profile.id,
-                    'document': BeamProfile.DOCUMENT_DESCRIPTION[document]
+                    'document': BeamProfile.DOCUMENT_VERBAL[document]
                 }
             )
 
