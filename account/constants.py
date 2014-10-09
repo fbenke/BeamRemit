@@ -1,3 +1,4 @@
+# Error Status Codes
 INVALID_PARAMETERS = '0'
 PASSWORD_FORMAT = '1'
 PASSWORD_MISMATCH = '2'
@@ -17,6 +18,7 @@ USER_ACCOUNT_ALREADY_ACTIVATED = '14'
 DOCUMENT_ALREADY_UPLOADED = '15'
 USER_PROFILE_INCOMPLETE = '16'
 
+# Verbal Description of Error Status Codes
 ERROR_MESSAGES = {
     INVALID_PARAMETERS: 'Invalid Parameters',
     PASSWORD_FORMAT: 'Password must be at least 6 characters long, contain at least one upper case letter, one lower case letter, and one numeric digit.',
@@ -35,4 +37,16 @@ ERROR_MESSAGES = {
     SIGNIN_MISSING_CREDENTIALS: 'Must include "email" and "password"',
     USER_ACCOUNT_ALREADY_ACTIVATED: 'This account is is already activated.',
     DOCUMENT_ALREADY_UPLOADED: 'This document has already been uploaded.'
+}
+
+from account.models import DocumentStatusChange as d
+
+REASON_VERBAL = {
+    d.INVALID_PASSPORT: 'The document did not depict a password issued by your country.',
+    d.CONTRADICTION: 'The profile information and documents were contradicting.',
+    d.CREDIT_NOT_ACCEPTED: 'We cannot accept credit card statements as proof of residence.',
+    d.MOBILE_NOT_ACCEPTED: 'We cannot accept mobile phone bills as proof of residence.',
+    d.INVALID_FORMAT: 'The document has an invalid format.',
+    d.LOW_RESOLUTION: 'The resolution is too low.',
+    d.MISC: 'Something was wrong with the document. A member of the support team will contact you via email'
 }

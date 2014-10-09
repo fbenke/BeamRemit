@@ -11,6 +11,7 @@ from userena.utils import get_user_model, get_protocol
 
 from beam.utils.mails import send_mail
 
+from account import constants
 from account import forms
 from account.models import BeamProfile as Profile
 from account.models import DocumentStatusChange
@@ -111,10 +112,11 @@ class BeamProfileAdmin(admin.ModelAdmin):
                         context={
                             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                             'protocol': get_protocol(),
-                            'document': Profile.DOCUMENT_DESCRIPTION[Profile.FIELD_DOCUMENT_MAPPING[field]],
+                            'document': Profile.DOCUMENT_VERBAL[Profile.FIELD_DOCUMENT_MAPPING[field]],
                             'site': Site.objects.get_current(),
                             'verification': settings.MAIL_VERIFICATION_SITE,
-                            'support': settings.SENDGRID_EMAIL_FROM
+                            'support': settings.SENDGRID_EMAIL_FROM,
+                            'reason': constants.REASON_VERBAL[reason]
                         },
                         from_email=settings.SENDGRID_EMAIL_FROM,
                         to_email=obj.user.email

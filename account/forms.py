@@ -13,5 +13,7 @@ class ProfileModelForm(forms.ModelForm):
 
     send_passport_mail = forms.BooleanField(required=False, initial=True)
     send_proof_of_residence_mail = forms.BooleanField(required=False, initial=True)
-    passport_reason = forms.ChoiceField(choices=DocumentStatusChange.REASONS)
-    proof_of_residence_reason = forms.ChoiceField(choices=DocumentStatusChange.REASONS)
+    passport_reason = forms.ChoiceField(
+        choices=DocumentStatusChange.REASONS_GENERAL + DocumentStatusChange.REASONS_PAS)
+    proof_of_residence_reason = forms.ChoiceField(
+        choices=DocumentStatusChange.REASONS_GENERAL + DocumentStatusChange.REASONS_POR)

@@ -17,14 +17,14 @@ class BeamProfile(UserenaBaseProfile):
 
     DOCUMENT_TYPES = (PASSPORT, PROOF_OF_RESIDENCE)
 
-    DOCUMENT_DESCRIPTION = {
+    DOCUMENT_VERBAL = {
         PASSPORT: 'Passport',
         PROOF_OF_RESIDENCE: 'Proof of Residence'
     }
 
     DOCUMENT_TYPE_CHOICES = (
-        (PASSPORT, DOCUMENT_DESCRIPTION[PASSPORT]),
-        (PROOF_OF_RESIDENCE, DOCUMENT_DESCRIPTION[PROOF_OF_RESIDENCE])
+        (PASSPORT, DOCUMENT_VERBAL[PASSPORT]),
+        (PROOF_OF_RESIDENCE, DOCUMENT_VERBAL[PROOF_OF_RESIDENCE])
     )
 
     EMPTY = 'EMP'
@@ -176,12 +176,31 @@ class DocumentStatusChange(models.Model):
         ordering = ['-changed_at']
 
     # TODO: add valid reasons
-    REASONS = (
-        ('CRE', 'Credit Card not accepted'),
-        ('PHO', 'Phone Bill not accepted'),
-        ('QUA', 'Low Resolution Document'),
-        ('MIS', 'Miscellaneous')
+    INVALID_PASSPORT = 'INP'
+    CREDIT_NOT_ACCEPTED = 'CRE'
+    MOBILE_NOT_ACCEPTED = 'PHO'
+    INVALID_FORMAT = 'INF'
+    CONTRADICTION = 'CON'
+    LOW_RESOLUTION = 'QUA'
+    MISC = 'MIS'
+
+    REASONS_PAS = (
+        (INVALID_PASSPORT, 'Invalid Passport'),
     )
+
+    REASONS_POR = (
+        (CREDIT_NOT_ACCEPTED, 'Credit Card not accepted'),
+        (MOBILE_NOT_ACCEPTED, 'Phone Bill not accepted')
+    )
+
+    REASONS_GENERAL = (
+        (INVALID_FORMAT, 'Invalid Format'),
+        (LOW_RESOLUTION, 'Low Resolution Document'),
+        (MISC, 'Miscellaneous'),
+        (CONTRADICTION, 'Contradicting Information')
+    )
+
+    REASONS = REASONS_PAS + REASONS_POR + REASONS_GENERAL
 
     profile = models.ForeignKey(
         BeamProfile,
