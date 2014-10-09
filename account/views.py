@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator as token_generator
+from django.db import transaction as dbtransaction
 from django.utils.http import urlsafe_base64_decode
 
 from rest_framework import status
@@ -297,25 +298,27 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
 
-        response = super(ProfileView, self).update(request, args, kwargs)
+        with dbtransaction.atomic():
 
-        if response.status_code == status.HTTP_200_OK:
+            response = super(ProfileView, self).update(request, args, kwargs)
 
-            changed_params = request.DATA.keys() + request.DATA.get('profile').keys()
+            if response.status_code == status.HTTP_200_OK:
 
-            passport_params = ['first_name', 'last_name', 'date_of_birth']
-            por_params = ['street', 'post_code', 'city', 'country']
+                changed_params = request.DATA.keys() + request.DATA.get('profile').keys()
 
-            # need to reupload passport
-            if (list(set(passport_params) & set(changed_params))):
-                request.user.profile.update_document_state(BeamProfile.PASSPORT, BeamProfile.EMPTY)
+                passport_params = ['first_name', 'last_name', 'date_of_birth']
+                por_params = ['street', 'post_code', 'city', 'country']
 
-            # need to reupload proof of residence
-            if (list(set(por_params) & set(changed_params))):
-                request.user.profile.update_document_state(BeamProfile.PROOF_OF_RESIDENCE, BeamProfile.EMPTY)
+                # need to reupload passport
+                if (list(set(passport_params) & set(changed_params))):
+                    request.user.profile.update_document_state(BeamProfile.PASSPORT, BeamProfile.EMPTY)
 
-            # clear response data
-            response.data = {}
+                # need to reupload proof of residence
+                if (list(set(por_params) & set(changed_params))):
+                    request.user.profile.update_document_state(BeamProfile.PROOF_OF_RESIDENCE, BeamProfile.EMPTY)
+
+                # clear response data
+                response.data = {}
 
         return response
 

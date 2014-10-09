@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db import transaction as dbtransaction
 
 from django_countries.fields import CountryField
 
@@ -30,7 +31,7 @@ class BeamProfile(UserenaBaseProfile):
     UPLOADED = 'UPL'
     VERIFIED = 'VER'
     FAILED = 'FAL'
-    
+
     DOCUMENT_STATES = (EMPTY, UPLOADED, VERIFIED, FAILED)
 
     DOCUMENT_STATE_CHOICES = (
@@ -120,21 +121,23 @@ class BeamProfile(UserenaBaseProfile):
 
     def update_document_state(self, document, state, user='user', reason=''):
 
-        if (document not in self.DOCUMENT_TYPES) or (state not in self.DOCUMENT_STATES):
-            raise AccountException()
+        with dbtransaction.atomic():
 
-        setattr(self, self.DOCUMENT_FIELD_MAPPING[document], state)
+            if (document not in self.DOCUMENT_TYPES) or (state not in self.DOCUMENT_STATES):
+                raise AccountException()
 
-        record = DocumentStatusChange(
-            profile=self,
-            changed_by=user,
-            document_type=document,
-            changed_to=state,
-            reason=reason
-        )
+            setattr(self, self.DOCUMENT_FIELD_MAPPING[document], state)
 
-        self.save()
-        record.save()
+            record = DocumentStatusChange(
+                profile=self,
+                changed_by=user,
+                document_type=document,
+                changed_to=state,
+                reason=reason
+            )
+
+            self.save()
+            record.save()
 
     @property
     def information_complete(self):

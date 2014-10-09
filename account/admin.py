@@ -1,3 +1,4 @@
+from django.db import transaction as dbtransaction
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.sites.models import Site
@@ -63,62 +64,62 @@ class BeamProfileAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
 
-        changed_fields = list(set(Profile.DOCUMENT_FIELDS) & set(form.changed_data))
+        with dbtransaction.atomic():
 
-        for field in changed_fields:
+            changed_fields = list(set(Profile.DOCUMENT_FIELDS) & set(form.changed_data))
 
-            # create a record documenting the file change
+            for field in changed_fields:
 
-            if getattr(obj, field) == Profile.FAILED:
-                reason = form.cleaned_data.get(form.DOCUMENT_FIELD[field][1])
-            else:
-                reason = ''
+                # create a record documenting the file change
+                if getattr(obj, field) == Profile.FAILED:
+                    reason = form.cleaned_data.get(form.DOCUMENT_FIELD[field][1])
+                else:
+                    reason = ''
 
-            obj.update_document_state(
-                document=Profile.FIELD_DOCUMENT_MAPPING[field],
-                state=getattr(obj, field),
-                user=request.user.username,
-                reason=reason
-            )
-
-            # document was approved and user shall be notified
-            if getattr(obj, field) == Profile.VERIFIED and\
-                    form.cleaned_data.get(form.DOCUMENT_FIELD[field][0], None):
-
-                send_mail(
-                    subject_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_SUBJECT,
-                    email_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_TEXT,
-                    context={
-                        'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
-                        'protocol': get_protocol(),
-                        'document': Profile.DOCUMENT_DESCRIPTION[Profile.FIELD_DOCUMENT_MAPPING[field]],
-                        'site': Site.objects.get_current(),
-                        'support': settings.SENDGRID_EMAIL_FROM
-                    },
-                    from_email=settings.SENDGRID_EMAIL_FROM,
-                    to_email=obj.user.email
+                obj.update_document_state(
+                    document=Profile.FIELD_DOCUMENT_MAPPING[field],
+                    state=getattr(obj, field),
+                    user=request.user.username,
+                    reason=reason
                 )
 
-            # document was rejected and user shall be notified
-            elif getattr(obj, field) == Profile.FAILED and\
-                    form.cleaned_data.get(form.DOCUMENT_FIELD[field][0], None):
+                # document was approved and user shall be notified
+                if getattr(obj, field) == Profile.VERIFIED and\
+                        form.cleaned_data.get(form.DOCUMENT_FIELD[field][0], None):
 
-                send_mail(
-                    subject_template_name=settings.MAIL_VERIFICATION_FAILED_SUBJECT,
-                    email_template_name=settings.MAIL_VERIFICATION_FAILED_TEXT,
-                    context={
-                        'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
-                        'protocol': get_protocol(),
-                        'document': Profile.DOCUMENT_DESCRIPTION[Profile.FIELD_DOCUMENT_MAPPING[field]],
-                        'site': Site.objects.get_current(),
-                        'verification': settings.MAIL_VERIFICATION_SITE,
-                        'support': settings.SENDGRID_EMAIL_FROM
-                    },
-                    from_email=settings.SENDGRID_EMAIL_FROM,
-                    to_email=obj.user.email
-                )
+                    send_mail(
+                        subject_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_SUBJECT,
+                        email_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_TEXT,
+                        context={
+                            'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
+                            'protocol': get_protocol(),
+                            'document': Profile.DOCUMENT_DESCRIPTION[Profile.FIELD_DOCUMENT_MAPPING[field]],
+                            'site': Site.objects.get_current(),
+                            'support': settings.SENDGRID_EMAIL_FROM
+                        },
+                        from_email=settings.SENDGRID_EMAIL_FROM,
+                        to_email=obj.user.email
+                    )
 
-        obj.save()
+                # document was rejected and user shall be notified
+                elif getattr(obj, field) == Profile.FAILED and\
+                        form.cleaned_data.get(form.DOCUMENT_FIELD[field][0], None):
+
+                    send_mail(
+                        subject_template_name=settings.MAIL_VERIFICATION_FAILED_SUBJECT,
+                        email_template_name=settings.MAIL_VERIFICATION_FAILED_TEXT,
+                        context={
+                            'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
+                            'protocol': get_protocol(),
+                            'document': Profile.DOCUMENT_DESCRIPTION[Profile.FIELD_DOCUMENT_MAPPING[field]],
+                            'site': Site.objects.get_current(),
+                            'verification': settings.MAIL_VERIFICATION_SITE,
+                            'support': settings.SENDGRID_EMAIL_FROM
+                        },
+                        from_email=settings.SENDGRID_EMAIL_FROM,
+                        to_email=obj.user.email
+                    )
+
 
 admin.site.register(Profile, BeamProfileAdmin)
 
@@ -166,5 +167,3 @@ try:
 except admin.sites.NotRegistered:
     pass
 admin.site.register(Token, CustomTokenAdmin)
-
-
