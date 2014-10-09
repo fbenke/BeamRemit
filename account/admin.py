@@ -50,9 +50,8 @@ class BeamProfileAdmin(admin.ModelAdmin):
     )
 
     read_and_write_fields = (
-        'passport_state', 'send_passport_mail', 'passport_reason',
-        'proof_of_residence_state', 'send_proof_of_residence_mail',
-        'proof_of_residence_reason'
+        ('passport_state', 'passport_reason', 'send_passport_mail'),
+        ('proof_of_residence_state', 'proof_of_residence_reason', 'send_proof_of_residence_mail')
     )
 
     fields = readonly_fields + read_and_write_fields
