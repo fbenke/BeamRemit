@@ -94,7 +94,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
                         context={
                             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                             'protocol': get_protocol(),
-                            'document': Profile.DOCUMENT_DESCRIPTION[Profile.FIELD_DOCUMENT_MAPPING[field]],
+                            'document': Profile.DOCUMENT_VERBAL[Profile.FIELD_DOCUMENT_MAPPING[field]],
                             'site': Site.objects.get_current(),
                             'support': settings.SENDGRID_EMAIL_FROM
                         },
