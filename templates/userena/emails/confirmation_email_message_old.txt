@@ -6,5 +6,6 @@
 {% trans "Thanks for using our site!" %}
 
 {% trans "Sincerely" %},
+
 {% trans "The" %} {{ site.name }} {% trans "Team" %}
 {% endautoescape %}
