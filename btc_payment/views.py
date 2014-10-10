@@ -11,7 +11,7 @@ from userena.utils import get_protocol
 
 from beam.utils.general import log_error
 from beam.utils.exceptions import APIException
-from beam.utils.mails import send_sendgrid_mail
+from beam.utils import mails
 from beam.utils.security import generate_signature
 
 from transaction.models import Transaction
@@ -58,14 +58,15 @@ class ConfirmGoCoinPayment(APIView):
                         transaction.gocoin_invoice.save()
                         transaction.set_paid()
 
-                    send_sendgrid_mail(
+                    mails.send_mail(
                         subject_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_SUBJECT,
                         email_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_TEXT,
                         context={
                             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                             'protocol': get_protocol(),
                             'id': transaction.id
-                        }
+                        },
+                        to_email=mails.get_admin_mail_addresses()
                     )
                 # payment received, but does not fulfill the required amount
                 elif request.DATA.get('payload')['status'] == 'underpaid':
@@ -99,15 +100,16 @@ class ConfirmGoCoinPayment(APIView):
                     transaction.gocoin_invoice.save()
                     transaction.set_invalid()
 
-                send_sendgrid_mail(
+                mails.send_mail(
                     subject_template_name=settings.MAIL_NOTIFY_ADMIN_PROBLEM_SUBJECT,
                     email_template_name=settings.MAIL_NOTIFY_ADMIN_PROBLEM_TEXT,
                     context={
                         'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                         'protocol': get_protocol(),
                         'id': transaction.id,
-                        'invoice_state': transaction.gocoin_invoice.state
-                    }
+                        'invoice_state': transaction.gocoin_invoice.state,
+                    },
+                    to_email=mails.get_admin_mail_addresses()
                 )
             else:
                 raise APIException

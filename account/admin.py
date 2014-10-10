@@ -90,14 +90,16 @@ class BeamProfileAdmin(admin.ModelAdmin):
                     send_mail(
                         subject_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_SUBJECT,
                         email_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_TEXT,
+                        html_email_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_HTML,
                         context={
                             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                             'protocol': get_protocol(),
                             'document': Profile.DOCUMENT_VERBAL[Profile.FIELD_DOCUMENT_MAPPING[field]],
                             'site': Site.objects.get_current(),
-                            'support': settings.SENDGRID_EMAIL_FROM
+                            'support': settings.BEAM_MAIL_ADDRESS,
+                            'site_name': Site.objects.get_current().name
                         },
-                        from_email=settings.SENDGRID_EMAIL_FROM,
+                        from_email=settings.BEAM_MAIL_ADDRESS,
                         to_email=obj.user.email
                     )
 
@@ -108,16 +110,18 @@ class BeamProfileAdmin(admin.ModelAdmin):
                     send_mail(
                         subject_template_name=settings.MAIL_VERIFICATION_FAILED_SUBJECT,
                         email_template_name=settings.MAIL_VERIFICATION_FAILED_TEXT,
+                        html_email_template_name=settings.MAIL_VERIFICATION_FAILED_HTML,
                         context={
                             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                             'protocol': get_protocol(),
                             'document': Profile.DOCUMENT_VERBAL[Profile.FIELD_DOCUMENT_MAPPING[field]],
                             'site': Site.objects.get_current(),
                             'verification': settings.MAIL_VERIFICATION_SITE,
-                            'support': settings.SENDGRID_EMAIL_FROM,
-                            'reason': constants.REASON_VERBAL[reason]
+                            'support': settings.BEAM_MAIL_ADDRESS,
+                            'reason': constants.REASON_VERBAL[reason],
+                            'site_name': Site.objects.get_current().name
                         },
-                        from_email=settings.SENDGRID_EMAIL_FROM,
+                        from_email=settings.BEAM_MAIL_ADDRESS,
                         to_email=obj.user.email
                     )
 

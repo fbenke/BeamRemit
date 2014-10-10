@@ -1,4 +1,4 @@
-Dear Beam User,
+Dear {{ site_name }} User,
 
 we regret to inform you that your uploaded {{ document }} has been denied.
 
@@ -12,4 +12,4 @@ Thanks for using our site!
 
 Sincerely,
 
-The Beam Team
+The {{ site_name }} Team

@@ -220,29 +220,33 @@ SITE_ID = 0
 if ENV == ENV_LOCAL:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.sendgrid.net'
-    EMAIL_HOST_USER = os.environ.get('SENDGRID_USERNAME')
-    EMAIL_HOST_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    DEFAULT_FROM_EMAIL = 'noreply@beamremit.com'
+    EMAIL_BACKEND = 'beam.utils.sendgrid_django'
+    SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')
+    SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
+
+BEAM_MAIL_ADDRESS = 'hello@beamremit.com'
 
 # Email templates
-MAIL_PASSWORD_RESET_SUBJECT = 'registration/password_reset_subject.txt'
-MAIL_PASSWORD_RESET_BODY = 'userena/emails/password_reset_message.txt'
-MAIL_PASSWORD_RESET_BODY_HTML = 'userena/emails/password_reset_message.txt'
-MAIL_VERIFICATION_SUCCESSFUL_SUBJECT = 'email/verification_successful_subject.txt'
-MAIL_VERIFICATION_SUCCESSFUL_TEXT = 'email/verification_successful_message.txt'
-MAIL_VERIFICATION_FAILED_SUBJECT = 'email/verification_failed_subject.txt'
-MAIL_VERIFICATION_FAILED_TEXT = 'email/verification_failed_message.txt'
-MAIL_NOTIFY_ADMIN_PAID_SUBJECT = 'email/transaction_paid_subject.txt'
-MAIL_NOTIFY_ADMIN_PAID_TEXT = 'email/transaction_paid_message.txt'
-MAIL_NOTIFY_ADMIN_PROBLEM_SUBJECT = 'email/transaction_problem_subject.txt'
-MAIL_NOTIFY_ADMIN_PROBLEM_TEXT = 'email/transaction_problem_message.txt'
-MAIL_NOTIFY_ADMIN_DOC_UPLOADED_SUBJECT = 'email/doc_uploaded_subject.txt'
-MAIL_NOTIFY_ADMIN_DOC_UPLOADED_TEXT = 'email/doc_uploaded_message.txt'
 
+# User Email templates
+MAIL_PASSWORD_RESET_SUBJECT = 'registration/password_reset_subject.txt'
+MAIL_PASSWORD_RESET_TEXT = 'userena/emails/password_reset_message.txt'
+MAIL_PASSWORD_RESET_HTML = 'userena/emails/password_reset_message.html'
+
+MAIL_VERIFICATION_SUCCESSFUL_SUBJECT = 'email/user/verification_successful_subject.txt'
+MAIL_VERIFICATION_SUCCESSFUL_TEXT = 'email/user/verification_successful_message.txt'
+MAIL_VERIFICATION_SUCCESSFUL_HTML = 'email/user/verification_successful_message.html'
+MAIL_VERIFICATION_FAILED_SUBJECT = 'email/user/verification_failed_subject.txt'
+MAIL_VERIFICATION_FAILED_TEXT = 'email/user/verification_failed_message.txt'
+MAIL_VERIFICATION_FAILED_HTML = 'email/user/verification_failed_message.html'
+
+# Admin Email templates
+MAIL_NOTIFY_ADMIN_PAID_SUBJECT = 'email/admin/transaction_paid_subject.txt'
+MAIL_NOTIFY_ADMIN_PAID_TEXT = 'email/admin/transaction_paid_message.txt'
+MAIL_NOTIFY_ADMIN_PROBLEM_SUBJECT = 'email/admin/transaction_problem_subject.txt'
+MAIL_NOTIFY_ADMIN_PROBLEM_TEXT = 'email/admin/transaction_problem_message.txt'
+MAIL_NOTIFY_ADMIN_DOC_UPLOADED_SUBJECT = 'email/admin/doc_uploaded_subject.txt'
+MAIL_NOTIFY_ADMIN_DOC_UPLOADED_TEXT = 'email/admin/doc_uploaded_message.txt'
 
 # User-Facing URLs in Email templates
 MAIL_ACTIVATION_URL = '#!/auth/activate/{}/'
@@ -268,11 +272,6 @@ ENV_BUCKET_MAPPING = {
 }
 
 AWS_BUCKET = ENV_BUCKET_MAPPING[ENV]
-
-# Sendrgrid Settings
-SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')
-SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
-SENDGRID_EMAIL_FROM = 'hello@beamremit.com'
 
 # Payment Processors
 PAYMENT_PROCESSOR = 'GoCoinInvoice'

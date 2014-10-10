@@ -14,7 +14,7 @@ from userena.models import UserenaSignup
 from userena.utils import get_user_model, get_protocol
 
 from beam.utils.general import log_error
-from beam.utils.mails import send_sendgrid_mail
+from beam.utils import mails
 
 from account import constants
 from account import serializers
@@ -421,7 +421,7 @@ class UploadComplete(APIView):
             request.user.profile.update_document_state(document, BeamProfile.UPLOADED)
 
             # notify admins that a document needs to be verified
-            send_sendgrid_mail(
+            mails.send_mail(
                 subject_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_SUBJECT,
                 email_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_TEXT,
                 context={
@@ -429,7 +429,8 @@ class UploadComplete(APIView):
                     'protocol': get_protocol(),
                     'id': request.user.profile.id,
                     'document': BeamProfile.DOCUMENT_VERBAL[document]
-                }
+                },
+                to_email=mails.get_admin_mail_addresses()
             )
 
             return Response()

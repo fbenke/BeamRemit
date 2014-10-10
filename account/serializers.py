@@ -164,11 +164,11 @@ class PasswordResetSerializer(RequestEmailSerializer):
 
         send_mail(
             subject_template_name=settings.MAIL_PASSWORD_RESET_SUBJECT,
-            email_template_name=settings.MAIL_PASSWORD_RESET_BODY,
+            email_template_name=settings.MAIL_PASSWORD_RESET_TEXT,
             context=context,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to_email=self.object.email,
-            html_email_template_name=settings.MAIL_PASSWORD_RESET_BODY_HTML
+            html_email_template_name=settings.MAIL_PASSWORD_RESET_HTML
         )
 
 

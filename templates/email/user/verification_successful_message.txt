@@ -1,4 +1,4 @@
-Dear Beam User,
+Dear {{ site_name }} User,
 
 the {{ document }} you have uploaded has been approved.
 
@@ -8,4 +8,4 @@ Thanks for using our site!
 
 Sincerely,
 
-The Beam Team
+The {{ site_name }} Team

@@ -1,4 +1,3 @@
-{% load i18n %}
 Dear Admin,
 
 There are transactions on {{ domain }} waiting to be processed. Please go to {{ protocol }}://{{ domain }}/admin/transaction/transaction/{{ id }}/.
