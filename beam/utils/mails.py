@@ -14,6 +14,7 @@ def send_mail(subject_template_name, email_template_name, context, to_email,
     if not isinstance(to_email, list):
         to_email = [to_email]
 
+    print from_email
     email_message = EmailMultiAlternatives(subject, body, from_email, to_email)
     if html_email_template_name is not None:
         html_email = loader.render_to_string(html_email_template_name, context)

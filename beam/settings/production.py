@@ -216,6 +216,9 @@ USERENA_REGISTER_PROFILE = False
 ANONYMOUS_USER_ID = -1
 SITE_ID = 0
 
+BEAM_MAIL_ADDRESS = 'hello@beamremit.com'
+DEFAULT_FROM_EMAIL = BEAM_MAIL_ADDRESS
+
 # Email Settings
 if ENV == ENV_LOCAL:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -224,7 +227,6 @@ else:
     SENDGRID_USER = os.environ.get('SENDGRID_USER')
     SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
 
-BEAM_MAIL_ADDRESS = 'hello@beamremit.com'
 
 # Email templates
 
