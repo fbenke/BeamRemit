@@ -227,7 +227,6 @@ else:
     SENDGRID_USER = os.environ.get('SENDGRID_USER')
     SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
 
-
 # Email templates
 
 # User Email templates
