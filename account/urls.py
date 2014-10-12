@@ -67,7 +67,7 @@ urlpatterns = patterns(
     ),
     url(
         r'^aws/$',
-        views.GenerateAWSLink.as_view(),
+        views.GenerateAWSUpload.as_view(),
         name='aws'
     ),
     url(

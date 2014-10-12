@@ -19,7 +19,7 @@ from beam.utils import mails
 from account import constants
 from account import serializers
 from account.models import BeamProfile
-from account.utils import AccountException, generate_aws_url
+from account.utils import AccountException, generate_aws_upload
 
 
 'DRF implementation of the userena.views used for Beam Accounts.'
@@ -345,7 +345,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class GenerateAWSLink(APIView):
+class GenerateAWSUpload(APIView):
 
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -360,8 +360,6 @@ class GenerateAWSLink(APIView):
 
             return Response({'detail': constants.INVALID_PARAMETERS},
                             status=status.HTTP_400_BAD_REQUEST)
-
-        headers = {'Content-Type': content_type}
 
         # allow upload only if the profile information is complete
         if not request.user.profile.information_complete:
@@ -385,8 +383,8 @@ class GenerateAWSLink(APIView):
                 status=status.HTTP_400_BAD_REQUEST)
 
         key = '{}_{}'.format(document_type, request.user.id)
-        url = generate_aws_url('PUT', key, headers)
-        return Response({'url': url}, status=status.HTTP_201_CREATED)
+        upload_params = generate_aws_upload(key, content_type)
+        return Response(upload_params, status=status.HTTP_201_CREATED)
 
 
 class UploadComplete(APIView):
