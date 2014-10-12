@@ -12,4 +12,9 @@ urlpatterns = patterns(
         views.PricingCurrent.as_view(),
         name='current'
     ),
+    url(
+        r'^limit$',
+        views.LimitCurrent.as_view(),
+        name='limit'
+    ),
 )

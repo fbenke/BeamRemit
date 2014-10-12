@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from pricing.models import Pricing, Comparison, end_previous_object
+from pricing.models import Pricing, Comparison, Limit, end_previous_object
 
 from pricing import forms
 
@@ -41,3 +41,21 @@ class ComparisonAdmin(admin.ModelAdmin):
             obj.save()
 
 admin.site.register(Comparison, ComparisonAdmin)
+
+
+class LimitAdmin(admin.ModelAdmin):
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('id', 'start', 'end', 'max_ghs', 'max_gbp')
+        else:
+            return ('id', 'start', 'end', 'max_ghs')
+
+    list_display = ('id', 'start', 'end', 'max_ghs', 'max_gbp')
+
+    def save_model(self, request, obj, form, change):
+        if not obj.id:
+            end_previous_object(Limit)
+            obj.save()
+
+admin.site.register(Limit, LimitAdmin)

@@ -84,6 +84,32 @@ class Comparison(models.Model):
         'End Time',
         blank=True,
         null=True,
-        help_text='Time at which comparison ended. If null, it represents the current pricing structure. ' +
+        help_text='Time at which comparison ended. If null, it represents the current comparison. ' +
                   'Only one row in this table can have a null value for this column.'
     )
+
+
+class Limit(models.Model):
+
+    max_gbp = models.FloatField(
+        'Maximum amount in GBP ',
+        help_text='Maximum remittance amount in GBB'
+    )
+
+    start = models.DateTimeField(
+        'Start Time',
+        auto_now_add=True,
+        help_text='Time at which limit became effective'
+    )
+
+    end = models.DateTimeField(
+        'End Time',
+        blank=True,
+        null=True,
+        help_text='Time at which limit was replaced. If null, it represents the current limit. ' +
+                  'Only one row in this table can have a null value for this column.'
+    )
+
+    @property
+    def max_ghs(self):
+        return get_current_object(Pricing).gbp_ghs * self.max_gbp
