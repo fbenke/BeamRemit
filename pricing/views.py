@@ -42,4 +42,8 @@ class LimitCurrent(RetrieveAPIView):
     serializer_class = serializers.LimitSerializer
 
     def get_object(self, queryset=None):
-        return get_current_object(Limit)
+        try:
+            return get_current_object(Limit)
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

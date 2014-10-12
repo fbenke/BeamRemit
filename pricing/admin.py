@@ -45,11 +45,13 @@ admin.site.register(Comparison, ComparisonAdmin)
 
 class LimitAdmin(admin.ModelAdmin):
 
+    form = forms.LimitForm
+
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'max_ghs', 'max_gbp')
+            return ('id', 'start', 'end', 'min_gbp', 'max_gbp', 'min_ghs', 'max_ghs')
         else:
-            return ('id', 'start', 'end', 'max_ghs')
+            return ('id', 'start', 'end', 'min_ghs', 'max_ghs')
 
     list_display = ('id', 'start', 'end', 'max_ghs', 'max_gbp')
 

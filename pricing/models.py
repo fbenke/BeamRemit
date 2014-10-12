@@ -96,6 +96,11 @@ class Limit(models.Model):
         help_text='Maximum remittance amount in GBB'
     )
 
+    min_gbp = models.FloatField(
+        'Minimum amount in GBP ',
+        help_text='Minimum remittance amount in GBB'
+    )
+
     start = models.DateTimeField(
         'Start Time',
         auto_now_add=True,
@@ -109,6 +114,10 @@ class Limit(models.Model):
         help_text='Time at which limit was replaced. If null, it represents the current limit. ' +
                   'Only one row in this table can have a null value for this column.'
     )
+
+    @property
+    def min_ghs(self):
+        return get_current_object(Pricing).gbp_ghs * self.min_gbp
 
     @property
     def max_ghs(self):
