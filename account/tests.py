@@ -14,6 +14,7 @@ from datetime import timedelta
 
 from beam.tests import BeamAPITestCase
 from account import constants
+from account.models import BeamProfile as Profile
 
 
 class AccountTests(BeamAPITestCase):
@@ -23,8 +24,8 @@ class AccountTests(BeamAPITestCase):
     url_email_change = reverse('account:email_change')
     url_password_reset = reverse('account:password_reset')
     url_password_change = reverse('account:password_change')
-    url_profile = reverse('account:profile')
     url_activate_resend = reverse('account:activate_resend')
+    url_aws_upload = reverse('account:aws')
     plain_url_activate_retry = 'account:activate_retry'
     plain_url_email_change_confirm = 'account:email_confirm'
     plain_url_password_reset_confirm = 'account:password_reset_confirm'
@@ -314,8 +315,7 @@ class AccountTests(BeamAPITestCase):
         url_confirm = reverse(self.plain_url_password_reset_confirm, args=(uid, token))
 
         # check if mail contains correct link
-        # TODO: replace `url_activate` with the real link later
-        self.assertTrue(url_confirm in mailbox.outbox[no_emails].body)
+        self.assertTrue(settings.MAIL_PASSWORD_RESET_URL.format(uid, token) in mailbox.outbox[no_emails].body)
 
         # send a get request to check if the generated token/uid combination is valid
         response = self.client.get(url_confirm)
@@ -369,3 +369,43 @@ class AccountTests(BeamAPITestCase):
         response = self.client.post(self.url_signin, {'email': email, 'password': self.new_password})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data['detail'], 'Invalid token')
+
+    def test_aws_upload_invalid_params(self):
+        email = self.emails.next()
+        token, _ = self._create_activated_user(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(self.url_aws_upload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.INVALID_PARAMETERS)
+
+    def test_aws_upload_profile_incomplete(self):
+        email = self.emails.next()
+        token, _ = self._create_activated_user(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(
+            self.url_aws_upload + '?documenttype=' + Profile.DOCUMENT_TYPES[0] +
+            '&contenttype=image/png')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.USER_PROFILE_INCOMPLETE)
+
+    def test_aws_upload_invalid_document_status(self):
+        email = self.emails.next()
+        token, id = self._create_user_with_profile(email=email)
+        user = get_user_model().objects.get(id=id)
+        user.profile.passport_state = Profile.UPLOADED
+        user.profile.save()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(
+            self.url_aws_upload + '?documenttype=' + Profile.DOCUMENT_TYPES[0] +
+            '&contenttype=image/png')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.DOCUMENT_ALREADY_UPLOADED)
+
+    def test_aws_upload_incomplete_profile(self):
+        email = self.emails.next()
+        token, _ = self._create_user_with_profile(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(
+            self.url_aws_upload + '?documenttype=' + Profile.DOCUMENT_TYPES[0] +
+            '&contenttype=image/png')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)

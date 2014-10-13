@@ -13,6 +13,7 @@ class BeamAPITestCase(APITestCase):
     new_password = 'Django321'
 
     url_signup = reverse('account:signup')
+    url_profile = reverse('account:profile')
     plain_url_activate = 'account:activate'
 
     @classmethod
@@ -47,4 +48,21 @@ class BeamAPITestCase(APITestCase):
         user = get_user_model().objects.get(id=id)
         user.is_staff = True
         user.save()
+        return token, id
+
+    def _create_user_with_profile(self, email=None, password=None):
+        token, id = self._create_activated_user(email=email, password=password)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        data = {
+            'firstName': 'Falk',
+            'lastName': 'Benke',
+            'profile': {
+                'country': 'DE',
+                'date_of_birth': '1985-10-04',
+                'city': 'Berlin',
+                'street': 'Platz der Vereinten Nationen 23',
+                'post_code': '10249'
+            }
+        }
+        self.client.patch(self.url_profile, data)
         return token, id

@@ -1,7 +1,6 @@
 {% load i18n %}
 {% autoescape off %}
 {% load account_extras %}
-{% endif %}
 {% blocktrans with site.name as site %}Thank you for signing up at {{ site }}.{% endblocktrans %}
 
 {% trans "To activate your account, please click on the link below:" %}

@@ -364,7 +364,7 @@ class GenerateAWSUpload(APIView):
         # allow upload only if the profile information is complete
         if not request.user.profile.information_complete:
 
-            log_error('ERROR Generate AWS Link - User {}} has not completed their profile'.
+            log_error('ERROR Generate AWS Link - User {} has not completed their profile'.
                       format(request.user.id))
 
             return Response(
