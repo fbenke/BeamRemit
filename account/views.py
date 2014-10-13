@@ -445,9 +445,6 @@ class VerificationStatus(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request):
-        print request
-        print request.user.id
-        print request.DATA
         data = request.user.profile.get_document_states()
         data['information_complete'] = request.user.profile.information_complete
         return Response(data)

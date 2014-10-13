@@ -26,6 +26,9 @@ class AccountTests(BeamAPITestCase):
     url_password_change = reverse('account:password_change')
     url_activate_resend = reverse('account:activate_resend')
     url_aws_upload = reverse('account:aws')
+    url_upload_complete = reverse('account:upload_complete')
+    url_verification_status = reverse('account:verification_status')
+
     plain_url_activate_retry = 'account:activate_retry'
     plain_url_email_change_confirm = 'account:email_confirm'
     plain_url_password_reset_confirm = 'account:password_reset_confirm'
@@ -409,3 +412,66 @@ class AccountTests(BeamAPITestCase):
             self.url_aws_upload + '?documenttype=' + Profile.DOCUMENT_TYPES[0] +
             '&contenttype=image/png')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_verification_status(self):
+        email = self.emails.next()
+        token, id = self._create_user_with_profile(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(self.url_verification_status)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[Profile.PASSPORT], Profile.EMPTY)
+        self.assertEqual(response.data[Profile.PROOF_OF_RESIDENCE], Profile.EMPTY)
+        self.assertEqual(response.data['information_complete'], True)
+
+        user = get_user_model().objects.get(id=id)
+        user.profile.passport_state = Profile.UPLOADED
+        user.profile.proof_of_residence_state = Profile.VERIFIED
+        user.profile.save()
+        response = self.client.get(self.url_verification_status)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[Profile.PASSPORT], Profile.UPLOADED)
+        self.assertEqual(response.data[Profile.PROOF_OF_RESIDENCE], Profile.VERIFIED)
+        self.assertEqual(response.data['information_complete'], True)
+
+        email = self.emails.next()
+        token, _ = self._create_activated_user(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(self.url_verification_status)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['PAS'], 'EMP')
+        self.assertEqual(response.data['POR'], 'EMP')
+        self.assertEqual(response.data['information_complete'], False)
+
+    def test_upload_confirmation_incomplete_profile(self):
+
+        email = self.emails.next()
+        token, _ = self._create_activated_user(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        data = {'document': Profile.PASSPORT}
+        response = self.client.post(self.url_upload_complete, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.USER_PROFILE_INCOMPLETE)
+
+    def test_upload_confirmation_invalid_document_status(self):
+        email = self.emails.next()
+        token, id = self._create_user_with_profile(email=email)
+        user = get_user_model().objects.get(id=id)
+        user.profile.passport_state = Profile.UPLOADED
+        user.profile.save()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        data = {'document': Profile.PASSPORT}
+        response = self.client.post(self.url_upload_complete, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.DOCUMENT_ALREADY_UPLOADED)
+
+    def test_upload_confirmation(self):
+        no_emails = len(mailbox.outbox)
+
+        email = self.emails.next()
+        token, _ = self._create_user_with_profile(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        data = {'document': Profile.PASSPORT}
+        response = self.client.post(self.url_upload_complete, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(len(mailbox.outbox), no_emails + 1)
