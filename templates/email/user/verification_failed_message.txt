@@ -1,15 +1,16 @@
+{% if firstname %}
+Hi {{ firstname }},
+{% else %}
 Dear {{ site_name }} User,
+{% endif %}
 
-we regret to inform you that your uploaded {{ document }} has been denied.
+We regret to inform you that your uploaded {{ document }} has been declined.
 
-The reason is: {{ reason }}
+This is because {{ reason }}
 
 Please resubmit this document as described on our verification page: {{ protocol }}://{{ site.domain }}/{{ verification }}.
 
-If you have any questions, please read our FAQ or contact us via {{ support }}. Our support staff will be more than happy to assist you.
-
-Thanks for using our site!
+If you have any questions, please read our FAQ or contact us via {{ support }}. Our support staff is more than happy to assist you.
 
 Sincerely,
-
 The {{ site_name }} Team

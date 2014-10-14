@@ -1,21 +1,21 @@
-{% load i18n %}
-{% autoescape off %}
 {% load account_extras %}
 <html>
 <body>
+    {% if firstname %}
+    <p>Hi {{ firstname }},</p>
+    {% else %}
+    <p>Dear {{ site.name }} User,</p> 
+    {% endif %}
     <p>
-        {% blocktrans with site.name as site %}You requested a change of your email address at {{ site }}.{% endblocktrans %}
+        You requested to change your email address at {{ site }}.
     </p>
     <p>
-        {% trans "Please confirm this email address by clicking on the link below:" %}<br>
+        To confirm this email as your new address, please click on the link below:<br>
         {{ protocol }}://{{ site.domain }}/{% email_change_link confirmation_key%}
-
     </p>
     <p>
-        {% trans "Thanks for using our site!" %}<br />
-        {% trans "Sincerely" %},<br />
-        {% trans "The" %} {{ site.name }} {% trans "Team" %}
+        Sincerely,<br/>
+        The {{ site.name }} Team
     </p>
-    </body>
-    </html>
-{% endautoescape %}
+</body>
+</html>

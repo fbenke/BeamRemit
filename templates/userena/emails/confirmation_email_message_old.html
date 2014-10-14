@@ -1,20 +1,21 @@
-{% load i18n %}{% autoescape off %}
 <html>
-  <body>
-    <p>
-      {% blocktrans with site.name as site %}There was a request to change your email address at {{ site }}.{% endblocktrans %}
-    </p>
+<body>
 
-    <p>
-      {% blocktrans %}An email has been sent to {{ new_email }} which contains a verification link. Click on the link in this email to activate it.{% endblocktrans %}
-    </p>
+{% if firstname %}
+  <p>Hi {{ firstname }},</p>
+{% else %}
+  <p>Dear {{ site.name }} User,</p> 
+{% endif %}
+<p>
+  There was a request to change your email address at {{ site }}.
+</p>
 
-    <p>{% trans "Thanks for using our site!" %}</p>
-
-    <p>
-      {% trans "Sincerely" %},<br />
-      {% trans "The" %} {{ site.name }} {% trans "Team" %}
-    </p>
-  </body>
+<p>
+  {% blocktrans %}An email has been sent to {{ new_email }} which contains a verification link. Click on the link in this email to activate it.{% endblocktrans %}
+</p>
+<p>
+  Sincerely,<br/>
+  The {{ site.name }} Team
+</p>
+</body>
 </html>
-{% endautoescape %}

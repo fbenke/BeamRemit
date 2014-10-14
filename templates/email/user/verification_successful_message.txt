@@ -1,11 +1,8 @@
 Dear {{ site_name }} User,
 
-the {{ document }} you have uploaded has been approved.
+We’re pleased to inform you that your {{ document }} has been approved and verified for {{ site_name }}.
 
-If you have any questions, please read our FAQ or contact us via {{ support }}. Our support staff will be more than happy to assist you.
-
-Thanks for using our site!
+If you have any questions, please contact us at {{ support }}. Our support staff is more than happy to assist you.
 
 Sincerely,
-
 The {{ site_name }} Team

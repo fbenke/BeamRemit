@@ -1,18 +1,14 @@
-{% load i18n %}
-{% autoescape off %}
 {% load account_extras %}
 <html>
 <body>
-    {% blocktrans with site.name as site %}<p>Thank you for signing up at {{ site }}.</p>{% endblocktrans %}
+    <p>Hello! Thank you for signing up for {{ site }}.</p>
     <p>
-        {% trans "To activate your account, please click on the link below:" %}<br />
+        To activate your account, please click on the link below:<br/>
         {{ protocol }}://{{ site.domain }}/{% activation_link activation_key%}
     </p>
     <p>
-        {% trans "Thanks for using our site!" %}<br />
-        {% trans "Sincerely" %},<br />
-        {% trans "The" %} {{ site.name }} {% trans "Team" %}
+        Sincerely,<br/>
+        The {{ site.name }} Team
     </p>
 </body>
 </html>
-{% endautoescape %}

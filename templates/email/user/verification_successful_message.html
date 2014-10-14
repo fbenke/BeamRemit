@@ -1,14 +1,17 @@
 <html>
 <body>
 
-<p>Dear {{ site_name }} User,</p>
+{% if firstname %}
+<p>Hi {{ firstname }},</p>
+{% else %}
+<p>Dear {{ site_name }} User,</p> 
+{% endif %}
 
-<p>the {{ document }} you have uploaded has been approved.</p>
+<p>We’re pleased to inform you that your {{ document }} has been approved and verified for {{ site_name }}.
 
-<p>If you have any questions, please read our FAQ or contact us via {{ support }}. Our support staff will be more than happy to assist you.</p>
+<p>If you have any questions, please contact us at {{ support }}. Our support staff is more than happy to assist you.</p>
 
 <p>
-Thanks for using our site!<br>
 Sincerely,<br>
 The {{ site_name }} Team
 </p>

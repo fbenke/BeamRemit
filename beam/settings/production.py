@@ -216,7 +216,7 @@ USERENA_REGISTER_PROFILE = False
 ANONYMOUS_USER_ID = -1
 SITE_ID = 0
 
-BEAM_MAIL_ADDRESS = 'hello@beamremit.com'
+BEAM_MAIL_ADDRESS = 'Beam <hello@beamremit.com>'
 DEFAULT_FROM_EMAIL = BEAM_MAIL_ADDRESS
 
 # Email Settings
