@@ -1,1 +1,1 @@
-Beam: A payment problem occured
+{{site.name}}: A payment problem occured

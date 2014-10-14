@@ -6,7 +6,7 @@ Hi {{ firstname }},
 Dear {{ site.name }} User,
 {% endif %}
 
-You requested to change your email address at {{ site }}.
+You requested to change your email address at {{ site.name }}.
 
 To confirm this email as your new address, please click on the link below:
 {{ protocol }}://{{ site.domain }}/{% email_change_link confirmation_key%}

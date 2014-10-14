@@ -1,1 +1,1 @@
-Beam: {{document}} has been declined
+{{site_name}}: {{document}} has been declined

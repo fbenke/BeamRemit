@@ -218,6 +218,7 @@ SITE_ID = 0
 
 BEAM_MAIL_ADDRESS = 'Beam <hello@beamremit.com>'
 DEFAULT_FROM_EMAIL = BEAM_MAIL_ADDRESS
+BEAM_SUPPORT = 'hello@beamremit.com'
 
 # Email Settings
 if ENV == ENV_LOCAL:

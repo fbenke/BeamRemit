@@ -1,1 +1,1 @@
-Beam: {{document}} has been approved!
+{{site_name}}: {{document}} has been approved!

@@ -1,1 +1,1 @@
-Beam: A document awaits verification.
+{{site_name}}: A document awaits verification.

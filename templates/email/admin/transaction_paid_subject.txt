@@ -1,1 +1,1 @@
-Beam: There are transactions waiting to be processed.
+{{site_name}}: There are transactions waiting to be processed.
