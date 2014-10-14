@@ -21,18 +21,18 @@ from pricing.models import Limit, get_current_object
 class BeamProfile(UserenaBaseProfile):
     ''' represents a sender user profile '''
 
-    PASSPORT = 'PAS'
+    IDENTIFICATION = 'PAS'
     PROOF_OF_RESIDENCE = 'POR'
 
-    DOCUMENT_TYPES = (PASSPORT, PROOF_OF_RESIDENCE)
+    DOCUMENT_TYPES = (IDENTIFICATION, PROOF_OF_RESIDENCE)
 
     DOCUMENT_VERBAL = {
-        PASSPORT: 'Passport',
+        IDENTIFICATION: 'Identification Document',
         PROOF_OF_RESIDENCE: 'Proof of Residence'
     }
 
     DOCUMENT_TYPE_CHOICES = (
-        (PASSPORT, DOCUMENT_VERBAL[PASSPORT]),
+        (IDENTIFICATION, DOCUMENT_VERBAL[IDENTIFICATION]),
         (PROOF_OF_RESIDENCE, DOCUMENT_VERBAL[PROOF_OF_RESIDENCE])
     )
 
@@ -50,18 +50,18 @@ class BeamProfile(UserenaBaseProfile):
         (FAILED, 'failed')
     )
 
-    PASSPORT_FIELD = 'passport_state'
+    IDENTIFICATION_FIELD = 'identification_state'
     PROOF_OF_RESIDENCE_FIELD = 'proof_of_residence_state'
 
-    DOCUMENT_FIELDS = (PASSPORT_FIELD, PROOF_OF_RESIDENCE_FIELD)
+    DOCUMENT_FIELDS = (IDENTIFICATION_FIELD, PROOF_OF_RESIDENCE_FIELD)
 
     DOCUMENT_FIELD_MAPPING = {
-        PASSPORT: PASSPORT_FIELD,
+        IDENTIFICATION: IDENTIFICATION_FIELD,
         PROOF_OF_RESIDENCE: PROOF_OF_RESIDENCE_FIELD
     }
 
     FIELD_DOCUMENT_MAPPING = {
-        PASSPORT_FIELD: PASSPORT,
+        IDENTIFICATION_FIELD: IDENTIFICATION,
         PROOF_OF_RESIDENCE_FIELD: PROOF_OF_RESIDENCE
     }
 
@@ -105,11 +105,29 @@ class BeamProfile(UserenaBaseProfile):
         help_text='Country'
     )
 
-    passport_state = models.CharField(
-        'Passport Status',
+    identification_state = models.CharField(
+        'Identification Document Status',
         max_length=3,
         choices=DOCUMENT_STATE_CHOICES,
         default=EMPTY
+    )
+
+    identification_number = models.CharField(
+        'Identification Document Number',
+        max_length=30,
+        blank=True
+    )
+
+    identification_issue_date = models.DateField(
+        'Identification Document Date of Issue',
+        null=True,
+        blank=True
+    )
+
+    identification_expiry_date = models.DateField(
+        'Identification Document Expiry Date',
+        null=True,
+        blank=True
     )
 
     proof_of_residence_state = models.CharField(
@@ -206,7 +224,7 @@ class DocumentStatusChange(models.Model):
         ordering = ['-changed_at']
 
     # TODO: add valid reasons
-    INVALID_PASSPORT = 'INP'
+    INVALID_IDENTIFICATION = 'IND'
     CREDIT_NOT_ACCEPTED = 'CRE'
     MOBILE_NOT_ACCEPTED = 'PHO'
     INVALID_FORMAT = 'INF'
@@ -215,7 +233,7 @@ class DocumentStatusChange(models.Model):
     MISC = 'MIS'
 
     REASONS_PAS = (
-        (INVALID_PASSPORT, 'Invalid Passport'),
+        (INVALID_IDENTIFICATION, 'Invalid Identification Document'),
     )
 
     REASONS_POR = (

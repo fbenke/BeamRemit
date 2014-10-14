@@ -311,7 +311,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
 
                 # need to reupload passport
                 if (list(set(passport_params) & set(changed_params))):
-                    request.user.profile.update_document_state(BeamProfile.PASSPORT, BeamProfile.EMPTY)
+                    request.user.profile.update_document_state(BeamProfile.IDENTIFICATION, BeamProfile.EMPTY)
 
                 # need to reupload proof of residence
                 if (list(set(por_params) & set(changed_params))):

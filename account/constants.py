@@ -42,7 +42,7 @@ ERROR_MESSAGES = {
 from account.models import DocumentStatusChange as d
 
 REASON_VERBAL = {
-    d.INVALID_PASSPORT: 'The document did not depict a password issued by your country.',
+    d.INVALID_IDENTIFICATION: 'The document did not depict a password issued by your country.',
     d.CONTRADICTION: 'The profile information and documents were contradicting.',
     d.CREDIT_NOT_ACCEPTED: 'We cannot accept credit card statements as proof of residence.',
     d.MOBILE_NOT_ACCEPTED: 'We cannot accept mobile phone bills as proof of residence.',

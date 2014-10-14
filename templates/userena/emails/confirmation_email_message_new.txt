@@ -12,4 +12,5 @@ To confirm this email as your new address, please click on the link below:
 {{ protocol }}://{{ site.domain }}/{% email_change_link confirmation_key%}
 
 Sincerely,
+
 The {{ site.name }} Team

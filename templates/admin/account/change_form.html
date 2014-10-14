@@ -15,7 +15,7 @@
 
 	<div class="form-row">
 
-		{% if original.passport_state != 'EMP' %}
+		{% if original.identification_state != 'EMP' %}
 			<a href="{% aws_document_link "PAS" original.user.id %}" target="_blank" class="viewsitelink">See Passport Document</a>
 		{% endif%}
 

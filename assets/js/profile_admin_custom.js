@@ -14,22 +14,22 @@
 (function($) {
 	$(document).ready(function() {
 
-		    $('#id_passport_reason').parent().attr('hidden', true)
+		$('#id_identification_reason').parent().attr('hidden', true)
 		$('#id_proof_of_residence_reason').parent().attr('hidden', true)
-		    $('#id_send_passport_mail').parent().attr('hidden', true)
-		    $('#id_send_proof_of_residence_mail').parent().attr('hidden', true)
+		$('#id_send_identification_mail').parent().attr('hidden', true)
+		$('#id_send_proof_of_residence_mail').parent().attr('hidden', true)
 
-		$('#id_passport_state').change(function(){
-			if ($('#id_passport_state :selected').text() === 'failed') {
-				$('#id_passport_reason').parent().attr('hidden', false)
-				$('#id_send_passport_mail').parent().attr('hidden', false)
+		$('#id_identification_state').change(function(){
+			if ($('#id_identification_state :selected').text() === 'failed') {
+				$('#id_identification_reason').parent().attr('hidden', false)
+				$('#id_send_identification_mail').parent().attr('hidden', false)
 			}else{
-				if ($('#id_passport_state :selected').text() === 'verified'){
-		    			$('#id_send_passport_mail').parent().attr('hidden', false)
+				if ($('#id_identification_state :selected').text() === 'verified'){
+		    			$('#id_send_identification_mail').parent().attr('hidden', false)
 				}else{
-					$('#id_send_passport_mail').parent().attr('hidden', true)
+					$('#id_send_identification_mail').parent().attr('hidden', true)
 				};
-				$('#id_passport_reason').parent().attr('hidden', true)
+				$('#id_identification_reason').parent().attr('hidden', true)
 			}
 		});
 

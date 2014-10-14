@@ -419,7 +419,7 @@ class AccountTests(BeamAPITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         response = self.client.get(self.url_verification_status)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[Profile.PASSPORT], Profile.EMPTY)
+        self.assertEqual(response.data[Profile.IDENTIFICATION], Profile.EMPTY)
         self.assertEqual(response.data[Profile.PROOF_OF_RESIDENCE], Profile.EMPTY)
         self.assertEqual(response.data['information_complete'], True)
 
@@ -429,7 +429,7 @@ class AccountTests(BeamAPITestCase):
         user.profile.save()
         response = self.client.get(self.url_verification_status)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[Profile.PASSPORT], Profile.UPLOADED)
+        self.assertEqual(response.data[Profile.IDENTIFICATION], Profile.UPLOADED)
         self.assertEqual(response.data[Profile.PROOF_OF_RESIDENCE], Profile.VERIFIED)
         self.assertEqual(response.data['information_complete'], True)
 
@@ -447,7 +447,7 @@ class AccountTests(BeamAPITestCase):
         email = self.emails.next()
         token, _ = self._create_activated_user(email=email)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        data = {'document': Profile.PASSPORT}
+        data = {'document': Profile.IDENTIFICATION}
         response = self.client.post(self.url_upload_complete, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.USER_PROFILE_INCOMPLETE)
@@ -459,7 +459,7 @@ class AccountTests(BeamAPITestCase):
         user.profile.passport_state = Profile.UPLOADED
         user.profile.save()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        data = {'document': Profile.PASSPORT}
+        data = {'document': Profile.IDENTIFICATION}
         response = self.client.post(self.url_upload_complete, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.DOCUMENT_ALREADY_UPLOADED)
@@ -470,7 +470,7 @@ class AccountTests(BeamAPITestCase):
         email = self.emails.next()
         token, _ = self._create_user_with_profile(email=email)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        data = {'document': Profile.PASSPORT}
+        data = {'document': Profile.IDENTIFICATION}
         response = self.client.post(self.url_upload_complete, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
