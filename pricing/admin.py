@@ -49,9 +49,10 @@ class LimitAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'min_gbp', 'max_gbp', 'min_ghs', 'max_ghs')
+            return ('id', 'start', 'end', 'min_gbp', 'max_gbp', 'min_ghs',
+                    'max_ghs', 'daily_limit_gbp', 'daily_limit_ghs')
         else:
-            return ('id', 'start', 'end', 'min_ghs', 'max_ghs')
+            return ('id', 'start', 'end', 'min_ghs', 'max_ghs', 'daily_limit_ghs')
 
     list_display = ('id', 'start', 'end', 'max_ghs', 'max_gbp')
 

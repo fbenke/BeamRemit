@@ -1,12 +1,21 @@
+import datetime
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.db import transaction as dbtransaction
-
+from django.utils import timezone
+from django.utils.timezone import utc
 from django_countries.fields import CountryField
 
 from userena.models import UserenaBaseProfile
 
+from transaction.models import Transaction
+
 from account.utils import AccountException
+
+from beam.utils.general import log_error
+
+from pricing.models import Limit, get_current_object
 
 
 class BeamProfile(UserenaBaseProfile):
@@ -169,9 +178,30 @@ class BeamProfile(UserenaBaseProfile):
             return False
         return True
 
+    def transaction_limit_exceeded(self, new_amount=0):
+        try:
+            now = timezone.now()
+            today = datetime.datetime(now.year, now.month, now.day).replace(tzinfo=utc)
+
+            transactions = Transaction.objects.filter(
+                sender=self.user.id,
+                state__in=(Transaction.PAID, Transaction.PROCESSED),
+                paid_at__gte=today
+            )
+
+            amount = new_amount
+            for t in transactions:
+                amount = amount + t.amount_gbp
+
+            return amount > get_current_object(Limit).daily_limit_gbp
+
+        except TypeError:
+
+            log_error('ERROR - Adding up transaction amounts for user {}'.format(self.user.id))
+            raise AccountException
+
 
 class DocumentStatusChange(models.Model):
-
     class Meta:
         ordering = ['-changed_at']
 

@@ -7,7 +7,6 @@ from rest_framework.response import Response
 
 from beam.utils.exceptions import APIException
 
-
 from transaction import serializers
 from transaction.models import Transaction, Pricing
 from transaction.permissions import IsNoAdmin
@@ -16,6 +15,7 @@ from pricing.models import get_current_object
 
 from state.models import get_current_state
 
+from account.utils import AccountException
 
 mod = __import__('btc_payment.models', fromlist=[settings.PAYMENT_PROCESSOR])
 payment_class = getattr(mod, settings.PAYMENT_PROCESSOR)
@@ -31,21 +31,25 @@ class CreateTransaction(GenericAPIView):
 
     def post(self, request):
 
-        # Pricing expired
-        if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
-            return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Sender Profile is incomplete
-        if not request.user.profile.information_complete or not request.user.profile.documents_provided:
-            return Response({'detail': '1'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Sender Profile is complete, documents await verification
-        if not request.user.profile.documents_verified:
-            return Response({'detail': '2'}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = self.serializer_class(user=request.user, data=request.DATA)
-
         try:
+            # Pricing expired
+            if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
+                return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Sender Profile is incomplete
+            if not request.user.profile.information_complete or not request.user.profile.documents_provided:
+                return Response({'detail': '1'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Sender Profile is complete, documents await verification
+            if not request.user.profile.documents_verified:
+                return Response({'detail': '2'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Sender has exceeded daily transaction limit
+            if request.user.profile.transaction_limit_exceeded(request.DATA.get('amount_gbp')):
+                return Response({'detail': '3'}, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = self.serializer_class(user=request.user, data=request.DATA)
+
             if serializer.is_valid():
 
                 self.object = serializer.save(force_insert=True)
@@ -62,6 +66,9 @@ class CreateTransaction(GenericAPIView):
 
         except APIException:
             self.object.set_invalid()
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except AccountException:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

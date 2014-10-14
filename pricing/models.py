@@ -91,6 +91,10 @@ class Comparison(models.Model):
 
 class Limit(models.Model):
 
+    def __init__(self, *args, **kwargs):
+        super(Limit, self).__init__(*args, **kwargs)
+        self.gbp_ghs = get_current_object(Pricing).gbp_ghs
+
     max_gbp = models.FloatField(
         'Maximum amount in GBP ',
         help_text='Maximum remittance amount in GBB'
@@ -99,6 +103,11 @@ class Limit(models.Model):
     min_gbp = models.FloatField(
         'Minimum amount in GBP ',
         help_text='Minimum remittance amount in GBB'
+    )
+
+    daily_limit_gbp = models.FloatField(
+        'Maximum per user per day',
+        help_text='Maximum amount a user is allowed to send per day in GBP'
     )
 
     start = models.DateTimeField(
@@ -117,8 +126,12 @@ class Limit(models.Model):
 
     @property
     def min_ghs(self):
-        return get_current_object(Pricing).gbp_ghs * self.min_gbp
+        return self.gbp_ghs * self.min_gbp
 
     @property
     def max_ghs(self):
-        return get_current_object(Pricing).gbp_ghs * self.max_gbp
+        return self.gbp_ghs * self.max_gbp
+
+    @property
+    def daily_limit_ghs(self):
+        return self.gbp_ghs * self.daily_limit_gbp

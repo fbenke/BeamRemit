@@ -58,11 +58,12 @@ class TransactionAdmin(admin.ModelAdmin):
     )
 
     read_and_write_fields = ('state', 'comments')
+
     fields = readonly_fields + read_and_write_fields
 
     list_display = ('id', 'sender_email', 'reference_number', 'state', 'amount_gbp')
 
-    list_filter = ('state', 'initialized_at')
+    list_filter = ('state', 'initialized_at', 'paid_at')
 
     search_fields = ('id', 'reference_number')
 
