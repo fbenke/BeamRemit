@@ -22,7 +22,7 @@ from account import constants
 from account import models
 from account.utils import AccountException
 
-PASSWORD_RE = r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$'
+PASSWORD_RE = r'^(?=.*\d).{8,}$'
 
 
 class PasswordSerializer(serializers.Serializer):

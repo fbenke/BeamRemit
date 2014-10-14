@@ -21,7 +21,7 @@ USER_PROFILE_INCOMPLETE = '16'
 # Verbal Description of Error Status Codes
 ERROR_MESSAGES = {
     INVALID_PARAMETERS: 'Invalid Parameters',
-    PASSWORD_FORMAT: 'Password must be at least 6 characters long, contain at least one upper case letter, one lower case letter, and one numeric digit.',
+    PASSWORD_FORMAT: 'Password must be at least 8 characters long and contain at least one numeric character',
     PASSWORD_MISMATCH: 'The two password fields didn\'t match.',
     PASSWORD_OLD_INCORRECT: 'Old Password is incorrect',
     EMAIL_IN_USE: 'This email is already in use.',
