@@ -1,5 +1,5 @@
 {% load account_extras %}
-Hello! Thank you for signing up for {{ site }}.
+Hello! Thank you for signing up for {{ site.name }}.
 
 To activate your account, please click on the link below:
 
