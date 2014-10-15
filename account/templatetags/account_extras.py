@@ -32,3 +32,10 @@ def aws_document_link(document_type, user_id):
     )
 
 register.simple_tag(aws_document_link)
+
+
+def get_support():
+
+    return settings.BEAM_SUPPORT
+
+register.simple_tag(get_support)

@@ -156,7 +156,7 @@ class PasswordResetSerializer(RequestEmailSerializer):
             'domain': site.domain,
             'site_name': site.name,
             'uid': urlsafe_base64_encode(force_bytes(self.object.pk)),
-            'firstname': self.object.first_name,
+            'first_name': self.object.first_name,
             'token': token_generator.make_token(self.object),
             'protocol': settings.PROTOCOL,
         }

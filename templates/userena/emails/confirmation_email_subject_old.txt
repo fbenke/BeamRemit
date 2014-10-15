@@ -1,1 +1,1 @@
-A request to change your email address is made at {{ site.name }}
+Change email address request
