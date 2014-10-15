@@ -100,7 +100,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
                             'site': Site.objects.get_current(),
                             'support': settings.BEAM_SUPPORT,
                             'site_name': Site.objects.get_current().name,
-                            'firstname': obj.user.firstname
+                            'first_name': obj.user.first_name
                         },
                         from_email=settings.BEAM_MAIL_ADDRESS,
                         to_email=obj.user.email
@@ -123,7 +123,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
                             'support': settings.BEAM_SUPPORT,
                             'reason': constants.REASON_VERBAL[reason],
                             'site_name': Site.objects.get_current().name,
-                            'firstname': obj.user.firstname
+                            'first_name': obj.user.first_name
                         },
                         from_email=settings.BEAM_MAIL_ADDRESS,
                         to_email=obj.user.email

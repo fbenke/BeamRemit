@@ -213,6 +213,7 @@ USERENA_USE_HTTPS = (ENV != ENV_LOCAL)
 # disable userena admin customizations to allow our own ones
 USERENA_REGISTER_USER = False
 USERENA_REGISTER_PROFILE = False
+USERENA_HTML_EMAIL = True
 ANONYMOUS_USER_ID = -1
 SITE_ID = 0
 
@@ -241,6 +242,9 @@ MAIL_VERIFICATION_SUCCESSFUL_HTML = 'email/user/verification_successful_message.
 MAIL_VERIFICATION_FAILED_SUBJECT = 'email/user/verification_failed_subject.txt'
 MAIL_VERIFICATION_FAILED_TEXT = 'email/user/verification_failed_message.txt'
 MAIL_VERIFICATION_FAILED_HTML = 'email/user/verification_failed_message.html'
+MAIL_TRANSACTION_COMPLETE_SUBJECT = 'email/user/transaction_complete_subject.txt'
+MAIL_TRANSACTION_COMPLETE_TEXT = 'email/user/transaction_complete_message.txt'
+MAIL_TRANSACTION_COMPLETE_HTML = 'email/user/transaction_complete_message.html'
 
 # Admin Email templates
 MAIL_NOTIFY_ADMIN_PAID_SUBJECT = 'email/admin/transaction_paid_subject.txt'
@@ -255,6 +259,7 @@ MAIL_ACTIVATION_URL = '#!/auth/activate/{}/'
 MAIL_EMAIL_CHANGE_CONFIRM_URL = '#!/settings/email/{}/'
 MAIL_PASSWORD_RESET_URL = '#!/auth/forgot/{}-{}/'
 MAIL_VERIFICATION_SITE = '#!/verify'
+MAIL_TRANSACTION_HISTORY_SITE = '#!/history'
 
 # AWS Settings
 AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY')

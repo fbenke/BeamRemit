@@ -41,8 +41,7 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
         recipient = models.Recipient(
             first_name=attrs['recipient'].first_name,
             last_name=attrs['recipient'].last_name,
-            phone_number=attrs['recipient'].phone_number,
-            notification_email=attrs['recipient'].notification_email
+            phone_number=attrs['recipient'].phone_number
         )
         transaction = models.Transaction(
             recipient=recipient,

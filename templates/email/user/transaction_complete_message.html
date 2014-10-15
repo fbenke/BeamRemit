@@ -1,0 +1,19 @@
+<html>
+<body>
+
+{% if first_name %}
+<p>Hi {{ first_name }},</p>
+{% else %}
+<p>Dear {{ site.name }} User,</p>
+{% endif %}
+
+<p>{{ recipient }} has just received {{ ghs }} GHS ({{ sender_currency}} GBP) in their MTN mobile money account ({{ mobile }}).</p>
+
+<p>To see your transaction history, please visit {{ protocol }}://{{ site.domain }}/{{ txn_history }}.</p>
+
+
+<p>Sincerely,</br>
+The {{ site.name }} Team</p>
+
+</body>
+</html>

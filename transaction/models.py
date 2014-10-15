@@ -28,11 +28,6 @@ class Recipient(models.Model):
         max_length=15,
         help_text='Mobile Money Account of recipient'
     )
-    notification_email = models.EmailField(
-        'Email Address',
-        blank=True,
-        help_text='Email Address of recipient'
-    )
 
     def __unicode__(self):
         return '{} {}'.format(self.first_name, self.last_name)

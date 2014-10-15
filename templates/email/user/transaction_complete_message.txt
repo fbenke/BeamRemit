@@ -1,0 +1,14 @@
+{% if first_name %}
+Hi {{ first_name }},
+{% else %}
+Dear {{ site.name }} User,
+{% endif %}
+
+{{ recipient }} has just received {{ ghs }} GHS ({{ sender_currency}} GBP) in their MTN mobile money account ({{ mobile }}).
+
+To see your transaction history, please visit {{ protocol }}://{{ site.domain }}/{{ txn_history }}.
+
+
+Sincerely,
+
+The {{ site.name }} Team
