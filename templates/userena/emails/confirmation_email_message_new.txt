@@ -1,7 +1,7 @@
 {% load account_extras %}
 
-{% if user.firstname %}
-Hi {{ user.firstname }},
+{% if user.first_name %}
+Hi {{ user.first_name }},
 {% else %}
 Dear {{ site.name }} User,
 {% endif %}

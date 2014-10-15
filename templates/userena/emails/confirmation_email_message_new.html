@@ -1,8 +1,8 @@
 {% load account_extras %}
 <html>
 <body>
-    {% if user.firstname %}
-    <p>Hi {{ user.firstname }},</p>
+    {% if user.first_name %}
+    <p>Hi {{ user.first_name }},</p>
     {% else %}
     <p>Dear {{ site.name }} User,</p> 
     {% endif %}
