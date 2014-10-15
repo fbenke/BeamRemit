@@ -1,8 +1,8 @@
 <html>
 <body>
 
-{% if firstname %}
-  <p>Hi {{ firstname }},</p>
+{% if user.firstname %}
+  <p>Hi {{ user.firstname }},</p>
 {% else %}
   <p>Dear {{ site.name }} User,</p> 
 {% endif %}
