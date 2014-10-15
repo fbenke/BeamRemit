@@ -1,4 +1,8 @@
+{% if first_name %}
+Hi {{ first_name }},
+{% else %}
 Dear {{ site_name }} User,
+{% endif %}
 
 We’re pleased to inform you that your {{ document }} has been approved and verified for {{ site_name }}.
 

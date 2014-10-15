@@ -1,5 +1,5 @@
-{% if firstname %}
-Hi {{ firstname }},
+{% if first_name %}
+Hi {{ first_name }},
 {% else %}
 Dear {{ site_name }} User,
 {% endif %}
