@@ -292,15 +292,3 @@ GOCOIN_BASE_URL = 'https://api.gocoin.com/api/v1/'
 GOCOIN_CREATE_INVOICE_URL = GOCOIN_BASE_URL + 'merchants/{}/invoices'.format(GOCOIN_MERCHANT_ID)
 GOCOIN_INVOICE_REDIRECT_URL = USER_BASE_URL + '/#!/send/complete/{}'
 GOCOIN_INVOICE_CALLBACK_URL = API_BASE_URL + '/api/v1/btc_payment/gocoin/'
-
-# Coinbase Settings
-# COINBASE_API_KEY = os.environ.get('COINBASE_API_KEY')
-# COINBASE_API_SECRET = os.environ.get('CONBASE_API_SECRET')
-# COINBASE_BASE_URL = 'https://coinbase.com/api/v1/'
-# COINBASE_GENERATE_BUTTON_URL = COINBASE_BASE_URL + 'buttons'
-# TODO: adjust these urls once the real site is up
-# COINBASE_CALLBACK_URL = 'https://' + ENV_SITE_MAPPING[ENV][SITE_API] + '/api/v1/transaction/confirm_payment/'
-# COINBASE_CALLBACK_URL = 'https://beamremit-dev.herokuapp.com/api/v1/transaction/confirm_payment/'
-# CONBASE_SUCCESS_URL = 'https://beamremit-dev.herokuapp.com'
-# COINBASE_CANCEL_URL = 'https://beamremit-dev.herokuapp.com'
-# COINBASE_ITEM_DESCRIPTION = 'Beam - the cheapest, fastest way to send money to Ghana.'

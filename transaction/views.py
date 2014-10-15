@@ -11,7 +11,7 @@ from transaction import serializers
 from transaction.models import Transaction, Pricing
 from transaction.permissions import IsNoAdmin
 
-from pricing.models import get_current_object
+from pricing.models import Limit, get_current_object
 
 from state.models import get_current_state
 
@@ -32,21 +32,31 @@ class CreateTransaction(GenericAPIView):
     def post(self, request):
 
         try:
-            # Pricing expired
+            # check if Pricing has expired
             if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
                 return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Sender Profile is incomplete
-            if not request.user.profile.information_complete or not request.user.profile.documents_provided:
+            # basic profile information incomplete
+            if not request.user.profile.information_complete:
                 return Response({'detail': '1'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Sender Profile is complete, documents await verification
-            if not request.user.profile.documents_verified:
-                return Response({'detail': '2'}, status=status.HTTP_400_BAD_REQUEST)
+            # calculate today's transaction volume for the user
+            volume = request.user.profile.todays_transaction_volume(request.DATA.get('amount_gbp'))
+            print volume
+            # sender has exceeded basic transaction limit
+            if volume > get_current_object(Limit).daily_limit_gbp_basic:
 
-            # Sender has exceeded daily transaction limit
-            if request.user.profile.transaction_limit_exceeded(request.DATA.get('amount_gbp')):
-                return Response({'detail': '3'}, status=status.HTTP_400_BAD_REQUEST)
+                # sender has exceeded maximum daily transaction limit
+                if volume > get_current_object(Limit).daily_limit_gbp_complete:
+                    return Response({'detail': '4'}, status=status.HTTP_400_BAD_REQUEST)
+
+                #  sender has not provided additional document
+                if not request.user.profile.documents_provided:
+                    return Response({'detail': '2'}, status=status.HTTP_400_BAD_REQUEST)
+
+                #  documents still await verification
+                if not request.user.profile.documents_verified:
+                    return Response({'detail': '3'}, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = self.serializer_class(user=request.user, data=request.DATA)
 

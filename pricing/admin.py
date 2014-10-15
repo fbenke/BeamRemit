@@ -50,11 +50,14 @@ class LimitAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         if obj:
             return ('id', 'start', 'end', 'min_gbp', 'max_gbp', 'min_ghs',
-                    'max_ghs', 'daily_limit_gbp', 'daily_limit_ghs')
+                    'max_ghs', 'daily_limit_gbp_basic', 'daily_limit_ghs_basic',
+                    'daily_limit_gbp_complete', 'daily_limit_ghs_complete')
         else:
-            return ('id', 'start', 'end', 'min_ghs', 'max_ghs', 'daily_limit_ghs')
+            return ('id', 'start', 'end', 'min_ghs', 'max_ghs',
+                    'daily_limit_ghs_basic', 'daily_limit_ghs_complete')
 
-    list_display = ('id', 'start', 'end', 'max_ghs', 'max_gbp')
+    list_display = ('id', 'start', 'end', 'max_gbp',
+                    'daily_limit_gbp_basic', 'daily_limit_gbp_complete')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:

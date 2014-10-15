@@ -54,7 +54,7 @@ class TransactionAdmin(admin.ModelAdmin):
             elif obj.state == Transaction.CANCELLED:
                 obj.cancelled_at = timezone.now()
 
-            obj.save()
+        obj.save()
 
     def sender_url(self, obj):
         path = settings.API_BASE_URL + '/admin/account/beamprofile'
@@ -83,7 +83,7 @@ class TransactionAdmin(admin.ModelAdmin):
     readonly_fields = (
         'id', 'recipient_url', 'pricing_url', 'sender_url', 'amount_gbp', 'british_pound_paid_to_beam',
         'amount_btc', 'amount_ghs', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
-        'cancelled_at', 'invalidated_at',
+        'cancelled_at', 'invalidated_at'
     )
 
     read_and_write_fields = ('state', 'comments')

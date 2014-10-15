@@ -93,21 +93,26 @@ class Limit(models.Model):
 
     def __init__(self, *args, **kwargs):
         super(Limit, self).__init__(*args, **kwargs)
-        self.gbp_ghs = get_current_object(Pricing).gbp_ghs
+        self.exchange_rate = get_current_object(Pricing).gbp_ghs * (1 - get_current_object(Pricing).markup)
 
     max_gbp = models.FloatField(
         'Maximum amount in GBP ',
-        help_text='Maximum remittance amount in GBB'
+        help_text='Maximum remittance amount in GBB per transaction'
     )
 
     min_gbp = models.FloatField(
         'Minimum amount in GBP ',
-        help_text='Minimum remittance amount in GBB'
+        help_text='Minimum remittance amount in GBB per transaction'
     )
 
-    daily_limit_gbp = models.FloatField(
-        'Maximum per user per day',
-        help_text='Maximum amount a user is allowed to send per day in GBP'
+    daily_limit_gbp_basic = models.FloatField(
+        'Maximum for basic users',
+        help_text='Maximum amount a basic user is allowed to send per day in GBP'
+    )
+
+    daily_limit_gbp_complete = models.FloatField(
+        'Maximum for fully verified users',
+        help_text='Maximum amount a fully verfied user is allowed to send per day in GBP'
     )
 
     start = models.DateTimeField(
@@ -126,12 +131,16 @@ class Limit(models.Model):
 
     @property
     def min_ghs(self):
-        return self.gbp_ghs * self.min_gbp
+        return self.exchange_rate * self.min_gbp
 
     @property
     def max_ghs(self):
-        return self.gbp_ghs * self.max_gbp
+        return self.exchange_rate * self.max_gbp
 
     @property
-    def daily_limit_ghs(self):
-        return self.gbp_ghs * self.daily_limit_gbp
+    def daily_limit_ghs_basic(self):
+        return self.exchange_rate * self.daily_limit_gbp_basic
+
+    @property
+    def daily_limit_ghs_complete(self):
+        return self.exchange_rate * self.daily_limit_gbp_complete

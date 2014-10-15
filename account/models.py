@@ -15,8 +15,6 @@ from account.utils import AccountException
 
 from beam.utils.general import log_error
 
-from pricing.models import Limit, get_current_object
-
 
 class BeamProfile(UserenaBaseProfile):
     ''' represents a sender user profile '''
@@ -196,7 +194,7 @@ class BeamProfile(UserenaBaseProfile):
             return False
         return True
 
-    def transaction_limit_exceeded(self, new_amount=0):
+    def todays_transaction_volume(self, new_amount=0):
         try:
             now = timezone.now()
             today = datetime.datetime(now.year, now.month, now.day).replace(tzinfo=utc)
@@ -211,7 +209,7 @@ class BeamProfile(UserenaBaseProfile):
             for t in transactions:
                 amount = amount + t.amount_gbp
 
-            return amount > get_current_object(Limit).daily_limit_gbp
+            return amount
 
         except TypeError:
 
