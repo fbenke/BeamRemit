@@ -65,7 +65,8 @@ class ConfirmGoCoinPayment(APIView):
                         context={
                             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                             'protocol': get_protocol(),
-                            'id': transaction.id
+                            'id': transaction.id,
+                            'site_name': Site.objects.get_current().name
                         },
                         to_email=mails.get_admin_mail_addresses()
                     )

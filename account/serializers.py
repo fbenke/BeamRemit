@@ -11,7 +11,7 @@ from django.utils.http import urlsafe_base64_encode
 
 from userena import settings as userena_settings
 from userena.models import UserenaSignup
-from userena.utils import get_user_model, get_protocol
+from userena.utils import get_user_model
 
 from rest_framework import serializers
 from rest_framework import fields
@@ -156,10 +156,9 @@ class PasswordResetSerializer(RequestEmailSerializer):
             'domain': site.domain,
             'site_name': site.name,
             'uid': urlsafe_base64_encode(force_bytes(self.object.pk)),
-            'user': self.object,
+            'firstname': self.object.first_name,
             'token': token_generator.make_token(self.object),
-            'protocol': get_protocol(),
-            'without_usernames': settings.USERENA_WITHOUT_USERNAMES
+            'protocol': settings.PROTOCOL,
         }
 
         send_mail(

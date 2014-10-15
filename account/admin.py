@@ -99,7 +99,8 @@ class BeamProfileAdmin(admin.ModelAdmin):
                             'document': Profile.DOCUMENT_VERBAL[Profile.FIELD_DOCUMENT_MAPPING[field]],
                             'site': Site.objects.get_current(),
                             'support': settings.BEAM_SUPPORT,
-                            'site_name': Site.objects.get_current().name
+                            'site_name': Site.objects.get_current().name,
+                            'firstname': obj.user.firstname
                         },
                         from_email=settings.BEAM_MAIL_ADDRESS,
                         to_email=obj.user.email
@@ -121,7 +122,8 @@ class BeamProfileAdmin(admin.ModelAdmin):
                             'verification': settings.MAIL_VERIFICATION_SITE,
                             'support': settings.BEAM_SUPPORT,
                             'reason': constants.REASON_VERBAL[reason],
-                            'site_name': Site.objects.get_current().name
+                            'site_name': Site.objects.get_current().name,
+                            'firstname': obj.user.firstname
                         },
                         from_email=settings.BEAM_MAIL_ADDRESS,
                         to_email=obj.user.email

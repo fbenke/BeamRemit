@@ -1,1 +1,1 @@
-{{site.name}}: A payment problem occured
+{{site_name}}: A payment problem occured

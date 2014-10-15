@@ -231,7 +231,7 @@ else:
 # Email templates
 
 # User Email templates
-MAIL_PASSWORD_RESET_SUBJECT = 'registration/password_reset_subject.txt'
+MAIL_PASSWORD_RESET_SUBJECT = 'userena/emails/password_reset_subject.txt'
 MAIL_PASSWORD_RESET_TEXT = 'userena/emails/password_reset_message.txt'
 MAIL_PASSWORD_RESET_HTML = 'userena/emails/password_reset_message.html'
 

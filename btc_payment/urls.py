@@ -11,10 +11,5 @@ urlpatterns = patterns(
         r'^gocoin/$',
         views.ConfirmGoCoinPayment.as_view(),
         name='gocoin'
-    ),
-    # url(
-    #     r'^confirm_payment/$',
-    #     views.ConfirmPayment.as_view(),
-    #     name='confirm_payment'
-    # ),
+    )
 )

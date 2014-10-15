@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator as token_generator
+from django.contrib.sites.models import Site
 from django.db import transaction as dbtransaction
 from django.utils.http import urlsafe_base64_decode
 
@@ -426,7 +427,8 @@ class UploadComplete(APIView):
                     'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                     'protocol': get_protocol(),
                     'id': request.user.profile.id,
-                    'document': BeamProfile.DOCUMENT_VERBAL[document]
+                    'document': BeamProfile.DOCUMENT_VERBAL[document],
+                    'site_name': Site.objects.get_current().name
                 },
                 to_email=mails.get_admin_mail_addresses()
             )
