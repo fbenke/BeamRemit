@@ -79,7 +79,13 @@ urlpatterns = patterns(
         r'^verification_status/$',
         views.VerificationStatus.as_view(),
         name='verification_status'
+    ),
+    url(
+        r'^limit/$',
+        views.AccountLimits.as_view(),
+        name='limit'
     )
+    
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)

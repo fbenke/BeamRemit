@@ -22,6 +22,7 @@ from account import serializers
 from account.models import BeamProfile
 from account.utils import AccountException, generate_aws_upload
 
+from pricing.models import Limit, get_current_object
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 
@@ -449,4 +450,27 @@ class VerificationStatus(APIView):
     def get(self, request):
         data = request.user.profile.get_document_states()
         data['information_complete'] = request.user.profile.information_complete
+        return Response(data)
+
+
+class AccountLimits(APIView):
+
+    permission_classes = (permissions.IsAuthenticated, )
+
+    def get(self, request):
+
+        todays_vol = request.user.profile.todays_transaction_volume()
+
+        if request.user.profile.documents_verified:
+            account_limit = get_current_object(Limit).daily_limit_gbp_complete
+            can_extend = False
+        else:
+            account_limit = get_current_object(Limit).daily_limit_gbp_basic
+            can_extend = True
+
+        data = {
+            'today': todays_vol,
+            'limit': account_limit,
+            'can_extend': can_extend
+        }
         return Response(data)
