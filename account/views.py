@@ -19,7 +19,7 @@ from beam.utils import mails
 
 from account import constants
 from account import serializers
-from account.models import BeamProfile
+from account.models import BeamProfile as Profile
 from account.utils import AccountException, generate_aws_upload
 
 from pricing.models import Limit, get_current_object
@@ -313,11 +313,15 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
 
                 # need to reupload passport
                 if (list(set(passport_params) & set(changed_params))):
-                    request.user.profile.update_document_state(BeamProfile.IDENTIFICATION, BeamProfile.EMPTY)
+                    request.user.profile.update_document_state(Profile.IDENTIFICATION, Profile.EMPTY)
+                    request.user.profile.identification_issue_date = None
+                    request.user.profile.identification_expiry_date = None
+                    request.user.profile.identification_number = ''
+                    request.user.profile.save()
 
                 # need to reupload proof of residence
                 if (list(set(por_params) & set(changed_params))):
-                    request.user.profile.update_document_state(BeamProfile.PROOF_OF_RESIDENCE, BeamProfile.EMPTY)
+                    request.user.profile.update_document_state(Profile.PROOF_OF_RESIDENCE, Profile.EMPTY)
 
                 # clear response data
                 response.data = {}
@@ -358,7 +362,7 @@ class GenerateAWSUpload(APIView):
 
         # check if parameters are complete
         if (not document_type or not content_type or document_type
-                not in BeamProfile.DOCUMENT_TYPES):
+                not in Profile.DOCUMENT_TYPES):
 
             return Response({'detail': constants.INVALID_PARAMETERS},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -375,7 +379,7 @@ class GenerateAWSUpload(APIView):
 
         # allow upload only if the current status is 'declied' or 'empty'
         if request.user.profile.get_document_state(document_type)\
-                not in (BeamProfile.EMPTY, BeamProfile.FAILED):
+                not in (Profile.EMPTY, Profile.FAILED):
 
             log_error('ERROR Generate AWS Link - Unexpected Request from user id: {}'.
                       format(request.user.id))
@@ -396,9 +400,10 @@ class UploadComplete(APIView):
     def post(self, request):
         try:
             document = request.DATA.get('document')
+            profile = request.user.profile
 
             # allow state change only if the profile information is complete
-            if not request.user.profile.information_complete:
+            if not profile.information_complete:
 
                 log_error('ERROR Document Upload Complete - User {} has not completed their profile'.
                           format(request.user.id))
@@ -408,8 +413,8 @@ class UploadComplete(APIView):
                     status=status.HTTP_400_BAD_REQUEST)
 
             # allow state change only if the current status is 'declied' or 'empty'
-            if request.user.profile.get_document_state(document)\
-                    not in (BeamProfile.EMPTY, BeamProfile.FAILED):
+            if profile.get_document_state(document)\
+                    not in (Profile.EMPTY, Profile.FAILED):
 
                 log_error('ERROR Document Upload Complete - Unexpected Request from user id: {}'.
                           format(request.user.id))
@@ -418,7 +423,20 @@ class UploadComplete(APIView):
                     {'detail': constants.DOCUMENT_ALREADY_UPLOADED},
                     status=status.HTTP_400_BAD_REQUEST)
 
-            request.user.profile.update_document_state(document, BeamProfile.UPLOADED)
+            if document == Profile.IDENTIFICATION:
+
+                issue = request.DATA.get('issue', None)
+                expiry = request.DATA.get('expiry', None)
+                number = request.DATA.get('number', None)
+
+                if not issue or not expiry or not number:
+                    raise AccountException
+
+                profile.identification_issue_date = issue
+                profile.identification_expiry_date = expiry
+                profile.identification_number = number
+
+            profile.update_document_state(document, Profile.UPLOADED)
 
             # notify admins that a document needs to be verified
             mails.send_mail(
@@ -427,8 +445,8 @@ class UploadComplete(APIView):
                 context={
                     'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                     'protocol': get_protocol(),
-                    'id': request.user.profile.id,
-                    'document': BeamProfile.DOCUMENT_VERBAL[document],
+                    'id': profile.id,
+                    'document': Profile.DOCUMENT_VERBAL[document],
                     'site_name': Site.objects.get_current().name
                 },
                 to_email=mails.get_admin_mail_addresses()
