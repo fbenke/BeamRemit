@@ -90,8 +90,13 @@ class ViewTransactions(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        states = list(set(Transaction.TRANSACTION_STATES) - set(Transaction.INIT))
-        queryset = Transaction.objects.filter(sender__id=user.id, state__in=states)
+        queryset = Transaction.objects.filter(
+            sender__id=user.id,
+            state__in=(
+                Transaction.PAID, Transaction.INVALID,
+                Transaction.PROCESSED, Transaction.CANCELLED
+            )
+        )
         return queryset
 
 
