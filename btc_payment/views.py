@@ -49,11 +49,13 @@ class ConfirmGoCoinPayment(APIView):
                 pass
 
             elif request.DATA.get('event') == 'invoice_payment_received':
+
+                transaction.gocoin_invoice.balance_due = request.DATA.get('payload')['crypto_balance_due']
+
                 # full payment received, this includes overpaid
                 if request.DATA.get('payload')['status'] == 'paid':
 
                     transaction.gocoin_invoice.state = GoCoinInvoice.PAID
-                    transaction.gocoin_invoice.balance_due = request.DATA.get('payload')['crypto_balance_due']
 
                     with db_transaction.atomic():
                         transaction.gocoin_invoice.save()
@@ -70,8 +72,10 @@ class ConfirmGoCoinPayment(APIView):
                         },
                         to_email=mails.get_admin_mail_addresses()
                     )
+
                 # payment received, but does not fulfill the required amount
                 elif request.DATA.get('payload')['status'] == 'underpaid':
+
                     transaction.gocoin_invoice.state = GoCoinInvoice.UNDERPAID
                     transaction.gocoin_invoice.save()
                 else:
