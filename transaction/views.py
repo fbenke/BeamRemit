@@ -90,7 +90,8 @@ class ViewTransactions(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Transaction.objects.filter(sender__id=user.id)
+        states = list(set(Transaction.TRANSACTION_STATES) - set(Transaction.INIT))
+        queryset = Transaction.objects.filter(sender__id=user.id, state__in=states)
         return queryset
 
 
@@ -100,6 +101,5 @@ class GetTransaction(RetrieveAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        states = list(set(Transaction.TRANSACTION_STATES) - Transaction.INIT)
-        queryset = Transaction.objects.filter(sender__id=user.id, states__in=states)
+        queryset = Transaction.objects.filter(sender__id=user.id)
         return queryset
