@@ -80,15 +80,15 @@ class TransactionAdmin(admin.ModelAdmin):
     def british_pound_paid_to_beam(self, obj):
         return obj.amount_gbp + obj.pricing.fee
 
-    readonly_fields = (
-        'id', 'recipient_url', 'pricing_url', 'sender_url', 'amount_gbp', 'british_pound_paid_to_beam',
-        'amount_btc', 'amount_ghs', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
-        'cancelled_at', 'invalidated_at'
-    )
+    # readonly_fields = (
+    #     'id', 'recipient_url', 'pricing_url', 'sender_url', 'amount_gbp', 'british_pound_paid_to_beam',
+    #     'amount_btc', 'amount_ghs', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
+    #     'cancelled_at', 'invalidated_at'
+    # )
 
-    read_and_write_fields = ('state', 'comments')
+    # read_and_write_fields = ('state', 'comments')
 
-    fields = readonly_fields + read_and_write_fields
+    # fields = readonly_fields + read_and_write_fields
 
     list_display = ('id', 'sender_email', 'reference_number', 'state', 'amount_gbp')
 
