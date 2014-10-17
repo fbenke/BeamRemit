@@ -8,7 +8,6 @@ Dear {{ site.name }} User,
 
 To see your transaction history, please visit {{ protocol }}://{{ site.domain }}/{{ txn_history }}.
 
-
 Sincerely,
 
 The {{ site.name }} Team

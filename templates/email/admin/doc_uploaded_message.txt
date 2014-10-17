@@ -3,4 +3,5 @@ Dear Admin,
 A {{document}} document has been uploaded for verfication on {{ domain }}. Please go to {{ protocol }}://{{ domain }}/admin/account/beamprofile/{{ id }}.
 
 Sincerely,
+
 The SendGridBot
