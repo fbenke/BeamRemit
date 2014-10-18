@@ -31,6 +31,10 @@ class CreateTransaction(GenericAPIView):
 
     def post(self, request):
 
+        # block countries we are not licensed to operate in
+        if country_blocked(request):
+            return Response(status=HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
+
         try:
             # check if Pricing has expired
             if get_current_object(Pricing).id != request.DATA.get('pricing_id'):

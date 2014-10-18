@@ -25,6 +25,7 @@ from account.utils import AccountException, generate_aws_upload
 from pricing.models import Limit, get_current_object
 
 from beam.utils.general import country_blocked
+from beam.utils.general import HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 
@@ -35,8 +36,9 @@ class Signup(APIView):
 
     def post(self, request):
 
+        # block countries we are not licensed to operate in
         if country_blocked(request):
-            return Response({'detail': constants.COUNTRY_BLOCKED}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
 
         serializer = self.serializer_class(data=request.DATA)
         if serializer.is_valid():
@@ -145,11 +147,9 @@ class Signin(APIView):
 
     def post(self, request):
 
+        # block countries we are not licensed to operate in
         if country_blocked(request):
-            return Response(
-                {'detail': constants.COUNTRY_BLOCKED},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(status=HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
 
         serializer = self.serializer_class(data=request.DATA)
         if serializer.is_valid():

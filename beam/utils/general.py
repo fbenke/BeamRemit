@@ -34,6 +34,6 @@ def get_client_ip(request):
 def country_blocked(request):
     ip_address = get_client_ip(request)
     g = GeoIP()
-    print ip_address
-    print g.country(ip_address)
     return g.country(ip_address)['country_code'] in settings.COUNTRY_BLACKLIST
+
+HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451

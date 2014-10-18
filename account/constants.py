@@ -17,7 +17,6 @@ SIGNIN_MISSING_CREDENTIALS = '13'
 USER_ACCOUNT_ALREADY_ACTIVATED = '14'
 DOCUMENT_ALREADY_UPLOADED = '15'
 USER_PROFILE_INCOMPLETE = '16'
-COUNTRY_BLOCKED = '17'
 
 # Verbal Description of Error Status Codes
 ERROR_MESSAGES = {
@@ -38,7 +37,6 @@ ERROR_MESSAGES = {
     SIGNIN_MISSING_CREDENTIALS: 'Must include "email" and "password"',
     USER_ACCOUNT_ALREADY_ACTIVATED: 'This account is is already activated.',
     DOCUMENT_ALREADY_UPLOADED: 'This document has already been uploaded.',
-    COUNTRY_BLOCKED: 'We are not allowed to offer our services in your country'
 }
 
 from account.models import DocumentStatusChange as d
