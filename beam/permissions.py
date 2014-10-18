@@ -6,10 +6,15 @@ from rest_framework import permissions
 
 class IsNotOnCountryBlacklist(permissions.BasePermission):
 
+    def _get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
     def has_permission(self, request, view):
-        ip_address = request.META['REMOTE_ADDR']
-        print request.META['X-Forwarded-For']
-        print ip_address
+        ip_address = self._get_client_ip(request)
         g = GeoIP()
-        print g.country(ip_address)
         return not g.country(ip_address)['country_code'] in settings.COUNTRY_BLACKLIST
