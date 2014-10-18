@@ -16,5 +16,7 @@ class IsNotOnCountryBlacklist(permissions.BasePermission):
 
     def has_permission(self, request, view):
         ip_address = self._get_client_ip(request)
+        print ip_address
         g = GeoIP()
+        print g.country(ip_address)
         return not g.country(ip_address)['country_code'] in settings.COUNTRY_BLACKLIST
