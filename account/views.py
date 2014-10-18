@@ -24,6 +24,7 @@ from account.utils import AccountException, generate_aws_upload
 
 from pricing.models import Limit, get_current_object
 
+from beam.utils.general import country_blocked
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 
@@ -33,6 +34,10 @@ class Signup(APIView):
     serializer_class = serializers.SignupSerializer
 
     def post(self, request):
+
+        if country_blocked(request):
+            return Response({'detail': constants.COUNTRY_BLOCKED}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.serializer_class(data=request.DATA)
         if serializer.is_valid():
             user = serializer.save()
@@ -139,6 +144,13 @@ class Signin(APIView):
     serializer_class = serializers.AuthTokenSerializer
 
     def post(self, request):
+
+        if country_blocked(request):
+            return Response(
+                {'detail': constants.COUNTRY_BLOCKED},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = self.serializer_class(data=request.DATA)
         if serializer.is_valid():
             authenticated_user = serializer.object['user']

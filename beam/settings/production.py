@@ -159,7 +159,6 @@ REST_FRAMEWORK = {
     # if not specified otherwise, anyone can acess a view (this is the default)
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
-        'beam.permissions.IsNotOnCountryBlacklist'
     ),
     # if required, which authentication is eligible?
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -294,5 +293,5 @@ GOCOIN_CREATE_INVOICE_URL = GOCOIN_BASE_URL + 'merchants/{}/invoices'.format(GOC
 GOCOIN_INVOICE_REDIRECT_URL = USER_BASE_URL + '/#!/send/complete/{}'
 GOCOIN_INVOICE_CALLBACK_URL = API_BASE_URL + '/api/v1/btc_payment/gocoin/'
 
-COUNTRY_BLACKLIST = ('US', 'GHA')
+COUNTRY_BLACKLIST = ('US', 'GH')
 GEOIP_PATH = BASE_DIR('static', 'geo_data', 'GeoIP.dat')
