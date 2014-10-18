@@ -8,6 +8,7 @@ class IsNotOnCountryBlacklist(permissions.BasePermission):
 
     def has_permission(self, request, view):
         ip_address = request.META['REMOTE_ADDR']
+        print request.META['X-Forwarded-For']
         print ip_address
         g = GeoIP()
         print g.country(ip_address)
