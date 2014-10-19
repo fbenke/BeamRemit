@@ -19,6 +19,7 @@ html2text==2014.7.3
 jsonfield==1.0.0
 newrelic==2.26.0.22
 psycopg2==2.5.3
+pydns==2.3.6
 sendgrid==1.1.1
 six==1.7.3
 smtpapi==0.1.2

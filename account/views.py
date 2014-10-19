@@ -14,7 +14,7 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from userena.models import UserenaSignup
 from userena.utils import get_user_model, get_protocol
 
-from beam.utils.logging import log_error
+from beam.utils.log import log_error
 from beam.utils import mails
 
 from account import constants

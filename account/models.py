@@ -13,7 +13,7 @@ from transaction.models import Transaction
 
 from account.utils import AccountException
 
-from beam.utils.logging import log_error
+from beam.utils.log import log_error
 
 
 class BeamProfile(UserenaBaseProfile):

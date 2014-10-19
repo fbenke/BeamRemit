@@ -1,9 +1,10 @@
+import DNS
+
 from django.conf import settings
 from django.contrib.gis.geoip import GeoIP
 
-from beam.utils.logging import log_error
+from beam.utils.log import log_error
 
-import DNS
 
 HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451
 
@@ -18,12 +19,17 @@ def get_client_ip(request):
 
 
 def country_blocked(request):
+    if settings.ENV == settings.ENV_LOCAL:
+        return False
     ip_address = get_client_ip(request)
     g = GeoIP()
     return g.country(ip_address)['country_code'] in settings.COUNTRY_BLACKLIST
 
 
 def is_tor_node(request):
+    if settings.ENV == settings.ENV_LOCAL:
+        return False
+
     ip_address = get_client_ip(request)
     return is_using_tor(ip_address)
 
@@ -43,15 +49,15 @@ def is_using_tor(clientIp, ELPort='80'):
     splitIp.reverse()
     ELExitNode = '.'.join(splitIp)
 
-    # We will try to reach beam
-    name = 'beamremit-dev.herokuapp.com'
+    # get beam's current ip address
+    name = settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_USER]
     ElTarget = DNS.dnslookup(name, 'A')
 
     # ExitList DNS server we want to query
     ELHost = 'ip-port.exitlist.torproject.org'
 
     # Prepare the question as an A record (i.e. a 32-bit IPv4 address) request
-    ELQuestion = ELExitNode + "." + ELPort + "." + ElTarget[0] + "." + ELHost
+    ELQuestion = ELExitNode + "." + ELPort + "." + ElTarget[1] + "." + ELHost
     request = DNS.DnsRequest(name=ELQuestion, qtype='A')
 
     # Ask the question and load the data into our answer

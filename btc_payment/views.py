@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from userena.utils import get_protocol
 
 from beam.utils.exceptions import APIException
-from beam.utils.logging import log_error
+from beam.utils.log import log_error
 from beam.utils import mails
 from beam.utils.security import generate_signature
 

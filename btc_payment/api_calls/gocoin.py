@@ -3,7 +3,7 @@ import urllib2
 
 from django.conf import settings
 
-from beam.utils.logging import log_error
+from beam.utils.log import log_error
 from beam.utils.exceptions import APIException
 
 
