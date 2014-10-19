@@ -5,7 +5,18 @@ from pricing.models import Pricing, Comparison, Limit, end_previous_object
 from pricing import forms
 
 
-class PricingAdmin(admin.ModelAdmin):
+class DoNotDeleteModelAdmin(admin.ModelAdmin):
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_actions(self, request):
+        actions = super(DoNotDeleteModelAdmin, self).get_actions(request)
+        del actions['delete_selected']
+        return actions
+
+
+class PricingAdmin(DoNotDeleteModelAdmin):
 
     form = forms.PricingForm
 
@@ -25,7 +36,7 @@ class PricingAdmin(admin.ModelAdmin):
 admin.site.register(Pricing, PricingAdmin)
 
 
-class ComparisonAdmin(admin.ModelAdmin):
+class ComparisonAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -43,7 +54,7 @@ class ComparisonAdmin(admin.ModelAdmin):
 admin.site.register(Comparison, ComparisonAdmin)
 
 
-class LimitAdmin(admin.ModelAdmin):
+class LimitAdmin(DoNotDeleteModelAdmin):
 
     form = forms.LimitForm
 
