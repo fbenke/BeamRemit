@@ -1,7 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
-from beam.utils.general import log_error
+from beam.utils.logging import log_error
 
 
 class State(models.Model):

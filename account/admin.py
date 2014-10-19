@@ -46,13 +46,14 @@ class BeamProfileAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         'user_url', 'user_email', 'user_name', 'date_of_birth',
-        'street', 'post_code', 'city', 'country',
+        'street', 'post_code', 'city', 'country', 'accepted_privacy_policy',
         'identification_number', 'identification_issue_date', 'identification_expiry_date'
     )
 
     fields = (
         'user_url', 'user_email', 'user_name', 'date_of_birth',
         'street', 'post_code', 'city', 'country',
+        'accepted_privacy_policy',
         ('identification_number', 'identification_issue_date', 'identification_expiry_date'),
         ('identification_state', 'identification_reason', 'send_identification_mail'),
         ('proof_of_residence_state', 'proof_of_residence_reason', 'send_proof_of_residence_mail')

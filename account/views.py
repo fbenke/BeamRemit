@@ -14,7 +14,7 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from userena.models import UserenaSignup
 from userena.utils import get_user_model, get_protocol
 
-from beam.utils.general import log_error
+from beam.utils.logging import log_error
 from beam.utils import mails
 
 from account import constants
@@ -24,8 +24,7 @@ from account.utils import AccountException, generate_aws_upload
 
 from pricing.models import Limit, get_current_object
 
-from beam.utils.general import country_blocked
-from beam.utils.general import HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
+from beam.utils.ip_blocking import country_blocked, HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 

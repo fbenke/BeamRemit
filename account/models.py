@@ -13,7 +13,7 @@ from transaction.models import Transaction
 
 from account.utils import AccountException
 
-from beam.utils.general import log_error
+from beam.utils.logging import log_error
 
 
 class BeamProfile(UserenaBaseProfile):
@@ -133,6 +133,11 @@ class BeamProfile(UserenaBaseProfile):
         max_length=3,
         choices=DOCUMENT_STATE_CHOICES,
         default=EMPTY
+    )
+
+    accepted_privacy_policy = models.BooleanField(
+        'Privacy Policy accepted',
+        default=True
     )
 
     def get_document_state(self, document):

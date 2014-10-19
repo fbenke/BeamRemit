@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from jsonfield import JSONField
 
-from beam.utils.general import log_error
+from beam.utils.logging import log_error
 
 
 def get_current_object(cls):

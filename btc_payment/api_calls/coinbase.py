@@ -6,7 +6,7 @@ import json
 
 from django.conf import settings
 
-from beam.utils.general import log_error
+from beam.utils.logging import log_error
 from beam.utils.exceptions import APIException
 
 

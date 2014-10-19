@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
-from beam.utils.general import log_error
+from beam.utils.logging import log_error
 
 from state.models import State
 

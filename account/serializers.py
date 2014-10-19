@@ -71,6 +71,7 @@ class SignupSerializer(PasswordSerializer):
     Also requires the password to be entered twice.
     '''
     email = fields.EmailField(label='Email')
+    accepted_privacy_policy = fields.BooleanField(label='Privacy Policy accepted')
 
     def validate_email(self, attrs, source):
         'Validate that the e-mail address is unique.'
@@ -81,6 +82,11 @@ class SignupSerializer(PasswordSerializer):
                .exclude(activation_key=userena_settings.USERENA_ACTIVATED):
                 raise serializers.ValidationError(constants.EMAIL_IN_USE_UNCONFIRMED)
             raise serializers.ValidationError(constants.EMAIL_IN_USE)
+        return attrs
+
+    def validate_accepted_privacy_policy(self, attrs, source):
+        if not attrs[source]:
+            raise serializers.ValidationError(constants.PRIVACY_POLICY_NOT_ACCEPTED)
         return attrs
 
     def restore_object(self, attrs, instance=None):
