@@ -29,7 +29,7 @@ class BeamAPITestCase(APITestCase):
             'email': email,
             'password1': password,
             'password2': password,
-
+            'acceptedPrivacyPolicy': True,
         }
         response = self.client.post(self.url_signup, data)
         return response

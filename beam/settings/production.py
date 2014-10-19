@@ -293,5 +293,15 @@ GOCOIN_CREATE_INVOICE_URL = GOCOIN_BASE_URL + 'merchants/{}/invoices'.format(GOC
 GOCOIN_INVOICE_REDIRECT_URL = USER_BASE_URL + '/#!/send/complete/{}'
 GOCOIN_INVOICE_CALLBACK_URL = API_BASE_URL + '/api/v1/btc_payment/gocoin/'
 
-COUNTRY_BLACKLIST = ('US', )
+COUNTRY_BLACKLIST = (
+    'US',
+    # FATF Blacklist as of June 2014, see http://en.wikipedia.org/wiki/FATF_blacklist
+    'IR',  # Iran
+    'KP',  # North Korea
+    'DZ',  # Algeria
+    'EC',  # Ecuador
+    'ID',  # Indonesia
+    'MM'  # Myanmar
+)
+
 GEOIP_PATH = BASE_DIR('static', 'geo_data', 'GeoIP.dat')
