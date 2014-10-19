@@ -53,7 +53,7 @@ urlpatterns = patterns(
     url(
         r'^api-auth/',
         include('rest_framework.urls', namespace='rest_framework')
-    ),
+    )
 )
 
 handler404 = 'beam.views.page_not_found'

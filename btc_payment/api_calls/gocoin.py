@@ -7,7 +7,6 @@ from beam.utils.logging import log_error
 from beam.utils.exceptions import APIException
 
 
-# TODO: maybe merge with coinbase.make_request
 def make_request(url, body=None):
 
     opener = urllib2.build_opener()

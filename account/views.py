@@ -24,7 +24,8 @@ from account.utils import AccountException, generate_aws_upload
 
 from pricing.models import Limit, get_current_object
 
-from beam.utils.ip_blocking import country_blocked, HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
+from beam.utils.ip_blocking import country_blocked, is_tor_node,\
+    HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
 
 'DRF implementation of the userena.views used for Beam Accounts.'
 
@@ -504,3 +505,9 @@ class AccountLimits(APIView):
             'can_extend': can_extend
         }
         return Response(data)
+
+
+class Test(APIView):
+
+    def get(self, request):
+        return Response({"detail": is_tor_node(request)})
