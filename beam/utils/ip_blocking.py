@@ -18,19 +18,21 @@ def get_client_ip(request):
     return ip
 
 
-def country_blocked(request):
+def country_blocked(ip_address):
+
     if settings.ENV == settings.ENV_LOCAL:
         return False
-    ip_address = get_client_ip(request)
+
     g = GeoIP()
+
     return g.country(ip_address)['country_code'] in settings.COUNTRY_BLACKLIST
 
 
-def is_tor_node(request):
+def is_tor_node(ip_address):
+
     if settings.ENV == settings.ENV_LOCAL:
         return False
 
-    ip_address = get_client_ip(request)
     return is_using_tor(ip_address)
 
 

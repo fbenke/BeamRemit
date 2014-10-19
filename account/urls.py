@@ -84,10 +84,6 @@ urlpatterns = patterns(
         r'^limit/$',
         views.AccountLimits.as_view(),
         name='limit'
-    ),
-    url(
-        r'^test/$',
-        views.Test.as_view()
     )
 )
 

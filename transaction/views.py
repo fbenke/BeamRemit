@@ -6,7 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from beam.utils.exceptions import APIException
-from beam.utils.ip_blocking import country_blocked, HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
+from beam.utils.ip_blocking import country_blocked, is_tor_node,\
+    get_client_ip, HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
 
 from transaction import serializers
 from transaction.models import Transaction, Pricing
@@ -33,8 +34,10 @@ class CreateTransaction(GenericAPIView):
 
     def post(self, request):
 
-        # block countries we are not licensed to operate in
-        if country_blocked(request):
+        # block countries we are not licensed to operate in and tor clients
+        client_ip = get_client_ip(request)
+
+        if country_blocked(client_ip) or is_tor_node(client_ip):
             return Response(status=HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
 
         try:
