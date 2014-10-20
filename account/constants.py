@@ -44,11 +44,13 @@ ERROR_MESSAGES = {
 from account.models import DocumentStatusChange as d
 
 REASON_VERBAL = {
-    d.INVALID_IDENTIFICATION: 'The document did not depict a password issued by your country.',
-    d.CONTRADICTION: 'The profile information and documents were contradicting.',
-    d.CREDIT_NOT_ACCEPTED: 'We cannot accept credit card statements as proof of residence.',
-    d.MOBILE_NOT_ACCEPTED: 'We cannot accept mobile phone bills as proof of residence.',
-    d.INVALID_FORMAT: 'The document has an invalid format.',
-    d.LOW_RESOLUTION: 'The resolution is too low.',
-    d.MISC: 'Something was wrong with the document. A member of the support team will contact you via email'
+    d.INVALID_IDENTIFICATION: 'the file does not depict an identity document issued by your country. We accept passports, driver licenses and national id cards.',
+    d.EXPIRED_IDENTIFICATION: 'the document is expired.',
+    d.INCOMPLETE_IDENTIFICATION: 'important parts of the document are not visible (i.e. document number or picture) or entirely missing (i.e. second side of an id card).',
+    d.EXPIRED_PROOF_OF_RESIDENCE: 'the document is older than 3 months.',
+    d.ADDRESS_MISMATCH: 'the address on the document does not match the address you provided.',
+    d.INVALID_PROOF_OF_RESIDENCE: 'the document cannot be accepted as proof of residence. Please upload a utility bill, bank statement or tax return.',
+    d.LOW_QUALITY: 'the document quality is too low.',
+    d.CONTRADICTION: 'the profile information and information on the document were contradicting.',
+    d.MISCELLANEOUS: 'something was wrong with the document. A member of the support team will contact you in a separate email.'
 }

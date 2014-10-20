@@ -46,8 +46,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         'user_url', 'user_email', 'user_name', 'date_of_birth',
-        'street', 'post_code', 'city', 'country', 'accepted_privacy_policy',
-        'identification_number', 'identification_issue_date', 'identification_expiry_date'
+        'street', 'post_code', 'city', 'country', 'accepted_privacy_policy'
     )
 
     fields = (
@@ -129,6 +128,8 @@ class BeamProfileAdmin(admin.ModelAdmin):
                         from_email=settings.BEAM_MAIL_ADDRESS,
                         to_email=obj.user.email
                     )
+            
+            obj.save()
 
 
 admin.site.register(Profile, BeamProfileAdmin)

@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.admin.widgets import AdminDateWidget
 
 from account.models import DocumentStatusChange
 from account.models import BeamProfile as Profile
@@ -14,6 +15,9 @@ class ProfileModelForm(forms.ModelForm):
     send_identification_mail = forms.BooleanField(required=False, initial=True)
     send_proof_of_residence_mail = forms.BooleanField(required=False, initial=True)
     identification_reason = forms.ChoiceField(
-        choices=DocumentStatusChange.REASONS_GENERAL + DocumentStatusChange.REASONS_PAS)
+        choices=DocumentStatusChange.REASONS_IDENTIFICATION + DocumentStatusChange.REASONS_GENERAL)
     proof_of_residence_reason = forms.ChoiceField(
-        choices=DocumentStatusChange.REASONS_GENERAL + DocumentStatusChange.REASONS_POR)
+        choices=DocumentStatusChange.REASONS_PROOF_OF_RESIDENCE + DocumentStatusChange.REASONS_GENERAL)
+    # identification_issue_date = forms.DateTimeField(
+    #     widget = AdminDateWidget
+    # )

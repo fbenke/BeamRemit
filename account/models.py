@@ -226,32 +226,35 @@ class DocumentStatusChange(models.Model):
     class Meta:
         ordering = ['-changed_at']
 
-    # TODO: add valid reasons
-    INVALID_IDENTIFICATION = 'IND'
-    CREDIT_NOT_ACCEPTED = 'CRE'
-    MOBILE_NOT_ACCEPTED = 'PHO'
-    INVALID_FORMAT = 'INF'
+    INVALID_IDENTIFICATION = 'INI'
+    EXPIRED_IDENTIFICATION = 'EXI'
+    INCOMPLETE_IDENTIFICATION = 'INC'
+    EXPIRED_PROOF_OF_RESIDENCE = 'EXP'
+    ADDRESS_MISMATCH = 'ADM'
+    INVALID_PROOF_OF_RESIDENCE = 'INP'
     CONTRADICTION = 'CON'
-    LOW_RESOLUTION = 'QUA'
-    MISC = 'MIS'
+    LOW_QUALITY = 'LOW'
+    MISCELLANEOUS = 'MIS'
 
-    REASONS_PAS = (
-        (INVALID_IDENTIFICATION, 'Invalid Identification Document'),
+    REASONS_IDENTIFICATION = (
+        (INVALID_IDENTIFICATION, 'Invalid Identification'),
+        (EXPIRED_IDENTIFICATION, 'Expired Identification'),
+        (INCOMPLETE_IDENTIFICATION, 'Incomplete Identification')
     )
 
-    REASONS_POR = (
-        (CREDIT_NOT_ACCEPTED, 'Credit Card not accepted'),
-        (MOBILE_NOT_ACCEPTED, 'Phone Bill not accepted')
+    REASONS_PROOF_OF_RESIDENCE = (
+        (EXPIRED_PROOF_OF_RESIDENCE, 'Expired POR'),
+        (ADDRESS_MISMATCH, 'Address Mismatch on POR'),
+        (INVALID_PROOF_OF_RESIDENCE, 'Invalid POR')
     )
 
     REASONS_GENERAL = (
-        (INVALID_FORMAT, 'Invalid Format'),
-        (LOW_RESOLUTION, 'Low Resolution Document'),
-        (MISC, 'Miscellaneous'),
-        (CONTRADICTION, 'Contradicting Information')
+        (LOW_QUALITY, 'Low Quality'),
+        (CONTRADICTION, 'Contradicting Information'),
+        (MISCELLANEOUS, 'Miscellaneous')
     )
 
-    REASONS = REASONS_PAS + REASONS_POR + REASONS_GENERAL
+    REASONS = REASONS_IDENTIFICATION + REASONS_PROOF_OF_RESIDENCE + REASONS_GENERAL
 
     profile = models.ForeignKey(
         BeamProfile,
