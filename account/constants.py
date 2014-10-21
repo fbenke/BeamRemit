@@ -18,6 +18,7 @@ USER_ACCOUNT_ALREADY_ACTIVATED = '14'
 DOCUMENT_ALREADY_UPLOADED = '15'
 USER_PROFILE_INCOMPLETE = '16'
 PRIVACY_POLICY_NOT_ACCEPTED = '17'
+ADMIN_ACCOUNT = '18'
 
 # Verbal Description of Error Status Codes
 ERROR_MESSAGES = {
@@ -38,7 +39,8 @@ ERROR_MESSAGES = {
     SIGNIN_MISSING_CREDENTIALS: 'Must include "email" and "password"',
     USER_ACCOUNT_ALREADY_ACTIVATED: 'This account is is already activated.',
     DOCUMENT_ALREADY_UPLOADED: 'This document has already been uploaded.',
-    PRIVACY_POLICY_NOT_ACCEPTED: 'You must accept the privacy policy.'
+    PRIVACY_POLICY_NOT_ACCEPTED: 'You must accept the privacy policy.',
+    ADMIN_ACCOUNT: 'You cannot sign in with an admin account.'
 }
 
 from account.models import DocumentStatusChange as d
