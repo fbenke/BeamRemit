@@ -72,7 +72,7 @@ class Pricing(models.Model):
         return '{}'.format(self.id)
 
     @property
-    def exchange_rate_gbp(self):
+    def exchange_rate_ghs(self):
         return self.gbp_ghs * (1 - self.markup)
 
     @property
