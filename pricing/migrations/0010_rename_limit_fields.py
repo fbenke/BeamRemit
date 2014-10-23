@@ -5,16 +5,16 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         for limit in orm.Limit.objects.all():
-            limit.transaction_min_gbp = limit.max_gbp
-            limit.transaction_max_gbp = limit.min_gbp
+            limit.transaction_min_gbp = limit.min_gbp
+            limit.transaction_max_gbp = limit.max_gbp
             limit.user_limit_basic_gbp = limit.daily_limit_gbp_basic
             limit.user_limit_complete_gbp = limit.daily_limit_gbp_complete
             limit.save()
 
     def backwards(self, orm):
         for limit in orm.Limit.objects.all():
-            limit.max_gbp = limit.transaction_min_gbp
-            limit.min_gbp = limit.transaction_max_gbp
+            limit.min_gbp = limit.transaction_min_gbp
+            limit.max_gbp = limit.transaction_max_gbp
             limit.daily_limit_gbp_basic = limit.user_limit_basic_gbp
             limit.daily_limit_gbp_complete = limit.user_limit_complete_gbp
             limit.save()
