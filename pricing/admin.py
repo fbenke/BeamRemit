@@ -22,7 +22,7 @@ class PricingAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'markup', 'fee', 'gbp_ghs', 'gbp_usd', 'gbp_ssl')
+            return ('id', 'start', 'end', 'markup', 'fee', 'gbp_ghs', 'gbp_usd', 'gbp_sll')
         else:
             return ('id', 'start', 'end')
 
@@ -64,7 +64,7 @@ class LimitAdmin(DoNotDeleteModelAdmin):
             'user_limit_basic_usd', 'user_limit_complete_usd',
             'transaction_min_usd', 'transaction_max_usd',
             'transaction_min_ghs', 'transaction_max_ghs',
-            'transaction_min_ssl', 'transaction_max_ssl'
+            'transaction_min_sll', 'transaction_max_sll'
         )
 
         if obj:

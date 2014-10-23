@@ -63,7 +63,7 @@ class Pricing(models.Model):
         help_text='Exchange Rate from GBP to USD without markup'
     )
 
-    gbp_ssl = models.FloatField(
+    gbp_sll = models.FloatField(
         'GBP to SSL Exchange Rate',
         help_text='Exchange Rate from GBP to SSL without markup'
     )
@@ -80,8 +80,8 @@ class Pricing(models.Model):
         return self.gbp_usd * (1 - self.markup)
 
     @property
-    def exchange_rate_ssl(self):
-        return self.gbp_ssl * (1 - self.markup)
+    def exchange_rate_sll(self):
+        return self.gbp_sll * (1 - self.markup)
 
 
 class Comparison(models.Model):
@@ -113,7 +113,7 @@ class Limit(models.Model):
         super(Limit, self).__init__(*args, **kwargs)
         current_object = get_current_object(Pricing)
         self.exchange_rate_ghs = current_object.gbp_ghs * (1 - current_object.markup)
-        self.exchange_rate_ssl = current_object.gbp_ssl * (1 - current_object.markup)
+        self.exchange_rate_sll = current_object.gbp_sll * (1 - current_object.markup)
         self.exchange_rate_usd = current_object.gbp_usd * (1 - current_object.markup)
 
     transaction_min_gbp = models.FloatField(
@@ -169,12 +169,12 @@ class Limit(models.Model):
 
     # SSL Limits
     @property
-    def transaction_min_ssl(self):
-        return self.exchange_rate_ssl * self.transaction_min_gbp
+    def transaction_min_sll(self):
+        return self.exchange_rate_sll * self.transaction_min_gbp
 
     @property
-    def transaction_max_ssl(self):
-        return self.exchange_rate_ssl * self.transaction_max_gbp
+    def transaction_max_sll(self):
+        return self.exchange_rate_sll * self.transaction_max_gbp
 
     # GHS Limits
     @property

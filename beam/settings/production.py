@@ -79,16 +79,19 @@ MIDDLEWARE_CLASSES = PRODUCTION_MIDDLEWARE + (
 # Site types in Env
 SITE_API = 0
 SITE_USER = 1
+SITE_USER_SL = 2
 
 # ENV to URL mapping
 ENV_SITE_MAPPING = {
     ENV_LOCAL: {
         SITE_API: os.environ.get('LOCAL_SITE_API'),
-        SITE_USER: os.environ.get('LOCAL_SITE_USER')
+        SITE_USER: os.environ.get('LOCAL_SITE_USER'),
+        SITE_USER_SL: os.environ.get('LOCAL_SITE_USER')
     },
     ENV_DEV: {
         SITE_API: 'api-dev.beamremit.com',
-        SITE_USER: 'dev.beamremit.com'
+        SITE_USER: 'dev.beamremit.com',
+        SITE_USER_SL: 'bitcoinagainstebola-dev'
     },
     ENV_VIP: {
         SITE_API: 'api-vip.beamremit.com',
@@ -96,7 +99,8 @@ ENV_SITE_MAPPING = {
     },
     ENV_PROD: {
         SITE_API: 'api.beamremit.com',
-        SITE_USER: 'beamremit.com'
+        SITE_USER: 'beamremit.com',
+        SITE_USER_SL: 'bitcoinagainstebola'
     }
 }
 
@@ -193,7 +197,10 @@ REST_FRAMEWORK = {
 if ENV == ENV_LOCAL:
     CORS_ORIGIN_ALLOW_ALL = True
 else:
-    CORS_ORIGIN_WHITELIST = (ENV_SITE_MAPPING[ENV][SITE_USER], )
+    CORS_ORIGIN_WHITELIST = (
+        ENV_SITE_MAPPING[ENV][SITE_USER],
+        ENV_SITE_MAPPING[ENV][SITE_USER_SL]
+    )
 
 # Base URLS for the apps
 API_BASE_URL = PROTOCOL + '://' + ENV_SITE_MAPPING[ENV][SITE_API]

@@ -66,7 +66,7 @@ class Migration(SchemaMigration):
             'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'fee': ('django.db.models.fields.FloatField', [], {}),
             'gbp_ghs': ('django.db.models.fields.FloatField', [], {}),
-            'gbp_ssl': ('django.db.models.fields.FloatField', [], {}),
+            'gbp_sll': ('django.db.models.fields.FloatField', [], {}),
             'gbp_usd': ('django.db.models.fields.FloatField', [], {}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'markup': ('django.db.models.fields.FloatField', [], {}),
