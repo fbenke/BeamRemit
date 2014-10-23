@@ -53,10 +53,10 @@ class CreateTransaction(GenericAPIView):
             todays_vol = request.user.profile.todays_transaction_volume(request.DATA.get('amount_gbp'))
 
             # sender has exceeded basic transaction limit
-            if todays_vol > get_current_object(Limit).daily_limit_gbp_basic:
+            if todays_vol > get_current_object(Limit).user_limit_basic_gbp:
 
                 # sender has exceeded maximum daily transaction limit
-                if todays_vol > get_current_object(Limit).daily_limit_gbp_complete:
+                if todays_vol > get_current_object(Limit).user_limit_complete_gbp:
                     return Response({'detail': '4'}, status=status.HTTP_400_BAD_REQUEST)
 
                 #  sender has not provided additional document
