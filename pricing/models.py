@@ -48,22 +48,40 @@ class Pricing(models.Model):
         help_text='Percentage to be added over exchange rate. Value between 0 and 1.'
     )
 
+    fee = models.FloatField(
+        'Fixed Fee in GBP',
+        help_text='Fixed Fee charged for the money transfer in GBP.'
+    )
+
     gbp_ghs = models.FloatField(
         'GBP to GHS Exchange Rate',
         help_text='Exchange Rate from GBP to GHS without markup'
     )
 
-    fee = models.FloatField(
-        'Fixed Fee',
-        help_text='Fixed Fee charged for the money transfer.'
+    gbp_usd = models.FloatField(
+        'GBP to USD Exchange Rate',
+        help_text='Exchange Rate from GBP to USD without markup'
+    )
+
+    gbp_ssl = models.FloatField(
+        'GBP to SSL Exchange Rate',
+        help_text='Exchange Rate from GBP to SSL without markup'
     )
 
     def __unicode__(self):
         return '{}'.format(self.id)
 
     @property
-    def exchange_rate(self):
+    def exchange_rate_gbp(self):
         return self.gbp_ghs * (1 - self.markup)
+
+    @property
+    def exchange_rate_usd(self):
+        return self.gbp_usd * (1 - self.markup)
+
+    @property
+    def exchange_rate_ssl(self):
+        return self.gbp_ssl * (1 - self.markup)
 
 
 class Comparison(models.Model):
@@ -93,24 +111,27 @@ class Limit(models.Model):
 
     def __init__(self, *args, **kwargs):
         super(Limit, self).__init__(*args, **kwargs)
-        self.exchange_rate = get_current_object(Pricing).gbp_ghs * (1 - get_current_object(Pricing).markup)
+        current_object = get_current_object(Pricing)
+        self.exchange_rate_ghs = current_object.gbp_ghs * (1 - current_object.markup)
+        self.exchange_rate_ssl = current_object.gbp_ssl * (1 - current_object.markup)
+        self.exchange_rate_usd = current_object.gbp_usd * (1 - current_object.markup)
 
-    max_gbp = models.FloatField(
-        'Maximum amount in GBP ',
-        help_text='Maximum remittance amount in GBB per transaction'
-    )
-
-    min_gbp = models.FloatField(
+    transaction_min_gbp = models.FloatField(
         'Minimum amount in GBP ',
         help_text='Minimum remittance amount in GBB per transaction'
     )
 
-    daily_limit_gbp_basic = models.FloatField(
+    transaction_max_gbp = models.FloatField(
+        'Maximum amount in GBP ',
+        help_text='Maximum remittance amount in GBB per transaction'
+    )
+
+    user_limit_basic_gbp = models.FloatField(
         'Maximum for basic users',
         help_text='Maximum amount a basic user is allowed to send per day in GBP'
     )
 
-    daily_limit_gbp_complete = models.FloatField(
+    user_limit_complete_gbp = models.FloatField(
         'Maximum for fully verified users',
         help_text='Maximum amount a fully verfied user is allowed to send per day in GBP'
     )
@@ -129,18 +150,37 @@ class Limit(models.Model):
                   'Only one row in this table can have a null value for this column.'
     )
 
+    # USD Limits
     @property
-    def min_ghs(self):
-        return self.exchange_rate * self.min_gbp
+    def transaction_min_usd(self):
+        return self.exchange_rate_usd * self.transaction_min_gbp
 
     @property
-    def max_ghs(self):
-        return self.exchange_rate * self.max_gbp
+    def transaction_max_usd(self):
+        return self.exchange_rate_usd * self.transaction_max_gbp
 
     @property
-    def daily_limit_ghs_basic(self):
-        return self.exchange_rate * self.daily_limit_gbp_basic
+    def user_limit_basic_usd(self):
+        return self.exchange_rate_usd * self.user_limit_basic_gbp
 
     @property
-    def daily_limit_ghs_complete(self):
-        return self.exchange_rate * self.daily_limit_gbp_complete
+    def user_limit_complete_usd(self):
+        return self.exchange_rate_usd * self.user_limit_complete_gbp
+
+    # SSL Limits
+    @property
+    def transaction_min_ssl(self):
+        return self.exchange_rate_ssl * self.transaction_min_gbp
+
+    @property
+    def transaction_max_ssl(self):
+        return self.exchange_rate_ssl * self.transaction_max_gbp
+
+    # GHS Limits
+    @property
+    def transaction_min_ghs(self):
+        return self.exchange_rate_ghs * self.transaction_min_gbp
+
+    @property
+    def transaction_max_ghs(self):
+        return self.exchange_rate_ghs * self.transaction_max_gbp
