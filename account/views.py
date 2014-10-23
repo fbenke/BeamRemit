@@ -497,15 +497,19 @@ class AccountLimits(APIView):
         todays_vol = request.user.profile.todays_transaction_volume()
 
         if request.user.profile.documents_verified:
-            account_limit = get_current_object(Limit).daily_limit_gbp_complete
+            account_limit_gbp = get_current_object(Limit).user_limit_basic_gbp
+            account_limit_usd = get_current_object(Limit).user_limit_basic_usd
             can_extend = False
         else:
-            account_limit = get_current_object(Limit).daily_limit_gbp_basic
+            account_limit_gbp = get_current_object(Limit).user_limit_complete_gbp
+            account_limit_usd = get_current_object(Limit).user_limit_complete_usd
             can_extend = True
 
         data = {
             'today': todays_vol,
-            'limit': account_limit,
+            'limit_gbp': account_limit_gbp,
+            'limit_usd': account_limit_usd,
             'can_extend': can_extend
         }
         return Response(data)
+
