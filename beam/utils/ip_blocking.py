@@ -60,13 +60,13 @@ def is_using_tor(clientIp, ELPort='80'):
 
     # Prepare the question as an A record (i.e. a 32-bit IPv4 address) request
     ELQuestion = ELExitNode + "." + ELPort + "." + ElTarget[1] + "." + ELHost
-    request = DNS.DnsRequest(name=ELQuestion, qtype='A')
+    request = DNS.DnsRequest(name=ELQuestion, qtype='A', timeout=settings.TOR_TIMEOUT)
 
     # Ask the question and load the data into our answer
     try:
         answer = request.req()
-    except DNS.DNSError:
-        log_error('ERROR Tor - Failed to query ip address')
+    except DNS.DNSError as e:
+        log_error('ERROR Tor - Failed to query ip address: {}'.format(e[0]))
         return False
 
     # Parse the answer and decide if it's allowing exits
