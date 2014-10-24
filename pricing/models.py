@@ -59,7 +59,12 @@ class Pricing(models.Model):
         help_text='Percentage to be added over exchange rate. Value between 0 and 1.'
     )
 
-    fee = models.FloatField(
+    fee_usd = models.FloatField(
+        'Fixed Fee in USD',
+        help_text='Fixed Fee charged for the money transfer in USD.'
+    )
+
+    fee_gbp = models.FloatField(
         'Fixed Fee in GBP',
         help_text='Fixed Fee charged for the money transfer in GBP.'
     )
