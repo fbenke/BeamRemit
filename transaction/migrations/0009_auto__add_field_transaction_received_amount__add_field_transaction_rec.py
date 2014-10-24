@@ -15,7 +15,7 @@ class Migration(SchemaMigration):
 
         # Adding field 'Transaction.receiving_country'
         db.add_column(u'transaction_transaction', 'receiving_country',
-                      self.gf('django_countries.fields.CountryField')(default='Ghana', max_length=2),
+                      self.gf('django_countries.fields.CountryField')(default='GH', max_length=2),
                       keep_default=False)
 
 
