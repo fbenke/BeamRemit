@@ -28,7 +28,7 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
         model = models.Transaction
         depth = 1
         read_only_fields = ()
-        read_and_write_fields = ('recipient', 'receiving_country', 'amount_gbp')
+        read_and_write_fields = ('recipient', 'receiving_country', 'sent_amount', 'sent_currency')
         fields = read_only_fields + read_and_write_fields
 
     def __init__(self, user, *args, **kwargs):
@@ -40,6 +40,11 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(constants.COUNTRY_NOT_SUPPORTED)
         return attrs
 
+    def validate_sent_currency(self, attrs, source):
+        if attrs[source] not in settings.SENDING_CURRENCIES:
+            raise serializers.ValidationError(constants.SENT_CURRENCY_NOT_SUPPORTED)
+        return attrs
+
     def restore_object(self, attrs, instance=None):
         recipient = models.Recipient(
             first_name=attrs['recipient'].first_name,
@@ -49,7 +54,8 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
         transaction = models.Transaction(
             recipient=recipient,
             sender=self.user,
-            amount_gbp=attrs['amount_gbp'],
+            sent_amount=attrs['sent_amount'],
+            sent_currency=attrs['sent_currency'],
             receiving_country=attrs['receiving_country']
         )
 

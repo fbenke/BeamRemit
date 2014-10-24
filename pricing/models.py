@@ -36,6 +36,10 @@ class Pricing(models.Model):
         settings.SIERRA_LEONE: 'exchange_rate_sll'
     }
 
+    SENT_CURRENCY_FXR = {
+        settings.USD: 'gbp_usd'
+    }
+
     start = models.DateTimeField(
         'Start Time',
         auto_now_add=True,
@@ -90,12 +94,24 @@ class Pricing(models.Model):
     def exchange_rate_sll(self):
         return self.gbp_sll * (1 - self.markup)
 
-    def get_exchange_rate(self, amount_gbp, country):
-        raw_price = amount_gbp * getattr(self, self.COUNTRY_FXR[country])
-        if country == settings.SIERRA_LEONE:
-            return math.ceil(raw_price / 10) * 10
+    def calculate_received_amount(self, sent_amount, currency, country):
+
+        # if necessary, convert the sent amount into the base currency
+        if currency != settings.GBP:
+            amount_gbp = sent_amount / getattr(self, self.SENT_CURRENCY_FXR[currency])
         else:
-            return math.ceil(raw_price * 10) / 10
+            amount_gbp = sent_amount
+
+        print amount_gbp
+        # convert from base currency to received currency
+        undrounded_amount = amount_gbp * getattr(self, self.COUNTRY_FXR[country])
+
+        print undrounded_amount
+        # do country-specific rounding
+        if country == settings.SIERRA_LEONE:
+            return math.ceil(undrounded_amount / 10) * 10
+        else:
+            return math.ceil(undrounded_amount * 10) / 10
 
 
 class Comparison(models.Model):

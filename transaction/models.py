@@ -171,7 +171,8 @@ class Transaction(models.Model):
         if not self.pk:
             self.pricing = get_current_object(Pricing)
             self._generate_reference_number()
-            self.received_amount = self.pricing.get_exchange_rate(self.amount_gbp, self.receiving_country)
+            self.received_amount = self.pricing.calculate_received_amount(
+                self.sent_amount, self.sent_currency, self.receiving_country)
         else:
             original = Transaction.objects.get(pk=self.pk)
             if original.pricing != self.pricing:
