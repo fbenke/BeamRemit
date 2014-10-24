@@ -65,7 +65,8 @@ class TransactionAdmin(admin.ModelAdmin):
 
     def sender_url(self, obj):
         path = settings.API_BASE_URL + '/admin/account/beamprofile'
-        return '<a href="{}/{}/">{}</a>'.format(path, obj.sender.profile.id, obj.sender.email)
+        return '<a href="{}/{}/">{} {}</a>'.format(
+            path, obj.sender.profile.id, obj.sender.first_name, obj.sender.last_name)
     sender_url.allow_tags = True
     sender_url.short_description = 'sender'
 
@@ -80,24 +81,35 @@ class TransactionAdmin(admin.ModelAdmin):
 
     def recipient_url(self, obj):
         path = settings.API_BASE_URL + '/admin/transaction/recipient'
-        return '<a href="{}/{}/">{}</a>'.format(path, obj.recipient.id, obj.recipient.id)
+        return '<a href="{}/{}/">{} {}</a>'.format(
+            path, obj.recipient.id, obj.recipient.first_name, obj.recipient.last_name)
     recipient_url.allow_tags = True
     recipient_url.short_description = 'recipient'
 
-    def british_pound_paid_to_beam(self, obj):
-        return obj.amount_gbp + obj.pricing.fee
+    def amount_paid_to_beam(self, obj):
+        return obj.sent_amount + obj.pricing.fee
 
     readonly_fields = (
-        'id', 'recipient_url', 'pricing_url', 'sender_url', 'receiving_country', 'amount_gbp',
-        'received_amount', 'british_pound_paid_to_beam', 'amount_btc', 'reference_number',
-        'initialized_at', 'paid_at', 'processed_at', 'cancelled_at', 'invalidated_at'
+        'id', 'recipient_url', 'pricing_url', 'sender_url', 'receiving_country',
+        'sent_amount', 'sent_currency', 'received_amount', 'amount_paid_to_beam',
+        'amount_btc', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
+        'cancelled_at', 'invalidated_at'
     )
 
     read_and_write_fields = ('state', 'comments')
 
-    fields = readonly_fields + read_and_write_fields
+    fields = (
+        'id', 'pricing_url',
+        'sender_url', ('sent_amount', 'sent_currency'), 'amount_paid_to_beam',
+        'recipient_url', ('received_amount', 'receiving_country'),
+        'amount_btc', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
+        'cancelled_at', 'invalidated_at'
+    ) + read_and_write_fields
 
-    list_display = ('id', 'sender_email', 'reference_number', 'state', 'amount_gbp', 'receiving_country')
+    list_display = (
+        'id', 'sender_email', 'reference_number', 'state', 'sent_amount',
+        'sent_currency', 'receiving_country'
+    )
 
     list_filter = ('state', 'initialized_at', 'paid_at')
 

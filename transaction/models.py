@@ -54,6 +54,11 @@ class Transaction(models.Model):
         (INVALID, 'invalid')
     )
 
+    SENT_CURRENCIES = (
+        (settings.GBP, 'British Pound'),
+        (settings.USD, 'US Dollar')
+    )
+
     recipient = models.ForeignKey(
         Recipient,
         related_name='transactions',
@@ -72,9 +77,16 @@ class Transaction(models.Model):
         help_text='Pricing information to enable conversion of btc to ghs'
     )
 
-    amount_gbp = models.FloatField(
-        'Remittance amount in GBP',
-        help_text='Amount of GBP sent via Beam (does not include fees)'
+    sent_amount = models.FloatField(
+        'Sent remittance amount',
+        help_text='Amount sent via Beam (does not include fees)'
+    )
+
+    sent_currency = models.CharField(
+        'Sent currency',
+        max_length=4,
+        choices=SENT_CURRENCIES,
+        help_text='Currency the sent amount is denominated in'
     )
 
     amount_btc = models.FloatField(
