@@ -10,10 +10,16 @@ from transaction.models import Recipient, Transaction
 
 class RecipientAdmin(admin.ModelAdmin):
 
-    def amount_ghs_to_be_paid(self, obj):
-        return obj.transactions.get(recipient=obj.id).amount_ghs
+    def amount_to_be_paid(self, obj):
+        return obj.transactions.get(recipient=obj.id).received_amount
 
-    readonly_fields = ('id', 'first_name', 'last_name', 'phone_number', 'amount_ghs_to_be_paid')
+    def country(self, obj):
+        return obj.transactions.get(recipient=obj.id).receiving_country
+
+    readonly_fields = (
+        'id', 'first_name', 'last_name', 'phone_number',
+        'amount_to_be_paid', 'country'
+    )
     read_and_write_fields = ()
     fields = readonly_fields + read_and_write_fields
     list_display = ('id', 'first_name', 'last_name', 'phone_number')
@@ -34,8 +40,9 @@ class TransactionAdmin(admin.ModelAdmin):
                     'site': Site.objects.get_current(),
                     'first_name': obj.sender.first_name,
                     'recipient': obj.recipient.first_name,
-                    'ghs': obj.amount_ghs,
-                    'sender_currency': obj.amount_gbp,
+                    'sent_amount': obj.amount_gbp,
+                    'received_amount': obj.received_amount,
+                    'received_currency': obj.received_currency,
                     'mobile': obj.recipient.phone_number,
                     'txn_history': settings.MAIL_TRANSACTION_HISTORY_SITE
                 }
@@ -81,16 +88,16 @@ class TransactionAdmin(admin.ModelAdmin):
         return obj.amount_gbp + obj.pricing.fee
 
     readonly_fields = (
-        'id', 'recipient_url', 'pricing_url', 'sender_url', 'amount_gbp', 'british_pound_paid_to_beam',
-        'amount_btc', 'amount_ghs', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
-        'cancelled_at', 'invalidated_at'
+        'id', 'recipient_url', 'pricing_url', 'sender_url', 'receiving_country', 'amount_gbp',
+        'received_amount', 'british_pound_paid_to_beam', 'amount_btc', 'reference_number',
+        'initialized_at', 'paid_at', 'processed_at', 'cancelled_at', 'invalidated_at'
     )
 
     read_and_write_fields = ('state', 'comments')
 
     fields = readonly_fields + read_and_write_fields
 
-    list_display = ('id', 'sender_email', 'reference_number', 'state', 'amount_gbp')
+    list_display = ('id', 'sender_email', 'reference_number', 'state', 'amount_gbp', 'receiving_country')
 
     list_filter = ('state', 'initialized_at', 'paid_at')
 

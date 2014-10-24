@@ -312,3 +312,16 @@ COUNTRY_BLACKLIST = (
 )
 
 GEOIP_PATH = BASE_DIR('static', 'geo_data', 'GeoIP.dat')
+
+# Countries
+GHANA = 'GH'
+SIERRA_LEONE = 'SL'
+RECEIVING_COUNTRIES = (GHANA, SIERRA_LEONE)
+
+# Currencies
+LEONE = 'SLL'
+CEDI = 'GHS'
+COUNTRY_CURRENCY = {
+    GHANA: CEDI,
+    SIERRA_LEONE: LEONE
+}

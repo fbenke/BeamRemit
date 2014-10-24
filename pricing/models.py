@@ -1,6 +1,8 @@
+import math
 import collections
 
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -28,6 +30,11 @@ def end_previous_object(cls):
 
 
 class Pricing(models.Model):
+
+    COUNTRY_FXR = {
+        settings.GHANA: 'exchange_rate_ghs',
+        settings.SIERRA_LEONE: 'exchange_rate_sll'
+    }
 
     start = models.DateTimeField(
         'Start Time',
@@ -82,6 +89,13 @@ class Pricing(models.Model):
     @property
     def exchange_rate_sll(self):
         return self.gbp_sll * (1 - self.markup)
+
+    def get_exchange_rate(self, amount_gbp, country):
+        raw_price = amount_gbp * getattr(self, self.COUNTRY_FXR[country])
+        if country == settings.SIERRA_LEONE:
+            return math.ceil(raw_price / 10) * 10
+        else:
+            return math.ceil(raw_price * 10) / 10
 
 
 class Comparison(models.Model):
