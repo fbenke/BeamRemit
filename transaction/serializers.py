@@ -2,21 +2,24 @@ from django.conf import settings
 from django.db import transaction as dbtransaction
 
 from rest_framework import serializers
+from rest_framework import fields
 
 from transaction import models
 from transaction import constants
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+
+    received_currency = fields.FloatField()
+
     class Meta:
         model = models.Transaction
         depth = 1
         read_only_fields = (
-            'id', 'recipient', 'amount_gbp', 'amount_btc', 'amount_ghs',
-            'reference_number', 'state', 'initialized_at', 'paid_at',
-            'processed_at'
+            'id', 'recipient', 'amount_gbp', 'amount_btc', 'received_amount',
+            'reference_number', 'state', 'initialized_at', 'paid_at', 'processed_at'
         )
-        fields = read_only_fields
+        fields = read_only_fields + ('received_currency',)
 
 
 class CreateTransactionSerializer(serializers.ModelSerializer):
