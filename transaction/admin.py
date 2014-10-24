@@ -93,18 +93,16 @@ class TransactionAdmin(admin.ModelAdmin):
         'id', 'recipient_url', 'pricing_url', 'sender_url', 'receiving_country',
         'sent_amount', 'sent_currency', 'received_amount', 'amount_paid_to_beam',
         'amount_btc', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
-        'cancelled_at', 'invalidated_at'
+        'cancelled_at', 'invalidated_at', 'received_currency'
     )
 
     read_and_write_fields = ('state', 'comments')
 
     fields = (
-        'id', 'pricing_url',
-        'sender_url', ('sent_amount', 'sent_currency'), 'amount_paid_to_beam',
-        'recipient_url', ('received_amount', 'receiving_country'),
+        'id', 'pricing_url', 'sender_url', ('sent_amount', 'sent_currency', 'amount_paid_to_beam'),
+        'recipient_url', ('received_amount', 'received_currency', 'receiving_country'),
         'amount_btc', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
-        'cancelled_at', 'invalidated_at'
-    ) + read_and_write_fields
+        'cancelled_at', 'invalidated_at') + read_and_write_fields
 
     list_display = (
         'id', 'sender_email', 'reference_number', 'state', 'sent_amount',

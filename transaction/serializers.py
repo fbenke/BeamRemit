@@ -16,7 +16,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = models.Transaction
         depth = 1
         read_only_fields = (
-            'id', 'recipient', 'amount_gbp', 'amount_btc', 'received_amount',
+            'id', 'recipient', 'sent_amount', 'sent_currency', 'amount_btc', 'received_amount',
             'reference_number', 'state', 'initialized_at', 'paid_at', 'processed_at'
         )
         fields = read_only_fields + ('received_currency',)
