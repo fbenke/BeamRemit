@@ -42,36 +42,37 @@ class CreateTransaction(GenericAPIView):
             return Response(status=HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
 
         try:
-            # check if Pricing has expired
-            if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
-                return Response({'detail': constants.PRICING_EXPIRED}, status=status.HTTP_400_BAD_REQUEST)
-
-            # basic profile information incomplete
-            if not request.user.profile.information_complete:
-                return Response({'detail': constants.PROFILE_INCOMPLETE}, status=status.HTTP_400_BAD_REQUEST)
-
-            # calculate today's transaction volume for the user
-            todays_vol = request.user.profile.todays_transaction_volume(
-                request.DATA.get('sent_amount'), request.DATA.get('sent_currency'))
-
-            # sender has exceeded basic transaction limit
-            if todays_vol > get_current_object(Limit).user_limit_basic_gbp:
-
-                # sender has exceeded maximum daily transaction limit
-                if todays_vol > get_current_object(Limit).user_limit_complete_gbp:
-                    return Response({'detail': constants.TRANSACTION_LIMIT_EXCEEDED}, status=status.HTTP_400_BAD_REQUEST)
-
-                #  sender has not provided additional document
-                if not request.user.profile.documents_provided:
-                    return Response({'detail': constants.ADDITIONAL_DOCUMENTS_MISSING}, status=status.HTTP_400_BAD_REQUEST)
-
-                #  documents still await verification
-                if not request.user.profile.documents_verified:
-                    return Response({'detail': constants.DOCUMENTS_NOT_VERIFIED}, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = self.serializer_class(user=request.user, data=request.DATA)
 
             if serializer.is_valid():
+
+                # check if Pricing has expired
+                if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
+                    return Response({'detail': constants.PRICING_EXPIRED}, status=status.HTTP_400_BAD_REQUEST)
+
+                # basic profile information incomplete
+                if not request.user.profile.information_complete:
+                    return Response({'detail': constants.PROFILE_INCOMPLETE}, status=status.HTTP_400_BAD_REQUEST)
+
+                # calculate today's transaction volume for the user
+                todays_vol = request.user.profile.todays_transaction_volume(
+                    request.DATA.get('sent_amount'), request.DATA.get('sent_currency'))
+
+                # sender has exceeded basic transaction limit
+                if todays_vol > get_current_object(Limit).user_limit_basic_gbp:
+
+                    # sender has exceeded maximum daily transaction limit
+                    if todays_vol > get_current_object(Limit).user_limit_complete_gbp:
+                        return Response({'detail': constants.TRANSACTION_LIMIT_EXCEEDED}, status=status.HTTP_400_BAD_REQUEST)
+
+                    #  sender has not provided additional document
+                    if not request.user.profile.documents_provided:
+                        return Response({'detail': constants.ADDITIONAL_DOCUMENTS_MISSING}, status=status.HTTP_400_BAD_REQUEST)
+
+                    #  documents still await verification
+                    if not request.user.profile.documents_verified:
+                        return Response({'detail': constants.DOCUMENTS_NOT_VERIFIED}, status=status.HTTP_400_BAD_REQUEST)
 
                 self.object = serializer.save(force_insert=True)
 
