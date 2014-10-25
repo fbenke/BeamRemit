@@ -6,6 +6,7 @@ from django.utils import timezone
 from beam.utils.mails import send_mail
 
 from transaction.models import Recipient, Transaction
+from pricing.models import Pricing
 
 
 class RecipientAdmin(admin.ModelAdmin):
@@ -87,7 +88,7 @@ class TransactionAdmin(admin.ModelAdmin):
     recipient_url.short_description = 'recipient'
 
     def amount_paid_to_beam(self, obj):
-        return obj.sent_amount + obj.pricing.fee
+        return obj.sent_amount + getattr(obj.pricing, Pricing.SENT_CURRENCY_FEE[obj.sent_currency])
 
     readonly_fields = (
         'id', 'recipient_url', 'pricing_url', 'sender_url', 'receiving_country',

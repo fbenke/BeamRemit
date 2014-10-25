@@ -40,6 +40,11 @@ class Pricing(models.Model):
         settings.USD: 'gbp_usd'
     }
 
+    SENT_CURRENCY_FEE = {
+        settings.USD: 'fee_usd',
+        settings.GBP: 'fee_gbp'
+    }
+
     start = models.DateTimeField(
         'Start Time',
         auto_now_add=True,
