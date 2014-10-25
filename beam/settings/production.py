@@ -91,7 +91,7 @@ ENV_SITE_MAPPING = {
     ENV_DEV: {
         SITE_API: 'api-dev.beamremit.com',
         SITE_USER: 'dev.beamremit.com',
-        SITE_USER_SL: 'bitcoinagainstebola-dev'
+        SITE_USER_SL: 'dev.bitcoinagainstebola.org'
     },
     ENV_VIP: {
         SITE_API: 'api-vip.beamremit.com',
@@ -100,7 +100,7 @@ ENV_SITE_MAPPING = {
     ENV_PROD: {
         SITE_API: 'api.beamremit.com',
         SITE_USER: 'beamremit.com',
-        SITE_USER_SL: 'bitcoinagainstebola'
+        SITE_USER_SL: 'bitcoinagainstebola.org'
     }
 }
 
@@ -199,7 +199,9 @@ if ENV == ENV_LOCAL:
 else:
     CORS_ORIGIN_WHITELIST = (
         ENV_SITE_MAPPING[ENV][SITE_USER],
-        ENV_SITE_MAPPING[ENV][SITE_USER_SL]
+        # ENV_SITE_MAPPING[ENV][SITE_USER_SL]
+        'dev.bitcoinagainstebola.org',
+        'bitcoinagainstebola.org'
     )
 
 # Base URLS for the apps
