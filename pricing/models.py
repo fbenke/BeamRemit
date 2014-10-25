@@ -107,10 +107,7 @@ class Pricing(models.Model):
     def calculate_received_amount(self, sent_amount, currency, country):
 
         # if necessary, convert the sent amount into the base currency
-        if currency != settings.GBP:
-            amount_gbp = sent_amount / getattr(self, self.SENT_CURRENCY_FXR[currency])
-        else:
-            amount_gbp = sent_amount
+        amount_gbp = self.convert_to_base_currency(sent_amount, currency)
 
         # convert from base currency to received currency
         undrounded_amount = amount_gbp * getattr(self, self.COUNTRY_FXR[country])
@@ -120,6 +117,12 @@ class Pricing(models.Model):
             return math.ceil(undrounded_amount / 10) * 10
         else:
             return math.ceil(undrounded_amount * 10) / 10
+
+    def convert_to_base_currency(self, amount, currency):
+        if currency != settings.GBP:
+            return amount / getattr(self, self.SENT_CURRENCY_FXR[currency])
+        else:
+            return amount
 
 
 class Comparison(models.Model):

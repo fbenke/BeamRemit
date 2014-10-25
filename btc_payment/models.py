@@ -7,7 +7,6 @@ from transaction.models import Transaction
 from beam.utils.security import generate_signature
 
 from btc_payment.api_calls import gocoin
-# from beam.btc_payment.models import coinbase
 
 
 class GoCoinInvoice(models.Model):

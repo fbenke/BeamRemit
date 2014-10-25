@@ -93,7 +93,7 @@ class Transaction(models.Model):
         'Bitcoins paid to Beam',
         null=True,
         blank=True,
-        help_text='BTCs equivalent of GBP amount, determined by Payment Processor'
+        help_text='BTC sent to Beam (includes fees), determined by Payment Processor'
     )
 
     received_amount = models.FloatField(

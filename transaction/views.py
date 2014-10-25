@@ -51,7 +51,8 @@ class CreateTransaction(GenericAPIView):
                 return Response({'detail': constants.PROFILE_INCOMPLETE}, status=status.HTTP_400_BAD_REQUEST)
 
             # calculate today's transaction volume for the user
-            todays_vol = request.user.profile.todays_transaction_volume(request.DATA.get('amount_gbp'))
+            todays_vol = request.user.profile.todays_transaction_volume(
+                request.DATA.get('sent_amount'), request.DATA.get('sent_currency'))
 
             # sender has exceeded basic transaction limit
             if todays_vol > get_current_object(Limit).user_limit_basic_gbp:
@@ -74,10 +75,10 @@ class CreateTransaction(GenericAPIView):
 
                 self.object = serializer.save(force_insert=True)
 
-                self.post_save(self.object, created=True)
+                # self.post_save(self.object, created=True)
 
                 return Response(
-                    {'invoice_id': self.invoice_id,
+                    {#'invoice_id': self.invoice_id,
                      'received_amount': self.object.received_amount,
                      'received_currency': self.object.received_currency,
                      'operation_mode': get_current_state()},
