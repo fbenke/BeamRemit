@@ -7,7 +7,7 @@
 <p>Dear {{ site.name }} User,</p>
 {% endif %}
 
-<p>{{ recipient }} has just received {{ received_amount }} {{ received_currency }} ({{ sent_amount}} GBP) in their MTN mobile money account ({{ mobile }}).</p>
+<p>{{ recipient }} has just received {{ received_amount }} {{ received_currency }} ({{ sent_amount}} {{ sent_currency }}) in their MTN mobile money account ({{ mobile }}).</p>
 
 <p>To see your transaction history, please visit {{ protocol }}://{{ site.domain }}/{{ txn_history }}.</p>
 

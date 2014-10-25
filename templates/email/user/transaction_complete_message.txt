@@ -4,7 +4,7 @@ Hi {{ first_name }},
 Dear {{ site.name }} User,
 {% endif %}
 
-{{ recipient }} has just received {{ received_amount }} {{ received_currency }} ({{ sent_amount}} GBP) in their MTN mobile money account ({{ mobile }}).
+{{ recipient }} has just received {{ received_amount }} {{ received_currency }} ({{ sent_amount}} {{ sent_currency }}) in their MTN mobile money account ({{ mobile }}).
 
 To see your transaction history, please visit {{ protocol }}://{{ site.domain }}/{{ txn_history }}.
 
