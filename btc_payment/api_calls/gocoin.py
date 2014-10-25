@@ -28,7 +28,7 @@ def make_request(url, body=None):
         raise APIException
 
 
-def generate_invoice(price, reference_number, transaction_id, signature, currency='GBP'):
+def generate_invoice(price, reference_number, transaction_id, signature, currency):
 
     # see http://help.gocoin.com/kb/api-invoices/creating-an-invoice
     data = {

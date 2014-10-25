@@ -89,7 +89,7 @@ class TransactionAdmin(admin.ModelAdmin):
     recipient_url.short_description = 'recipient'
 
     def amount_paid_to_beam(self, obj):
-        return obj.sent_amount + getattr(obj.pricing, Pricing.SENT_CURRENCY_FEE[obj.sent_currency])
+        return obj.sent_amount + obj.fee
 
     readonly_fields = (
         'id', 'recipient_url', 'pricing_url', 'sender_url', 'receiving_country',

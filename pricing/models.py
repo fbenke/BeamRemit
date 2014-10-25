@@ -112,11 +112,9 @@ class Pricing(models.Model):
         else:
             amount_gbp = sent_amount
 
-        print amount_gbp
         # convert from base currency to received currency
         undrounded_amount = amount_gbp * getattr(self, self.COUNTRY_FXR[country])
 
-        print undrounded_amount
         # do country-specific rounding
         if country == settings.SIERRA_LEONE:
             return math.ceil(undrounded_amount / 10) * 10

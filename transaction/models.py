@@ -164,6 +164,10 @@ class Transaction(models.Model):
     def received_currency(self):
         return settings.COUNTRY_CURRENCY[self.receiving_country]
 
+    @property
+    def fee(self):
+        return getattr(self.pricing, Pricing.SENT_CURRENCY_FEE[self.sent_currency])
+
     def __unicode__(self):
         return '{}'.format(self.id)
 
