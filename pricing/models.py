@@ -106,10 +106,10 @@ class Pricing(models.Model):
 
     def calculate_received_amount(self, sent_amount, currency, country):
 
-        # if necessary, convert the sent amount into the base currency
+        # if necessary, convert the sent amount into the base currency, no markup included
         amount_gbp = self.convert_to_base_currency(sent_amount, currency)
 
-        # convert from base currency to received currency
+        # convert from base currency to received currency, this includes the markup
         undrounded_amount = amount_gbp * getattr(self, self.COUNTRY_FXR[country])
 
         # do country-specific rounding
