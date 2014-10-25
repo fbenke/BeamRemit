@@ -75,10 +75,10 @@ class CreateTransaction(GenericAPIView):
 
                 self.object = serializer.save(force_insert=True)
 
-                # self.post_save(self.object, created=True)
+                self.post_save(self.object, created=True)
 
                 return Response(
-                    {#'invoice_id': self.invoice_id,
+                    {'invoice_id': self.invoice_id,
                      'received_amount': self.object.received_amount,
                      'received_currency': self.object.received_currency,
                      'operation_mode': get_current_state()},
