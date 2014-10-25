@@ -6,7 +6,6 @@ from django.utils import timezone
 from beam.utils.mails import send_mail
 
 from transaction.models import Recipient, Transaction
-from pricing.models import Pricing
 
 
 class RecipientAdmin(admin.ModelAdmin):
@@ -69,12 +68,14 @@ class TransactionAdmin(admin.ModelAdmin):
         path = settings.API_BASE_URL + '/admin/account/beamprofile'
         return '<a href="{}/{}/">{} {}</a>'.format(
             path, obj.sender.profile.id, obj.sender.first_name, obj.sender.last_name)
+
     sender_url.allow_tags = True
     sender_url.short_description = 'sender'
 
     def pricing_url(self, obj):
         path = settings.API_BASE_URL + '/admin/pricing/pricing'
         return '<a href="{}/{}/">{}</a>'.format(path, obj.pricing.id, obj.pricing.id)
+
     pricing_url.allow_tags = True
     pricing_url.short_description = 'pricing'
 
@@ -85,22 +86,32 @@ class TransactionAdmin(admin.ModelAdmin):
         path = settings.API_BASE_URL + '/admin/transaction/recipient'
         return '<a href="{}/{}/">{} {}</a>'.format(
             path, obj.recipient.id, obj.recipient.first_name, obj.recipient.last_name)
+
     recipient_url.allow_tags = True
     recipient_url.short_description = 'recipient'
 
     def amount_paid_to_beam(self, obj):
         return obj.sent_amount + obj.fee
 
+    def payment_processor_invoice(self, obj):
+        path = settings.API_BASE_URL + '/admin/btc_payment/gocoininvoice'
+        # TODO make this more flexible once we add other payment processors
+        return '<a href="{}/{}/">{}</a>'.format(
+            path, obj.gocoin_invoice.id, obj.gocoin_invoice.id)
+
+    payment_processor_invoice.allow_tags = True
+    payment_processor_invoice.short_description = 'invoice'
+
     readonly_fields = (
         'id', 'recipient_url', 'pricing_url', 'sender_url', 'receiving_country',
         'sent_amount', 'sent_currency', 'received_amount', 'amount_paid_to_beam',
         'amount_btc', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
-        'cancelled_at', 'invalidated_at', 'received_currency'
+        'cancelled_at', 'invalidated_at', 'received_currency', 'payment_processor_invoice'
     )
 
     fieldsets = (
         (None, {
-            'fields': ('id', 'pricing_url', 'amount_btc', 'reference_number')
+            'fields': ('id', 'pricing_url', 'payment_processor_invoice', 'amount_btc', 'reference_number')
         }),
         ('Sender', {
             'fields': (
