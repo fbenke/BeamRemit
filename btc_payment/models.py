@@ -78,12 +78,16 @@ class GoCoinInvoice(models.Model):
                    settings.GOCOIN_INVOICE_CALLBACK_URL)
         signature = generate_signature(message, settings.GOCOIN_API_KEY)
 
+        redirect_url = settings.PROTOCOL + '://' + settings.COUNTRY_SITE[transaction.receiving_country] +\
+            settings.GOCOIN_INVOICE_REDIRECT_SUFFIX.format(transaction.id)
+
         result = gocoin.generate_invoice(
             price=transaction.sent_amount + transaction.fee,
             reference_number=transaction.reference_number,
             transaction_id=transaction.id,
             signature=signature,
-            currency=transaction.sent_currency
+            currency=transaction.sent_currency,
+            redirect_url=redirect_url
         )
 
         gocoin_invoice = GoCoinInvoice(
