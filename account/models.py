@@ -201,7 +201,7 @@ class BeamProfile(UserenaBaseProfile):
             return False
         return True
 
-    def todays_transaction_volume(self, new_amount, new_currency):
+    def todays_transaction_volume(self, new_amount=0, new_currency=0):
         try:
             now = timezone.now()
             today = datetime.datetime(now.year, now.month, now.day).replace(tzinfo=utc)
