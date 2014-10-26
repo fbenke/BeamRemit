@@ -201,7 +201,7 @@ class BeamProfile(UserenaBaseProfile):
             return False
         return True
 
-    def todays_transaction_volume(self, new_amount=0, new_currency=0):
+    def todays_transaction_volume(self, new_amount=0, new_currency=None):
         try:
             now = timezone.now()
             today = datetime.datetime(now.year, now.month, now.day).replace(tzinfo=utc)
@@ -212,7 +212,11 @@ class BeamProfile(UserenaBaseProfile):
                 paid_at__gte=today
             )
 
-            amount = get_current_object(Pricing).convert_to_base_currency(new_amount, new_currency)
+            amount = 0
+
+            if new_amount:
+                amount = get_current_object(Pricing).convert_to_base_currency(new_amount, new_currency)
+
             for t in transactions:
                 amount = amount + t.pricing.convert_to_base_currency(t.sent_amount, t.sent_currency)
 
