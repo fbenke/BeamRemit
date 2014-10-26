@@ -22,5 +22,8 @@ urlpatterns = patterns(
         views.GetTransaction.as_view(),
         name='list'
     ),
-
+    url(
+        r'^test/$',
+        views.Test.as_view()
+    ),
 )

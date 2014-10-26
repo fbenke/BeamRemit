@@ -231,7 +231,7 @@ DEFAULT_FROM_EMAIL = BEAM_MAIL_ADDRESS
 BEAM_SUPPORT = 'hello@beamremit.com'
 
 # Email Settings
-if ENV == ENV_LOCAL:
+if ENV in (ENV_LOCAL, ENV_DEV):
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
     EMAIL_BACKEND = 'beam.utils.sendgrid_django.SendGridBackend'
@@ -290,6 +290,23 @@ ENV_BUCKET_MAPPING = {
 
 AWS_BUCKET = ENV_BUCKET_MAPPING[ENV]
 
+# Countries
+GHANA = 'GH'
+SIERRA_LEONE = 'SL'
+RECEIVING_COUNTRIES = (GHANA, SIERRA_LEONE)
+
+# Currencies
+GBP = 'GBP'
+USD = 'USD'
+LEONE = 'SLL'
+CEDI = 'GHS'
+SENDING_CURRENCIES = (USD, GBP)
+
+COUNTRY_CURRENCY = {
+    GHANA: CEDI,
+    SIERRA_LEONE: LEONE
+}
+
 # Payment Processors
 PAYMENT_PROCESSOR = 'GoCoinInvoice'
 
@@ -303,7 +320,12 @@ GOCOIN_INVOICE_CALLBACK_URL = API_BASE_URL + '/api/v1/btc_payment/gocoin/'
 GOCOIN_INVOICE_REDIRECT_SUFFIX = '/#!/send/complete/{}'
 GOCOIN_INVOICE_REDIRECT = USER_BASE_URL + GOCOIN_INVOICE_REDIRECT_SUFFIX
 GOCOIN_INVOICE_REDIRECT_SL = USER_BASE_URL_SL + GOCOIN_INVOICE_REDIRECT_SUFFIX
+GOCOIN_PAYMENT_REDIRECT = {
+    GHANA: GOCOIN_INVOICE_REDIRECT,
+    SIERRA_LEONE: GOCOIN_INVOICE_REDIRECT_SL
+}
 
+# IP-based blocking
 COUNTRY_BLACKLIST = (
     'US',
     # FATF Blacklist as of June 2014, see http://en.wikipedia.org/wiki/FATF_blacklist
@@ -317,25 +339,8 @@ COUNTRY_BLACKLIST = (
 
 GEOIP_PATH = BASE_DIR('static', 'geo_data', 'GeoIP.dat')
 
-# Countries
-GHANA = 'GH'
-SIERRA_LEONE = 'SL'
-RECEIVING_COUNTRIES = (GHANA, SIERRA_LEONE)
-
-# Currencies
-GBP = 'GBP'
-USD = 'USD'
-LEONE = 'SLL'
-CEDI = 'GHS'
-
-SENDING_CURRENCIES = (USD, GBP)
-
-COUNTRY_CURRENCY = {
-    GHANA: CEDI,
-    SIERRA_LEONE: LEONE
-}
-
-COUNTRY_PAYMENT_REDIRECT = {
-    GHANA: GOCOIN_INVOICE_REDIRECT,
-    SIERRA_LEONE: GOCOIN_INVOICE_REDIRECT_SL
-}
+# Bitcoin Against Ebola Specifics
+CHARITIES = {'SLLG': '23288401022', }
+SPLASH_EMAIL = 'beam@splash-cash.com'
+SPLASH_ONBOARD_RECIPIENT_SUBJECT = 'email/splash/oboard_recipient_subject.txt'
+SPLASH_ONBOARD_RECIPIENT_TEXT = 'email/splash/oboard_recipient_message.txt'

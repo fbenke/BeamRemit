@@ -20,7 +20,6 @@ from state.models import get_current_state
 
 from account.utils import AccountException
 
-
 mod = __import__('btc_payment.models', fromlist=[settings.PAYMENT_PROCESSOR])
 payment_class = getattr(mod, settings.PAYMENT_PROCESSOR)
 
@@ -31,6 +30,7 @@ class CreateTransaction(GenericAPIView):
 
     def post_save(self, obj, created=False):
 
+        # initiate payment with external payment processor
         self.invoice_id = payment_class.initiate(obj)
 
     def post(self, request):
