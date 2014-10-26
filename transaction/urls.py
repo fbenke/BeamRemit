@@ -21,9 +21,5 @@ urlpatterns = patterns(
         r'^(?P<pk>[0-9]+)/$',
         views.GetTransaction.as_view(),
         name='list'
-    ),
-    url(
-        r'^test/$',
-        views.Test.as_view()
-    ),
+    )
 )
