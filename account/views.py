@@ -22,7 +22,7 @@ from account import serializers
 from account.models import BeamProfile as Profile
 from account.utils import AccountException, generate_aws_upload
 
-from pricing.models import Limit, get_current_object
+from pricing.models import Pricing, Limit, get_current_object
 
 from beam.utils.ip_blocking import country_blocked, is_tor_node,\
     get_client_ip, HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
@@ -494,7 +494,9 @@ class AccountLimits(APIView):
 
     def get(self, request):
 
-        todays_vol = request.user.profile.todays_transaction_volume()
+        todays_vol_gbp = request.user.profile.todays_transaction_volume()
+
+        todays_vol_usd = todays_vol_gbp * get_current_object(Pricing).gbp_usd
 
         if request.user.profile.documents_verified:
             account_limit_gbp = get_current_object(Limit).user_limit_basic_gbp
@@ -506,7 +508,8 @@ class AccountLimits(APIView):
             can_extend = False
 
         data = {
-            'today': todays_vol,
+            'today_gbp': todays_vol_gbp,
+            'today_usd': todays_vol_usd,
             'limit_gbp': account_limit_gbp,
             'limit_usd': account_limit_usd,
             'can_extend': can_extend
