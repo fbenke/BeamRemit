@@ -499,11 +499,11 @@ class AccountLimits(APIView):
         if request.user.profile.documents_verified:
             account_limit_gbp = get_current_object(Limit).user_limit_basic_gbp
             account_limit_usd = get_current_object(Limit).user_limit_basic_usd
-            can_extend = False
+            can_extend = True
         else:
             account_limit_gbp = get_current_object(Limit).user_limit_complete_gbp
             account_limit_usd = get_current_object(Limit).user_limit_complete_usd
-            can_extend = True
+            can_extend = False
 
         data = {
             'today': todays_vol,
@@ -512,4 +512,3 @@ class AccountLimits(APIView):
             'can_extend': can_extend
         }
         return Response(data)
-
