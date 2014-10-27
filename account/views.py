@@ -17,7 +17,7 @@ from userena.utils import get_user_model
 
 from beam.utils.log import log_error
 from beam.utils import mails
-from beam.utils.site_mapping import get_site_by_request
+from beam.utils.frontend_requests import get_site_by_request
 
 from account import constants
 from account import serializers

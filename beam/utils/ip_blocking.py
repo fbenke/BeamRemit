@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.gis.geoip import GeoIP
 
 from beam.utils.log import log_error
-
+from beam.utlis.frontend_requests import get_country_blacklist_by_request
 
 HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451
 
@@ -24,13 +24,7 @@ def country_blocked(request, ip_address):
     if settings.ENV == settings.ENV_LOCAL:
         return False
 
-    bae_project_site = settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_USER_SL]
-
-    if bae_project_site in request.META.get('HTTP_REFERER'):
-        blocked_countries = list(set(settings.COUNTRY_BLACKLIST) - set(('US',)))
-
-    else:
-        blocked_countries = settings.COUNTRY_BLACKLIST
+    blocked_countries = get_country_blacklist_by_request(request)
 
     g = GeoIP()
 
