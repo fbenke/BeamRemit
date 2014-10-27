@@ -226,6 +226,7 @@ USERENA_REGISTER_USER = False
 USERENA_REGISTER_PROFILE = False
 USERENA_HTML_EMAIL = True
 ANONYMOUS_USER_ID = -1
+# used whenever domain of frontend app does not matter
 SITE_ID = 0
 
 BEAM_MAIL_ADDRESS = 'Beam <hello@beamremit.com>'

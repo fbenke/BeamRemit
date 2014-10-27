@@ -2,12 +2,7 @@ from hashlib import sha1 as sha_constructor
 import random
 import re
 
-from django.conf import settings
 from django.contrib.auth import authenticate
-from django.contrib.auth.tokens import default_token_generator as token_generator
-from django.contrib.sites.models import Site
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 
 from userena import settings as userena_settings
 from userena.models import UserenaSignup
@@ -15,8 +10,6 @@ from userena.utils import get_user_model
 
 from rest_framework import serializers
 from rest_framework import fields
-
-from beam.utils.mails import send_mail
 
 from account import constants
 from account import models
@@ -56,9 +49,6 @@ class RequestEmailSerializer(serializers.Serializer):
         except get_user_model().DoesNotExist:
             raise AccountException(constants.EMAIL_UNKNOWN)
         return user
-
-    def get_user(self):
-        return self.object
 
 
 class SignupSerializer(PasswordSerializer):
@@ -146,38 +136,6 @@ class AuthTokenSerializer(serializers.Serializer):
                 raise serializers.ValidationError(constants.SIGNIN_WRONG_CREDENTIALS)
         else:
             raise serializers.ValidationError(constants.SIGNIN_MISSING_CREDENTIALS)
-
-
-class PasswordResetSerializer(RequestEmailSerializer):
-
-    '''
-    Serializer for initiating password reset.
-    Basically ports django.contrib.auth.forms.PasswordResetForm to a
-    Serializer to work with Django Rest Framework.
-    '''
-
-    def save(self):
-
-        site = Site.objects.get_current()
-
-        context = {
-            'email': self.object.email,
-            'domain': site.domain,
-            'site_name': site.name,
-            'uid': urlsafe_base64_encode(force_bytes(self.object.pk)),
-            'first_name': self.object.first_name,
-            'token': token_generator.make_token(self.object),
-            'protocol': settings.PROTOCOL,
-        }
-
-        send_mail(
-            subject_template_name=settings.MAIL_PASSWORD_RESET_SUBJECT,
-            email_template_name=settings.MAIL_PASSWORD_RESET_TEXT,
-            context=context,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to_email=self.object.email,
-            html_email_template_name=settings.MAIL_PASSWORD_RESET_HTML
-        )
 
 
 class SetPasswordSerializer(PasswordSerializer):

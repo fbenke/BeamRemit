@@ -2,7 +2,8 @@ from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.contrib.sites.models import Site
 from django.db import transaction as dbtransaction
-from django.utils.http import urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -234,7 +235,7 @@ class EmailConfirm(APIView):
 class PasswordReset(APIView):
     'DRF version of django.contrib.auth.views.password_reset'
 
-    serializer_class = serializers.PasswordResetSerializer
+    serializer_class = serializers.RequestEmailSerializer
 
     def post(self, request):
         try:
@@ -245,7 +246,23 @@ class PasswordReset(APIView):
                 if not serializer.object.is_active:
                     raise AccountException(constants.USER_ACCOUNT_DISABLED)
 
-                serializer.save()
+                context = {
+                    'email': serializer.object.email,
+                    'site': get_site_by_request(request),
+                    'uid': urlsafe_base64_encode(force_bytes(serializer.object.pk)),
+                    'first_name': serializer.object.first_name,
+                    'token': token_generator.make_token(serializer.object),
+                    'protocol': settings.PROTOCOL,
+                }
+
+                mails.send_mail(
+                    subject_template_name=settings.MAIL_PASSWORD_RESET_SUBJECT,
+                    email_template_name=settings.MAIL_PASSWORD_RESET_TEXT,
+                    html_email_template_name=settings.MAIL_PASSWORD_RESET_HTML,
+                    context=context,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to_email=serializer.object.email
+                )
 
                 return Response()
 
