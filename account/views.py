@@ -266,6 +266,7 @@ class Email_Change(APIView):
                 'site': get_site_by_request(request)
             }
 
+            # mail to old email account
             mails.send_mail(
                 subject_template_name=settings.MAIL_CHANGE_EMAIL_OLD_SUBJECT,
                 email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_TEXT,
@@ -275,11 +276,12 @@ class Email_Change(APIView):
                 context=context
             )
 
+            # mail to new email account
             mails.send_mail(
                 subject_template_name=settings.MAIL_CHANGE_EMAIL_NEW_SUBJECT,
                 email_template_name=settings.MAIL_CHANGE_EMAIL_NEW_TEXT,
                 html_email_template_name=settings.MAIL_CHANGE_EMAIL_NEW_HTML,
-                to_email=user.email,
+                to_email=user.userena_signup.email_unconfirmed,
                 from_email=settings.BEAM_MAIL_ADDRESS,
                 context=context
             )
