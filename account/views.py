@@ -11,11 +11,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
+from userena import settings as userena_settings
 from userena.models import UserenaSignup
-from userena.utils import get_user_model, get_protocol
+from userena.utils import get_user_model
 
 from beam.utils.log import log_error
 from beam.utils import mails
+from beam.utils.site_mapping import get_site_by_request
 
 from account import constants
 from account import serializers
@@ -44,8 +46,26 @@ class Signup(APIView):
 
         serializer = self.serializer_class(data=request.DATA)
         if serializer.is_valid():
+
             user = serializer.save()
+
             if user:
+
+                mails.send_mail(
+                    subject_template_name=settings.MAIL_ACTIVATION_SUBJECT,
+                    email_template_name=settings.MAIL_ACTIVATION_TEXT,
+                    html_email_template_name=settings.MAIL_ACTIVATION_HTML,
+                    to_email=user.email,
+                    from_email=settings.BEAM_MAIL_ADDRESS,
+                    context={
+                        'user': user,
+                        'protocol': settings.PROTOCOL,
+                        'activation_days': userena_settings.USERENA_ACTIVATION_DAYS,
+                        'activation_key': user.userena_signup.activation_key,
+                        'site': get_site_by_request(request)
+                    }
+                )
+
                 return Response(status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -461,7 +481,7 @@ class UploadComplete(APIView):
                 email_template_name=settings.MAIL_NOTIFY_ADMIN_DOC_UPLOADED_TEXT,
                 context={
                     'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
-                    'protocol': get_protocol(),
+                    'protocol': settings.PROTOCOL,
                     'id': profile.id,
                     'document': Profile.DOCUMENT_VERBAL[document],
                     'site_name': Site.objects.get_current().name

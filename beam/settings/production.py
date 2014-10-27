@@ -73,7 +73,7 @@ MIDDLEWARE_CLASSES = PRODUCTION_MIDDLEWARE + (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware'
 )
 
 # Site types in Env
@@ -226,7 +226,6 @@ USERENA_REGISTER_USER = False
 USERENA_REGISTER_PROFILE = False
 USERENA_HTML_EMAIL = True
 ANONYMOUS_USER_ID = -1
-SITE_ID = 0
 
 BEAM_MAIL_ADDRESS = 'Beam <hello@beamremit.com>'
 DEFAULT_FROM_EMAIL = BEAM_MAIL_ADDRESS
@@ -243,6 +242,9 @@ else:
 # Email templates
 
 # User Email templates
+MAIL_ACTIVATION_SUBJECT = 'userena/emails/activation_email_subject.txt'
+MAIL_ACTIVATION_TEXT = 'userena/emails/activation_email_message.txt'
+MAIL_ACTIVATION_HTML = 'userena/emails/activation_email_message.html'
 MAIL_PASSWORD_RESET_SUBJECT = 'userena/emails/password_reset_subject.txt'
 MAIL_PASSWORD_RESET_TEXT = 'userena/emails/password_reset_message.txt'
 MAIL_PASSWORD_RESET_HTML = 'userena/emails/password_reset_message.html'

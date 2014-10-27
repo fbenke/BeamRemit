@@ -6,8 +6,6 @@ from django.conf import settings
 class Migration(DataMigration):
 
     def forwards(self, orm):
-        "Write your forwards methods here."
-
         orm['sites.site'].objects.all().delete()
         site = orm['sites.site'].objects.create(
             id=0,

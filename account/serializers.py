@@ -103,7 +103,8 @@ class SignupSerializer(PasswordSerializer):
             email=attrs['email'],
             password=attrs['password1'],
             active=not userena_settings.USERENA_ACTIVATION_REQUIRED,
-            send_email=userena_settings.USERENA_ACTIVATION_REQUIRED
+            # this will be done manually in the next step to allow more flexibiliy
+            send_email=False
         )
 
         return new_user
