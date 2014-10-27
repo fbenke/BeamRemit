@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.gis.geoip import GeoIP
 
 from beam.utils.log import log_error
-from beam.utlis.frontend_requests import get_country_blacklist_by_request
+from beam.utlis.angular_requests import get_country_blacklist_by_request
 
 HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451
 
