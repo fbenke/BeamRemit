@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.sites.models import Site
 
-from beam.utils.logging import log_error
+from beam.utils.log import log_error
 
 
 def get_site_by_request(request):
