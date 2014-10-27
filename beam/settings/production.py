@@ -234,7 +234,7 @@ DEFAULT_FROM_EMAIL = BEAM_MAIL_ADDRESS
 BEAM_SUPPORT = 'hello@beamremit.com'
 
 # Email Settings
-if ENV in (ENV_LOCAL, ENV_DEV):
+if ENV in (ENV_LOCAL,):
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
     EMAIL_BACKEND = 'beam.utils.sendgrid_django.SendGridBackend'
@@ -353,6 +353,6 @@ GEOIP_PATH = BASE_DIR('static', 'geo_data', 'GeoIP.dat')
 
 # Bitcoin Against Ebola Specifics
 CHARITIES = {'SLLG': '23288401022', }
-SPLASH_EMAIL = 'beam@splash-cash.com'
+SPLASH_EMAIL = 'falk@beamremit.com'   # 'beam@splash-cash.com'
 SPLASH_ONBOARD_RECIPIENT_SUBJECT = 'email/splash/oboard_recipient_subject.txt'
 SPLASH_ONBOARD_RECIPIENT_TEXT = 'email/splash/oboard_recipient_message.txt'
