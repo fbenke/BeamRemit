@@ -27,8 +27,10 @@ def country_blocked(request, ip_address):
     bae_project_site = settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_USER_SL]
 
     if bae_project_site in request.META.get('HTTP_REFERER'):
+        print "i won't block US"
         blocked_countries = list(set(settings.COUNTRY_BLACKLIST) - set('US',))
     else:
+        print "i will block US"
         blocked_countries = settings.COUNTRY_BLACKLIST
 
     g = GeoIP()
