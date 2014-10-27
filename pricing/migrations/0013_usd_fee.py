@@ -1,0 +1,51 @@
+# -*- coding: utf-8 -*-
+from south.v2 import DataMigration
+
+
+class Migration(DataMigration):
+
+    def forwards(self, orm):
+        for pricing in orm.Pricing.objects.all():
+            pricing.fee_gbp = pricing.fee
+            pricing.save()
+
+    def backwards(self, orm):
+        for pricing in orm.Pricing.objects.all():
+            pricing.fee = pricing.fee_gbp
+            pricing.save()
+
+    models = {
+        u'pricing.comparison': {
+            'Meta': {'object_name': 'Comparison'},
+            'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'price_comparison': ('jsonfield.fields.JSONField', [], {}),
+            'start': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'})
+        },
+        u'pricing.limit': {
+            'Meta': {'object_name': 'Limit'},
+            'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'start': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'transaction_max_gbp': ('django.db.models.fields.FloatField', [], {}),
+            'transaction_min_gbp': ('django.db.models.fields.FloatField', [], {}),
+            'user_limit_basic_gbp': ('django.db.models.fields.FloatField', [], {}),
+            'user_limit_complete_gbp': ('django.db.models.fields.FloatField', [], {})
+        },
+        u'pricing.pricing': {
+            'Meta': {'object_name': 'Pricing'},
+            'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'fee': ('django.db.models.fields.FloatField', [], {}),
+            'fee_gbp': ('django.db.models.fields.FloatField', [], {}),
+            'fee_usd': ('django.db.models.fields.FloatField', [], {}),
+            'gbp_ghs': ('django.db.models.fields.FloatField', [], {}),
+            'gbp_sll': ('django.db.models.fields.FloatField', [], {}),
+            'gbp_usd': ('django.db.models.fields.FloatField', [], {}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'markup': ('django.db.models.fields.FloatField', [], {}),
+            'start': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'})
+        }
+    }
+
+    complete_apps = ['pricing']
+    symmetrical = True

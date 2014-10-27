@@ -22,11 +22,11 @@ class PricingAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'markup', 'fee', 'gbp_ghs')
+            return ('id', 'start', 'end', 'markup', 'fee_gbp', 'fee_usd', 'gbp_ghs', 'gbp_usd', 'gbp_sll')
         else:
             return ('id', 'start', 'end')
 
-    list_display = ('id', 'start', 'end', 'markup', 'gbp_ghs', 'fee')
+    list_display = ('id', 'start', 'end', 'markup', 'gbp_ghs', 'fee_gbp', 'fee_usd')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
@@ -59,16 +59,24 @@ class LimitAdmin(DoNotDeleteModelAdmin):
     form = forms.LimitForm
 
     def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return ('id', 'start', 'end', 'min_gbp', 'max_gbp', 'min_ghs',
-                    'max_ghs', 'daily_limit_gbp_basic', 'daily_limit_ghs_basic',
-                    'daily_limit_gbp_complete', 'daily_limit_ghs_complete')
-        else:
-            return ('id', 'start', 'end', 'min_ghs', 'max_ghs',
-                    'daily_limit_ghs_basic', 'daily_limit_ghs_complete')
 
-    list_display = ('id', 'start', 'end', 'max_gbp',
-                    'daily_limit_gbp_basic', 'daily_limit_gbp_complete')
+        calculated_fields = (
+            'user_limit_basic_usd', 'user_limit_complete_usd',
+            'transaction_min_usd', 'transaction_max_usd',
+            'transaction_min_ghs', 'transaction_max_ghs',
+            'transaction_min_sll', 'transaction_max_sll'
+        )
+
+        if obj:
+            return ('id', 'start', 'end', 'user_limit_basic_gbp',
+                    'user_limit_complete_gbp', 'transaction_min_gbp',
+                    'transaction_max_gbp') + calculated_fields
+        else:
+            return ('id', 'start', 'end') + calculated_fields
+
+    list_display = ('id', 'start', 'end', 'user_limit_basic_gbp',
+                    'user_limit_complete_gbp', 'transaction_min_gbp',
+                    'transaction_max_gbp')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:

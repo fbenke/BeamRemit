@@ -10,6 +10,7 @@ HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451
 
 
 def get_client_ip(request):
+    print request.META
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
         ip = x_forwarded_for.split(',')[0]

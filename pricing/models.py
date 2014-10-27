@@ -1,6 +1,8 @@
+import math
 import collections
 
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -29,6 +31,20 @@ def end_previous_object(cls):
 
 class Pricing(models.Model):
 
+    COUNTRY_FXR = {
+        settings.GHANA: 'exchange_rate_ghs',
+        settings.SIERRA_LEONE: 'exchange_rate_sll'
+    }
+
+    SENT_CURRENCY_FXR = {
+        settings.USD: 'gbp_usd'
+    }
+
+    SENT_CURRENCY_FEE = {
+        settings.USD: 'fee_usd',
+        settings.GBP: 'fee_gbp'
+    }
+
     start = models.DateTimeField(
         'Start Time',
         auto_now_add=True,
@@ -48,22 +64,65 @@ class Pricing(models.Model):
         help_text='Percentage to be added over exchange rate. Value between 0 and 1.'
     )
 
+    fee_usd = models.FloatField(
+        'Fixed Fee in USD',
+        help_text='Fixed Fee charged for the money transfer in USD.'
+    )
+
+    fee_gbp = models.FloatField(
+        'Fixed Fee in GBP',
+        help_text='Fixed Fee charged for the money transfer in GBP.'
+    )
+
     gbp_ghs = models.FloatField(
         'GBP to GHS Exchange Rate',
         help_text='Exchange Rate from GBP to GHS without markup'
     )
 
-    fee = models.FloatField(
-        'Fixed Fee',
-        help_text='Fixed Fee charged for the money transfer.'
+    gbp_usd = models.FloatField(
+        'GBP to USD Exchange Rate',
+        help_text='Exchange Rate from GBP to USD without markup'
+    )
+
+    gbp_sll = models.FloatField(
+        'GBP to SSL Exchange Rate',
+        help_text='Exchange Rate from GBP to SSL without markup'
     )
 
     def __unicode__(self):
         return '{}'.format(self.id)
 
     @property
-    def exchange_rate(self):
+    def exchange_rate_ghs(self):
         return self.gbp_ghs * (1 - self.markup)
+
+    @property
+    def exchange_rate_usd(self):
+        return self.gbp_usd * (1 - self.markup)
+
+    @property
+    def exchange_rate_sll(self):
+        return self.gbp_sll * (1 - self.markup)
+
+    def calculate_received_amount(self, sent_amount, currency, country):
+
+        # if necessary, convert the sent amount into the base currency, no markup included
+        amount_gbp = self.convert_to_base_currency(sent_amount, currency)
+
+        # convert from base currency to received currency, this includes the markup
+        undrounded_amount = amount_gbp * getattr(self, self.COUNTRY_FXR[country])
+
+        # do country-specific rounding
+        if country == settings.SIERRA_LEONE:
+            return math.ceil(undrounded_amount / 10) * 10
+        else:
+            return math.ceil(undrounded_amount * 10) / 10
+
+    def convert_to_base_currency(self, amount, currency):
+        if currency != settings.GBP:
+            return amount / getattr(self, self.SENT_CURRENCY_FXR[currency])
+        else:
+            return amount
 
 
 class Comparison(models.Model):
@@ -93,24 +152,27 @@ class Limit(models.Model):
 
     def __init__(self, *args, **kwargs):
         super(Limit, self).__init__(*args, **kwargs)
-        self.exchange_rate = get_current_object(Pricing).gbp_ghs * (1 - get_current_object(Pricing).markup)
+        current_object = get_current_object(Pricing)
+        self.exchange_rate_ghs = current_object.gbp_ghs * (1 - current_object.markup)
+        self.exchange_rate_sll = current_object.gbp_sll * (1 - current_object.markup)
+        self.exchange_rate_usd = current_object.gbp_usd * (1 - current_object.markup)
 
-    max_gbp = models.FloatField(
-        'Maximum amount in GBP ',
-        help_text='Maximum remittance amount in GBB per transaction'
-    )
-
-    min_gbp = models.FloatField(
+    transaction_min_gbp = models.FloatField(
         'Minimum amount in GBP ',
         help_text='Minimum remittance amount in GBB per transaction'
     )
 
-    daily_limit_gbp_basic = models.FloatField(
+    transaction_max_gbp = models.FloatField(
+        'Maximum amount in GBP ',
+        help_text='Maximum remittance amount in GBB per transaction'
+    )
+
+    user_limit_basic_gbp = models.FloatField(
         'Maximum for basic users',
         help_text='Maximum amount a basic user is allowed to send per day in GBP'
     )
 
-    daily_limit_gbp_complete = models.FloatField(
+    user_limit_complete_gbp = models.FloatField(
         'Maximum for fully verified users',
         help_text='Maximum amount a fully verfied user is allowed to send per day in GBP'
     )
@@ -129,18 +191,37 @@ class Limit(models.Model):
                   'Only one row in this table can have a null value for this column.'
     )
 
+    # USD Limits
     @property
-    def min_ghs(self):
-        return self.exchange_rate * self.min_gbp
+    def transaction_min_usd(self):
+        return self.exchange_rate_usd * self.transaction_min_gbp
 
     @property
-    def max_ghs(self):
-        return self.exchange_rate * self.max_gbp
+    def transaction_max_usd(self):
+        return self.exchange_rate_usd * self.transaction_max_gbp
 
     @property
-    def daily_limit_ghs_basic(self):
-        return self.exchange_rate * self.daily_limit_gbp_basic
+    def user_limit_basic_usd(self):
+        return self.exchange_rate_usd * self.user_limit_basic_gbp
 
     @property
-    def daily_limit_ghs_complete(self):
-        return self.exchange_rate * self.daily_limit_gbp_complete
+    def user_limit_complete_usd(self):
+        return self.exchange_rate_usd * self.user_limit_complete_gbp
+
+    # SSL Limits
+    @property
+    def transaction_min_sll(self):
+        return self.exchange_rate_sll * self.transaction_min_gbp
+
+    @property
+    def transaction_max_sll(self):
+        return self.exchange_rate_sll * self.transaction_max_gbp
+
+    # GHS Limits
+    @property
+    def transaction_min_ghs(self):
+        return self.exchange_rate_ghs * self.transaction_min_gbp
+
+    @property
+    def transaction_max_ghs(self):
+        return self.exchange_rate_ghs * self.transaction_max_gbp

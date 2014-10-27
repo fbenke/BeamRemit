@@ -1,41 +1,49 @@
+from django.conf import settings
 from django.db import transaction as dbtransaction
 
 from rest_framework import serializers
+from rest_framework import fields
 
 from transaction import models
+from transaction import constants
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+
+    received_currency = fields.FloatField()
+
     class Meta:
         model = models.Transaction
         depth = 1
         read_only_fields = (
-            'id', 'recipient', 'amount_gbp', 'amount_btc', 'amount_ghs',
-            'reference_number', 'state', 'initialized_at', 'paid_at',
-            'processed_at'
+            'id', 'recipient', 'sent_amount', 'sent_currency', 'amount_btc', 'received_amount',
+            'reference_number', 'state', 'initialized_at', 'paid_at', 'processed_at'
         )
-        fields = read_only_fields
+        fields = read_only_fields + ('received_currency',)
 
 
 class CreateTransactionSerializer(serializers.ModelSerializer):
-
-    # Pricing has expired
-    PRICING_EXPIRED = 0
-    # Sender Profile is incomplete
-    SENDER_PROFILE_INCOMPLETE = 1
-
-    pricing_id = serializers.IntegerField('pricing_id')
 
     class Meta:
         model = models.Transaction
         depth = 1
         read_only_fields = ()
-        read_and_write_fields = ('amount_gbp', 'recipient', 'pricing_id')
+        read_and_write_fields = ('recipient', 'receiving_country', 'sent_amount', 'sent_currency')
         fields = read_only_fields + read_and_write_fields
 
     def __init__(self, user, *args, **kwargs):
         self.user = user
         super(CreateTransactionSerializer, self).__init__(*args, **kwargs)
+
+    def validate_receiving_country(self, attrs, source):
+        if attrs[source] not in settings.RECEIVING_COUNTRIES:
+            raise serializers.ValidationError(constants.COUNTRY_NOT_SUPPORTED)
+        return attrs
+
+    def validate_sent_currency(self, attrs, source):
+        if attrs[source] not in settings.SENDING_CURRENCIES:
+            raise serializers.ValidationError(constants.SENT_CURRENCY_NOT_SUPPORTED)
+        return attrs
 
     def restore_object(self, attrs, instance=None):
         recipient = models.Recipient(
@@ -46,7 +54,9 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
         transaction = models.Transaction(
             recipient=recipient,
             sender=self.user,
-            amount_gbp=attrs['amount_gbp'],
+            sent_amount=attrs['sent_amount'],
+            sent_currency=attrs['sent_currency'],
+            receiving_country=attrs['receiving_country']
         )
 
         return transaction

@@ -18,8 +18,11 @@ class PricingCurrent(APIView):
         response_dict = {}
 
         response_dict['pricing_id'] = self.pricing.id
-        response_dict['beam_rate'] = self.pricing.exchange_rate
-        response_dict['beam_fee'] = self.pricing.fee
+        response_dict['beam_rate_ghs'] = self.pricing.exchange_rate_ghs
+        response_dict['beam_rate_sll'] = self.pricing.exchange_rate_sll
+        response_dict['beam_rate_usd'] = self.pricing.exchange_rate_usd
+        response_dict['beam_fee_gbp'] = self.pricing.fee_gbp
+        response_dict['beam_fee_usd'] = self.pricing.fee_usd
         response_dict['comparison'] = self.comparison.price_comparison
         response_dict['comparison_retrieved'] = self.comparison.start
         response_dict['operationMode'] = get_current_state()
@@ -46,4 +49,3 @@ class LimitCurrent(RetrieveAPIView):
             return get_current_object(Limit)
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-

@@ -1,12 +1,13 @@
 import random
-import math
-
-from django.db import models
 
 from django.core.exceptions import ValidationError
+from django.conf import settings
+from django.db import models
 from django.utils import timezone
 
 from userena.utils import get_user_model
+
+from django_countries.fields import CountryField
 
 from pricing.models import Pricing, get_current_object
 
@@ -53,6 +54,11 @@ class Transaction(models.Model):
         (INVALID, 'invalid')
     )
 
+    SENT_CURRENCIES = (
+        (settings.GBP, 'British Pound'),
+        (settings.USD, 'US Dollar')
+    )
+
     recipient = models.ForeignKey(
         Recipient,
         related_name='transactions',
@@ -71,21 +77,33 @@ class Transaction(models.Model):
         help_text='Pricing information to enable conversion of btc to ghs'
     )
 
-    amount_gbp = models.FloatField(
-        'Remittance amount in GBP',
-        help_text='Amount of GBP sent via Beam (does not include fees)'
+    sent_amount = models.FloatField(
+        'Sent remittance amount',
+        help_text='Amount sent via Beam (does not include fees)'
+    )
+
+    sent_currency = models.CharField(
+        'Sent currency',
+        max_length=4,
+        choices=SENT_CURRENCIES,
+        help_text='Currency the sent amount is denominated in'
     )
 
     amount_btc = models.FloatField(
         'Bitcoins paid to Beam',
         null=True,
         blank=True,
-        help_text='BTCs equivalent of GBP amount, determined by Payment Processor'
+        help_text='BTC sent to Beam (includes fees), determined by Payment Processor, exclusive BTC transaction fee'
     )
 
-    amount_ghs = models.FloatField(
-        'GHS payed out to recipient',
-        help_text='GHS to be paid to recipient'
+    received_amount = models.FloatField(
+        'Remittance amount in received currency',
+        help_text='Amount payed out to recipient in their currency'
+    )
+
+    receiving_country = CountryField(
+        'Receiving Country',
+        help_text='Country to which remittance is sent'
     )
 
     reference_number = models.CharField(
@@ -136,12 +154,19 @@ class Transaction(models.Model):
         blank=True,
         help_text='Time at which payment was set invalid'
     )
-
     comments = models.TextField(
         'Comments',
         blank=True,
         help_text='Leave comments when manually solving problems with this transaction'
     )
+
+    @property
+    def received_currency(self):
+        return settings.COUNTRY_CURRENCY[self.receiving_country]
+
+    @property
+    def fee(self):
+        return getattr(self.pricing, Pricing.SENT_CURRENCY_FEE[self.sent_currency])
 
     def __unicode__(self):
         return '{}'.format(self.id)
@@ -150,7 +175,8 @@ class Transaction(models.Model):
         if not self.pk:
             self.pricing = get_current_object(Pricing)
             self._generate_reference_number()
-            self.amount_btc = self._calculate_ghs_price()
+            self.received_amount = self.pricing.calculate_received_amount(
+                self.sent_amount, self.sent_currency, self.receiving_country)
         else:
             original = Transaction.objects.get(pk=self.pk)
             if original.pricing != self.pricing:
@@ -172,7 +198,3 @@ class Transaction(models.Model):
 
     def _generate_reference_number(self):
         self.reference_number = str(random.randint(10000, 999999))
-
-    def _calculate_ghs_price(self):
-        raw_price = self.amount_gbp * self.pricing.exchange_rate
-        self.amount_ghs = math.ceil(raw_price * 10) / 10
