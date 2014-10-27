@@ -33,13 +33,16 @@ from beam.utils.ip_blocking import country_blocked, is_tor_node,\
 'DRF implementation of the userena.views used for Beam Accounts.'
 
 
-def send_activation_email(user, request):
+def send_activation_email(user, request, activation_key=None):
+
+    if not activation_key:
+        activation_key = user.userena_signup.activation_key
 
     context = {
         'user': user,
         'protocol': settings.PROTOCOL,
         'activation_days': userena_settings.USERENA_ACTIVATION_DAYS,
-        'activation_key': user.userena_signup.activation_key,
+        'activation_key': activation_key,
         'site': get_site_by_request(request)
     }
 
@@ -62,16 +65,16 @@ def reissue_activation(activation_key):
     try:
         userena = UserenaSignup.objects.get(activation_key=activation_key)
     except UserenaSignup.objects.model.DoesNotExist:
-        return False
+        return None
     try:
         salt, new_activation_key = generate_sha1(userena.user.username)
         userena.activation_key = new_activation_key
         userena.save(using=UserenaSignup.objects._db)
         userena.user.date_joined = get_datetime_now()
         userena.user.save(using=UserenaSignup.objects._db)
-        return True
+        return new_activation_key
     except Exception:
-        return False
+        return None
 
 
 class Signup(APIView):
@@ -144,12 +147,11 @@ class ActivationRetry(APIView):
             if UserenaSignup.objects.check_expired_activation(activation_key):
                 user = UserenaSignup.objects.get(activation_key=activation_key).user
 
-                # new_key = UserenaSignup.objects.reissue_activation(activation_key)
-                new_key = reissue_activation(activation_key)
+                new_activation_key = reissue_activation(activation_key)
 
-                if new_key:
+                if new_activation_key:
 
-                    send_activation_email(user, request)
+                    send_activation_email(user, request, new_activation_key)
 
                     return Response({'email': user.email}, status=status.HTTP_201_CREATED)
 
@@ -182,11 +184,11 @@ class ActivationResend(APIView):
                 if serializer.object.is_active:
                     raise AccountException(constants.USER_ACCOUNT_ALREADY_ACTIVATED)
 
-                new_key = reissue_activation(serializer.object.userena_signup.activation_key)
+                new_activation_key = reissue_activation(serializer.object.userena_signup.activation_key)
 
-                if new_key:
+                if new_activation_key:
 
-                    send_activation_email(serializer.object, request)
+                    send_activation_email(serializer.object, request, new_activation_key)
 
                     return Response(status=status.HTTP_201_CREATED)
 
