@@ -39,7 +39,7 @@ class Signup(APIView):
         # block countries we are not licensed to operate in and tor clients
         client_ip = get_client_ip(request)
 
-        if country_blocked(client_ip) or is_tor_node(client_ip):
+        if country_blocked(request, client_ip) or is_tor_node(client_ip):
             return Response(status=HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
 
         serializer = self.serializer_class(data=request.DATA)
@@ -152,7 +152,7 @@ class Signin(APIView):
         # block countries we are not licensed to operate in and tor clients
         client_ip = get_client_ip(request)
 
-        if country_blocked(client_ip) or is_tor_node(client_ip):
+        if country_blocked(request, client_ip) or is_tor_node(client_ip):
             return Response(status=HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
 
         serializer = self.serializer_class(data=request.DATA)

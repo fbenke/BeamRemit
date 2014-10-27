@@ -10,7 +10,7 @@ HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451
 
 
 def get_client_ip(request):
-    print request.META
+
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
         ip = x_forwarded_for.split(',')[0]
@@ -19,14 +19,22 @@ def get_client_ip(request):
     return ip
 
 
-def country_blocked(ip_address):
+def country_blocked(request, ip_address):
 
     if settings.ENV == settings.ENV_LOCAL:
         return False
 
+    bae_project_site = settings.ENV_SITE_MAPPING[settings.ENV_LOCAL][settings.SITE_USER_SL]
+
+    if bae_project_site in request.META.get('HTTP_REFERER'):
+        print "don't worry, i won't block us stuff"
+        blocked_countries = list(set(settings.COUNTRY_BLACKLIST) - set('US',))
+    else:
+        blocked_countries = settings.COUNTRY_BLACKLIST
+
     g = GeoIP()
 
-    return g.country(ip_address)['country_code'] in settings.COUNTRY_BLACKLIST
+    return g.country(ip_address)['country_code'] in blocked_countries
 
 
 def is_tor_node(ip_address):
