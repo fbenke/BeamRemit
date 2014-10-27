@@ -9,7 +9,7 @@ class Migration(DataMigration):
         site = orm['sites.site'].objects.create(
             id=1,
             domain=settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_USER_SL],
-            name='Bitcoin Against Ebola'
+            name='Beam'
         )
         site.save()
 

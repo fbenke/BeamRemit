@@ -33,6 +33,47 @@ from beam.utils.ip_blocking import country_blocked, is_tor_node,\
 'DRF implementation of the userena.views used for Beam Accounts.'
 
 
+def send_activation_email(user, request):
+
+    context = {
+        'user': user,
+        'protocol': settings.PROTOCOL,
+        'activation_days': userena_settings.USERENA_ACTIVATION_DAYS,
+        'activation_key': user.userena_signup.activation_key,
+        'site': get_site_by_request(request)
+    }
+
+    mails.send_mail(
+        subject_template_name=settings.MAIL_ACTIVATION_SUBJECT,
+        email_template_name=settings.MAIL_ACTIVATION_TEXT,
+        html_email_template_name=settings.MAIL_ACTIVATION_HTML,
+        to_email=user.email,
+        from_email=settings.BEAM_MAIL_ADDRESS,
+        context=context
+    )
+
+
+def reissue_activation(activation_key):
+    '''
+    Rewritten version of UserenaSignup.objects.reissue_activation()
+    to customize the sent email
+    '''
+
+    try:
+        userena = UserenaSignup.objects.get(activation_key=activation_key)
+    except UserenaSignup.objects.model.DoesNotExist:
+        return False
+    try:
+        salt, new_activation_key = generate_sha1(userena.user.username)
+        userena.activation_key = new_activation_key
+        userena.save(using=UserenaSignup.objects._db)
+        userena.user.date_joined = get_datetime_now()
+        userena.user.save(using=UserenaSignup.objects._db)
+        return True
+    except Exception:
+        return False
+
+
 class Signup(APIView):
 
     serializer_class = serializers.SignupSerializer
@@ -51,22 +92,8 @@ class Signup(APIView):
             user = serializer.save()
 
             if user:
-                context = {
-                    'user': user,
-                    'protocol': settings.PROTOCOL,
-                    'activation_days': userena_settings.USERENA_ACTIVATION_DAYS,
-                    'activation_key': user.userena_signup.activation_key,
-                    'site': get_site_by_request(request)
-                }
 
-                mails.send_mail(
-                    subject_template_name=settings.MAIL_ACTIVATION_SUBJECT,
-                    email_template_name=settings.MAIL_ACTIVATION_TEXT,
-                    html_email_template_name=settings.MAIL_ACTIVATION_HTML,
-                    to_email=user.email,
-                    from_email=settings.BEAM_MAIL_ADDRESS,
-                    context=context
-                )
+                send_activation_email(user, request)
 
                 return Response(status=status.HTTP_201_CREATED)
 
@@ -116,9 +143,16 @@ class ActivationRetry(APIView):
         try:
             if UserenaSignup.objects.check_expired_activation(activation_key):
                 user = UserenaSignup.objects.get(activation_key=activation_key).user
-                new_key = UserenaSignup.objects.reissue_activation(activation_key)
+
+                # new_key = UserenaSignup.objects.reissue_activation(activation_key)
+                new_key = reissue_activation(activation_key)
+
                 if new_key:
+
+                    send_activation_email(user, request)
+
                     return Response({'email': user.email}, status=status.HTTP_201_CREATED)
+
                 else:
                     log_error(
                         'ERROR - activation key could not be generated for expired key {}'.
@@ -148,12 +182,14 @@ class ActivationResend(APIView):
                 if serializer.object.is_active:
                     raise AccountException(constants.USER_ACCOUNT_ALREADY_ACTIVATED)
 
-                new_key = UserenaSignup.objects.reissue_activation(
-                    serializer.object.userena_signup.activation_key
-                )
+                new_key = reissue_activation(serializer.object.userena_signup.activation_key)
 
                 if new_key:
+
+                    send_activation_email(serializer.object, request)
+
                     return Response(status=status.HTTP_201_CREATED)
+
                 else:
                     log_error('ERROR - activation key could not be generated for resend request for email {}'
                               .format(serializer.object.email))
