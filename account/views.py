@@ -499,13 +499,13 @@ class AccountLimits(APIView):
         todays_vol_usd = todays_vol_gbp * get_current_object(Pricing).gbp_usd
 
         if request.user.profile.documents_verified:
-            account_limit_gbp = get_current_object(Limit).user_limit_basic_gbp
-            account_limit_usd = get_current_object(Limit).user_limit_basic_usd
-            can_extend = True
-        else:
             account_limit_gbp = get_current_object(Limit).user_limit_complete_gbp
             account_limit_usd = get_current_object(Limit).user_limit_complete_usd
             can_extend = False
+        else:
+            account_limit_gbp = get_current_object(Limit).user_limit_basic_gbp
+            account_limit_usd = get_current_object(Limit).user_limit_basic_usd
+            can_extend = True
 
         data = {
             'today_gbp': todays_vol_gbp,
