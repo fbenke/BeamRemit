@@ -14,7 +14,7 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
 from userena import settings as userena_settings
 from userena.models import UserenaSignup
-from userena.utils import get_user_model
+from userena.utils import get_user_model, generate_sha1, get_datetime_now
 
 from beam.utils.log import log_error
 from beam.utils import mails
@@ -51,6 +51,13 @@ class Signup(APIView):
             user = serializer.save()
 
             if user:
+                context = {
+                    'user': user,
+                    'protocol': settings.PROTOCOL,
+                    'activation_days': userena_settings.USERENA_ACTIVATION_DAYS,
+                    'activation_key': user.userena_signup.activation_key,
+                    'site': get_site_by_request(request)
+                }
 
                 mails.send_mail(
                     subject_template_name=settings.MAIL_ACTIVATION_SUBJECT,
@@ -58,13 +65,7 @@ class Signup(APIView):
                     html_email_template_name=settings.MAIL_ACTIVATION_HTML,
                     to_email=user.email,
                     from_email=settings.BEAM_MAIL_ADDRESS,
-                    context={
-                        'user': user,
-                        'protocol': settings.PROTOCOL,
-                        'activation_days': userena_settings.USERENA_ACTIVATION_DAYS,
-                        'activation_key': user.userena_signup.activation_key,
-                        'site': get_site_by_request(request)
-                    }
+                    context=context
                 )
 
                 return Response(status=status.HTTP_201_CREATED)
@@ -211,7 +212,39 @@ class Email_Change(APIView):
             if get_user_model().objects.filter(email__iexact=new_email):
                 raise AccountException(constants.EMAIL_IN_USE)
 
-            user.userena_signup.change_email(new_email)
+            # the following is a rewritten version of user.userena_signup.change_email(new_email)
+            user.userena_signup.email_unconfirmed = new_email
+            salt, hash = generate_sha1(user.username)
+            user.userena_signup.email_confirmation_key = hash
+            user.userena_signup.email_confirmation_key_created = get_datetime_now()
+            user.userena_signup.save()
+
+            # the purpose is rewriting the following part where the emails are sent out
+            context = {
+                'user': user,
+                'new_email': user.userena_signup.email_unconfirmed,
+                'protocol': settings.PROTOCOL,
+                'confirmation_key': user.userena_signup.email_confirmation_key,
+                'site': get_site_by_request(request)
+            }
+
+            mails.send_mail(
+                subject_template_name=settings.MAIL_CHANGE_EMAIL_OLD_SUBJECT,
+                email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_TEXT,
+                html_email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_HTML,
+                to_email=user.email,
+                from_email=settings.BEAM_MAIL_ADDRESS,
+                context=context
+            )
+
+            mails.send_mail(
+                subject_template_name=settings.MAIL_CHANGE_EMAIL_NEW_SUBJECT,
+                email_template_name=settings.MAIL_CHANGE_EMAIL_NEW_TEXT,
+                html_email_template_name=settings.MAIL_CHANGE_EMAIL_NEW_HTML,
+                to_email=user.email,
+                from_email=settings.BEAM_MAIL_ADDRESS,
+                context=context
+            )
 
             return Response()
 
