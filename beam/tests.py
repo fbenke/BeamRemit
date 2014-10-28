@@ -11,6 +11,7 @@ class BeamAPITestCase(APITestCase):
     emails = iter(['test{}@mail.com'.format(k) for k in xrange(1, 100)])
     password = 'Django123'
     new_password = 'Django321'
+    invalid_password = 'schatzi'
 
     url_signup = reverse('account:signup')
     url_profile = reverse('account:profile')

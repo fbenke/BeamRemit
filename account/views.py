@@ -90,6 +90,7 @@ class Signup(APIView):
             return Response(status=HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
 
         serializer = self.serializer_class(data=request.DATA)
+
         if serializer.is_valid():
 
             user = serializer.save()
@@ -182,6 +183,7 @@ class ActivationResend(APIView):
             if serializer.is_valid():
 
                 if serializer.object.is_active:
+
                     raise AccountException(constants.USER_ACCOUNT_ALREADY_ACTIVATED)
 
                 new_activation_key = reissue_activation(serializer.object.userena_signup.activation_key)
@@ -193,6 +195,7 @@ class ActivationResend(APIView):
                     return Response(status=status.HTTP_201_CREATED)
 
                 else:
+
                     log_error('ERROR - activation key could not be generated for resend request for email {}'
                               .format(serializer.object.email))
                     return Response(status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -200,6 +203,7 @@ class ActivationResend(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         except AccountException as e:
+
             return Response({'detail': e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
 
 

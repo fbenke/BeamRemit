@@ -200,9 +200,7 @@ if ENV == ENV_LOCAL:
 else:
     CORS_ORIGIN_WHITELIST = (
         ENV_SITE_MAPPING[ENV][SITE_USER],
-        # ENV_SITE_MAPPING[ENV][SITE_USER_SL]
-        'dev.bitcoinagainstebola.org',
-        'bitcoinagainstebola.org'
+        ENV_SITE_MAPPING[ENV][SITE_USER_SL]
     )
 
 # Base URLS for the apps
