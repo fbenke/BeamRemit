@@ -93,10 +93,6 @@ class Pricing(models.Model):
         return '{}'.format(self.id)
 
     @property
-    def exchange_rate_usd(self):
-        return self.gbp_usd
-
-    @property
     def exchange_rate_ghs(self):
         return self.gbp_ghs * (1 - self.markup)
 
@@ -155,7 +151,7 @@ class Limit(models.Model):
         current_object = get_current_object(Pricing)
         self.exchange_rate_ghs = current_object.gbp_ghs * (1 - current_object.markup)
         self.exchange_rate_sll = current_object.gbp_sll * (1 - current_object.markup)
-        self.exchange_rate_usd = current_object.gbp_usd * (1 - current_object.markup)
+        self.exchange_rate_usd = current_object.gbp_usd
 
     transaction_min_gbp = models.FloatField(
         'Minimum amount in GBP ',
