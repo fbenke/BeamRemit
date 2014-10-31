@@ -548,17 +548,33 @@ class ProfileTests(AccountTests):
         response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_edit_user_reset_documents(self):
+        email = self.emails.next()
+        token, id = self._create_fully_verified_user(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.patch(self.url_profile, {'firstName': 'NewF', 'profile': {}})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user = get_user_model().objects.get(id=id)
+
+        self.assertEqual(user.profile.identification_state, Profile.EMPTY)
+        self.assertEqual(user.profile.proof_of_residence_state, Profile.VERIFIED)
+
+        self.client.patch(self.url_profile, {'profile': {'country': 'GH'}})
+        user = get_user_model().objects.get(id=id)
+        self.assertEqual(user.profile.proof_of_residence_state, Profile.EMPTY)
+
 
 class AWSTests(AccountTests):
     # TODO: How to start using mocking?
-    def test_aws_upload(self):
-        email = self.emails.next()
-        token, _ = self._create_user_with_profile(email=email)
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.get(
-            self.url_aws_upload + '?documenttype=' + Profile.DOCUMENT_TYPES[0] +
-            '&contenttype=image/png')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+    # def test_aws_upload(self):
+    #     email = self.emails.next()
+    #     token, _ = self._create_user_with_profile(email=email)
+    #     self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+    #     response = self.client.get(
+    #         self.url_aws_upload + '?documenttype=' + Profile.DOCUMENT_TYPES[0] +
+    #         '&contenttype=image/png')
+    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_aws_upload_invalid_params(self):
         email = self.emails.next()
@@ -595,4 +611,3 @@ class AWSTests(AccountTests):
             '&contenttype=image/png')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.DOCUMENT_ALREADY_UPLOADED)
-

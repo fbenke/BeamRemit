@@ -67,3 +67,15 @@ class BeamAPITestCase(APITestCase):
         }
         self.client.patch(self.url_profile, data)
         return token, id
+
+    def _create_fully_verified_user(self, email=None, password=None):
+        token, id = self._create_activated_user(email=email, password=password)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        user = get_user_model().objects.get(id=id)
+        user.profile.identification_state = 'VER'
+        user.profile.identification_issue_date = '2000-01-01'
+        user.profile.identification_expiry_date = '2010-01-01'
+        user.profile.identification_number = 'C3J3'
+        user.profile.proof_of_residence_state = 'VER'
+        user.profile.save()
+        return token, id
