@@ -350,7 +350,7 @@ TOR_TIMEOUT = 5
 GEOIP_PATH = BASE_DIR('static', 'geo_data', 'GeoIP.dat')
 
 # Bitcoin Against Ebola Specifics
-CHARITIES = {'SLLG': '88401022', }
+CHARITIES = {'SLLG': '0000', 'LBG': '5275'}
 SPLASH_EMAIL = 'beam@splash-cash.com'
 SPLASH_ONBOARD_RECIPIENT_SUBJECT = 'email/splash/oboard_recipient_subject.txt'
 SPLASH_ONBOARD_RECIPIENT_TEXT = 'email/splash/oboard_recipient_message.txt'
