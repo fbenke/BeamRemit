@@ -354,3 +354,5 @@ CHARITIES = {'SLLG': '0000', 'LBG': '5275'}
 SPLASH_EMAIL = 'beam@splash-cash.com'
 SPLASH_ONBOARD_RECIPIENT_SUBJECT = 'email/splash/oboard_recipient_subject.txt'
 SPLASH_ONBOARD_RECIPIENT_TEXT = 'email/splash/oboard_recipient_message.txt'
+SPLASH_DONATION_COMPLETE_TEXT = 'email/splash/donation_complete_message.txt'
+SPLASH_DONATION_COMPLETE_HTML = 'email/splash/donation_complete_message.html'

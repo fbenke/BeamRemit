@@ -1,0 +1,13 @@
+{% if first_name %}
+Hi {{ first_name }},
+{% else %}
+Dear {{ site.name }} User,
+{% endif %}
+
+{{ recipient }} has just received {{ received_amount }} {{ received_currency }} ({{ sent_amount}} {{ sent_currency }}) in their mobile money account.
+
+To see your transaction history, please visit {{ protocol }}://{{ site.domain }}/{{ txn_history }}.
+
+Sincerely,
+
+The {{ site.name }} Team

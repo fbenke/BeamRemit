@@ -1,11 +1,10 @@
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.sites.models import Site
 from django.utils import timezone
 
-from beam.utils.mails import send_mail
-
 from transaction.models import Recipient, Transaction
+
+from payout.models import post_processed
 
 
 class RecipientAdmin(admin.ModelAdmin):
@@ -35,27 +34,7 @@ class TransactionAdmin(admin.ModelAdmin):
 
             if obj.state == Transaction.PROCESSED:
 
-                context = {
-                    'protocol': settings.PROTOCOL,
-                    'site': Site.objects.get_current(),
-                    'first_name': obj.sender.first_name,
-                    'recipient': obj.recipient.first_name,
-                    'sent_amount': obj.sent_amount,
-                    'sent_currency': obj.sent_currency,
-                    'received_amount': obj.received_amount,
-                    'received_currency': obj.received_currency,
-                    'mobile': obj.recipient.phone_number,
-                    'txn_history': settings.MAIL_TRANSACTION_HISTORY_SITE
-                }
-
-                send_mail(
-                    subject_template_name=settings.MAIL_TRANSACTION_COMPLETE_SUBJECT,
-                    email_template_name=settings.MAIL_TRANSACTION_COMPLETE_TEXT,
-                    context=context,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to_email=obj.sender.email,
-                    html_email_template_name=settings.MAIL_TRANSACTION_COMPLETE_HTML
-                )
+                post_processed(obj)
 
                 obj.processed_at = timezone.now()
 
@@ -131,7 +110,7 @@ class TransactionAdmin(admin.ModelAdmin):
             )
         }),
     )
-        
+
     list_display = (
         'id', 'sender_email', 'reference_number', 'state', 'sent_amount',
         'sent_currency', 'receiving_country'

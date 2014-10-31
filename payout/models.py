@@ -57,3 +57,45 @@ def post_paid_problem(transaction):
         },
         to_email=mails.get_admin_mail_addresses()
     )
+
+
+def post_processed(transaction):
+
+    context = {
+        'protocol': settings.PROTOCOL,
+        'site': Site.objects.get_current(),
+        'first_name': transaction.sender.first_name,
+        'sent_amount': transaction.sent_amount,
+        'sent_currency': transaction.sent_currency,
+        'received_amount': transaction.received_amount,
+        'received_currency': transaction.received_currency,
+        'mobile': transaction.recipient.phone_number,
+        'txn_history': settings.MAIL_TRANSACTION_HISTORY_SITE
+    }
+
+    # charities for bitcoinagainstebola project have a slightly different email
+    if transaction.receiving_country == settings.SIERRA_LEONE and\
+       transaction.recipient.phone_number in settings.CHARITIES.values():
+
+        context['recipient'] = transaction.recipient.last_name
+
+        mails.send_mail(
+            subject_template_name=settings.MAIL_TRANSACTION_COMPLETE_SUBJECT,
+            email_template_name=settings.SPLASH_DONATION_COMPLETE_TEXT,
+            html_email_template_name=settings.SPLASH_DONATION_COMPLETE_HTML,
+            context=context,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to_email=transaction.sender.email
+        )
+
+    else:
+        context['recipient'] = transaction.recipient.first_name
+
+        mails.send_mail(
+            subject_template_name=settings.MAIL_TRANSACTION_COMPLETE_SUBJECT,
+            email_template_name=settings.MAIL_TRANSACTION_COMPLETE_TEXT,
+            context=context,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to_email=transaction.sender.email,
+            html_email_template_name=settings.MAIL_TRANSACTION_COMPLETE_HTML
+        )
