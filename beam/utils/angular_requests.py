@@ -5,7 +5,8 @@ from beam.utils.log import log_error
 
 
 def get_frontend_domain(request):
-    return request.META.get('HTTP_REFERER').replace(settings.PROTOCOL, '').replace('/', '').replace(':', '')
+
+    return request.META.get('HTTP_REFERER').split('?')[0].split(settings.PROTOCOL + '://')[1]
 
 
 def get_site_by_request(request):
