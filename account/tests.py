@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.core.urlresolvers import reverse
 from django.core import mail as mailbox
@@ -7,18 +8,25 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 
 from rest_framework import status
+from rest_framework.test import APITestCase
 
-from userena.utils import get_user_model
+from userena.models import UserenaSignup
 
 from datetime import timedelta
 
-from beam.tests import BeamAPITestCase
+from mock import patch
+# from unittest import skip
+
 from account import constants
 from account.models import BeamProfile as Profile
 
+from beam.tests import TestUtils
 
-class AccountTests(BeamAPITestCase):
 
+class AccountTests(APITestCase, TestUtils):
+
+    url_signup = reverse('account:signup')
+    url_profile = reverse('account:profile')
     url_signin = reverse('account:signin')
     url_singout = reverse('account:signout')
     url_email_change = reverse('account:email_change')
@@ -29,79 +37,59 @@ class AccountTests(BeamAPITestCase):
     url_upload_complete = reverse('account:upload_complete')
     url_verification_status = reverse('account:verification_status')
 
+    plain_url_activate = 'account:activate'
     plain_url_activate_retry = 'account:activate_retry'
     plain_url_email_change_confirm = 'account:email_confirm'
     plain_url_password_reset_confirm = 'account:password_reset_confirm'
 
+    @classmethod
+    def setUpClass(cls):
+        UserenaSignup.objects.check_permissions()
+
     def _generate_password_reset_confirmation_key(self, id):
-        user = get_user_model().objects.get(id=id)
+        user = User.objects.get(id=id)
         return urlsafe_base64_encode(force_bytes(user.pk)), token_generator.make_token(user)
 
+    def _create_inactive_user(self, email=None, password=None):
+        if email is None:
+            email = self.emails.next()
+        if password is None:
+            password = self.default_password
+        data = {
+            'email': email,
+            'password1': password,
+            'password2': password,
+            'acceptedPrivacyPolicy': True,
+        }
+        response = self.client.post(self.url_signup, data)
+        return response
 
-class OtherTests(AccountTests):
+    def _create_activated_user(self, email=None, password=None):
+        if email is None:
+            email = self.emails.next()
+        self._create_inactive_user(email, password)
+        activation_key = User.objects.get(email__iexact=email).userena_signup.activation_key
+        url_activate = reverse(self.plain_url_activate, args=(activation_key,))
+        response = self.client.get(url_activate)
+        return response.data['token'], response.data['id']
 
-    def test_verification_status(self):
-        email = self.emails.next()
-        token, id = self._create_user_with_profile(email=email)
+    def _create_user_with_profile(self, email=None, password=None):
+        token, id = self._create_activated_user(email=email, password=password)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.get(self.url_verification_status)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[Profile.IDENTIFICATION], Profile.EMPTY)
-        self.assertEqual(response.data[Profile.PROOF_OF_RESIDENCE], Profile.EMPTY)
-        self.assertEqual(response.data['information_complete'], True)
+        self.client.patch(self.url_profile, self.default_profile)
+        return token, id
 
-        user = get_user_model().objects.get(id=id)
-        user.profile.identification_state = Profile.UPLOADED
+    def _create_fully_verified_user(self, email=None, password=None):
+        token, id = self._create_activated_user(email=email, password=password)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        user = User.objects.get(id=id)
+        user.profile.identification_state = Profile.VERIFIED
+        user.profile.identification_issue_date = self.default_identification_issue_date
+        user.profile.identification_expiry_date = self.default_identification_expiry_date
+        user.profile.identification_number = self.default_identification_number
         user.profile.proof_of_residence_state = Profile.VERIFIED
         user.profile.save()
-        response = self.client.get(self.url_verification_status)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[Profile.IDENTIFICATION], Profile.UPLOADED)
-        self.assertEqual(response.data[Profile.PROOF_OF_RESIDENCE], Profile.VERIFIED)
-        self.assertEqual(response.data['information_complete'], True)
-
-        email = self.emails.next()
-        token, _ = self._create_activated_user(email=email)
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.get(self.url_verification_status)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['PAS'], 'EMP')
-        self.assertEqual(response.data['POR'], 'EMP')
-        self.assertEqual(response.data['information_complete'], False)
-
-    def test_upload_confirmation_incomplete_profile(self):
-
-        email = self.emails.next()
-        token, _ = self._create_activated_user(email=email)
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        data = {'document': Profile.IDENTIFICATION}
-        response = self.client.post(self.url_upload_complete, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['detail'], constants.USER_PROFILE_INCOMPLETE)
-
-    def test_upload_confirmation_invalid_document_status(self):
-        email = self.emails.next()
-        token, id = self._create_user_with_profile(email=email)
-        user = get_user_model().objects.get(id=id)
-        user.profile.identification_state = Profile.UPLOADED
-        user.profile.save()
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        data = {'document': Profile.IDENTIFICATION, 'issue': '2012-2-3', 'expiry': '2022-2-3', 'number': 'C3J3ZZ7VP'}
-        response = self.client.post(self.url_upload_complete, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['detail'], constants.DOCUMENT_ALREADY_UPLOADED)
-
-    def test_upload_confirmation(self):
-        no_emails = len(mailbox.outbox)
-
-        email = self.emails.next()
-        token, _ = self._create_user_with_profile(email=email)
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        data = {'document': Profile.IDENTIFICATION, 'issue': '2012-2-3', 'expiry': '2022-2-3', 'number': 'C3J3ZZ7VP'}
-        response = self.client.post(self.url_upload_complete, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        self.assertEqual(len(mailbox.outbox), no_emails + 1)
+        return token, id
 
 
 class SignupTests(AccountTests):
@@ -111,14 +99,14 @@ class SignupTests(AccountTests):
         no_emails = len(mailbox.outbox)
 
         email = self.emails.next()
-        response = self._create_user(email=email)
+        response = self._create_inactive_user(email=email)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # assert that mail was sent
         self.assertEqual(len(mailbox.outbox), no_emails + 1)
 
         # get activation key and send activate get request
-        activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
+        activation_key = User.objects.get(email__iexact=email).userena_signup.activation_key
         url_activate = reverse(self.plain_url_activate, args=(activation_key,))
 
         # check if mail contains correct link
@@ -137,7 +125,7 @@ class SignupTests(AccountTests):
         'incomplete post'
         data = {
             'email': self.emails.next(),
-            'password1': self.password
+            'password1': self.default_password
         }
         response = self.client.post(self.url_signup, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -148,8 +136,8 @@ class SignupTests(AccountTests):
         'password mismatch'
         data = {
             'email': self.emails.next(),
-            'password1': self.password,
-            'password2': self.password[1:],
+            'password1': self.default_password,
+            'password2': self.default_password[1:],
             'acceptedPrivacyPolicy': True
         }
         response = self.client.post(self.url_signup, data)
@@ -159,8 +147,8 @@ class SignupTests(AccountTests):
     def test_signup_validation_unconfirmed_mail(self):
         'unconfiremd email'
         email = self.emails.next()
-        self._create_user(email=email)
-        response = self._create_user(email=email)
+        self._create_inactive_user(email=email)
+        response = self._create_inactive_user(email=email)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['email'][0], constants.EMAIL_IN_USE_UNCONFIRMED)
 
@@ -168,7 +156,7 @@ class SignupTests(AccountTests):
         'duplicate mail'
         email = self.emails.next()
         self._create_activated_user(email=email)
-        response = self._create_user(email=email)
+        response = self._create_inactive_user(email=email)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['email'][0], constants.EMAIL_IN_USE)
 
@@ -176,8 +164,8 @@ class SignupTests(AccountTests):
         'privacy policy not accepted'
         data = {
             'email': self.emails.next(),
-            'password1': self.password,
-            'password2': self.password,
+            'password1': self.default_password,
+            'password2': self.default_password,
             'acceptedPrivacyPolicy': False
         }
         response = self.client.post(self.url_signup, data)
@@ -195,10 +183,10 @@ class ActivationTests(AccountTests):
 
     def test_activation_expired_key(self):
         email = self.emails.next()
-        self._create_user(email=email)
+        self._create_inactive_user(email=email)
 
         # manipulate db so that activation key is expired
-        user = get_user_model().objects.get(email__iexact=email)
+        user = User.objects.get(email__iexact=email)
         user.date_joined = timezone.now() - timedelta(settings.USERENA_ACTIVATION_DAYS)
         user.save()
 
@@ -216,7 +204,7 @@ class ActivationTests(AccountTests):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # activate account with new activation key
-        activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
+        activation_key = User.objects.get(email__iexact=email).userena_signup.activation_key
         url_activate = reverse(self.plain_url_activate, args=(activation_key,))
 
         response = self.client.get(url_activate)
@@ -232,8 +220,8 @@ class ActivationTests(AccountTests):
 
     def test_activation_retry_valid_key(self):
         email = self.emails.next()
-        self._create_user(email)
-        activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
+        self._create_inactive_user(email)
+        activation_key = User.objects.get(email__iexact=email).userena_signup.activation_key
         url_activate_retry = reverse(self.plain_url_activate_retry, args=(activation_key,))
         response = self.client.get(url_activate_retry)
 
@@ -242,14 +230,14 @@ class ActivationTests(AccountTests):
 
     def test_activation_resend(self):
         email = self.emails.next()
-        self._create_user(email=email)
+        self._create_inactive_user(email=email)
 
         no_emails = len(mailbox.outbox)
         response = self.client.post(self.url_activate_resend, {'email': email})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(mailbox.outbox), no_emails + 1)
 
-        activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
+        activation_key = User.objects.get(email__iexact=email).userena_signup.activation_key
         url_activate = reverse(self.plain_url_activate, args=(activation_key,))
         response = self.client.get(url_activate)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -271,9 +259,9 @@ class ActivationTests(AccountTests):
 
     def test_activation_overwritten_key(self):
         email = self.emails.next()
-        self._create_user(email=email)
+        self._create_inactive_user(email=email)
         response = self.client.post(self.url_activate_resend, {'email': email})
-        activation_key = get_user_model().objects.get(email__iexact=email).userena_signup.activation_key
+        activation_key = User.objects.get(email__iexact=email).userena_signup.activation_key
         response = self.client.post(self.url_activate_resend, {'email': email})
         url_activate = reverse(self.plain_url_activate, args=(activation_key,))
         response = self.client.get(url_activate)
@@ -286,7 +274,7 @@ class SigninTests(AccountTests):
     def test_signin(self):
         email = self.emails.next()
         self._create_activated_user(email=email)
-        response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.default_password})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['token'] is not None)
         self.assertTrue(response.data['id'] is not None)
@@ -300,21 +288,21 @@ class SigninTests(AccountTests):
     def test_signin_wrong_credentials(self):
         email = self.emails.next()
         self._create_activated_user(email=email)
-        response = self.client.post(self.url_signin, {'email': email, 'password': self.password[1:]})
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.default_password[1:]})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['non_field_errors'][0], constants.SIGNIN_WRONG_CREDENTIALS)
 
     def test_singin_without_activation(self):
         email = self.emails.next()
-        self._create_user(email=email)
-        response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
+        self._create_inactive_user(email=email)
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.default_password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['non_field_errors'][0], constants.USER_ACCOUNT_DISABLED)
 
     def test_signin_with_admin_account(self):
         email = self.emails.next()
         self._create_admin_user(email=email)
-        response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.default_password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['non_field_errors'][0], constants.ADMIN_ACCOUNT)
 
@@ -342,7 +330,7 @@ class EmailChangeTests(AccountTests):
         mailbox.outbox[1].from_email in (old_email, new_mail)
 
         # check if corresponding database fields exist
-        user = get_user_model().objects.get(email__iexact=old_email)
+        user = User.objects.get(email__iexact=old_email)
         self.assertEqual(user.userena_signup.email_unconfirmed, new_mail)
 
         confirmation_key = user.userena_signup.email_confirmation_key
@@ -352,9 +340,9 @@ class EmailChangeTests(AccountTests):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # verify that new email address is active and old no longer in use
-        self.assertIsNotNone(get_user_model().objects.get(email__iexact=new_mail))
-        with self.assertRaises(get_user_model().DoesNotExist):
-            get_user_model().objects.get(email__iexact=old_email)
+        self.assertIsNotNone(User.objects.get(email__iexact=new_mail))
+        with self.assertRaises(User.DoesNotExist):
+            User.objects.get(email__iexact=old_email)
 
     def test_email_change_failure_empty(self):
         token, _ = self._create_activated_user()
@@ -417,15 +405,17 @@ class PasswordResetTests(AccountTests):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # change password
-        response = self.client.post(url_confirm, {'password1': self.new_password, 'password2': self.new_password})
+        response = self.client.post(url_confirm, {
+            'password1': self.default_new_password,
+            'password2': self.default_new_password})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # fails to signin with old credentials
-        response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.default_password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         # signin with new credentials
-        response = self.client.post(self.url_signin, {'email': email, 'password': self.new_password})
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.default_new_password})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['token'] is not None)
         self.assertTrue(response.data['id'] is not None)
@@ -438,7 +428,7 @@ class PasswordResetTests(AccountTests):
 
     def test_password_reset_fail_user_incative(self):
         email = self.emails.next()
-        self._create_user(email)
+        self._create_inactive_user(email)
         response = self.client.post(self.url_password_reset, {'email': email})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.USER_ACCOUNT_DISABLED)
@@ -459,12 +449,16 @@ class PasswordResetTests(AccountTests):
         url_confirm = reverse(self.plain_url_password_reset_confirm, args=(uid, token))
 
         #  password mismatch
-        response = self.client.post(url_confirm, {'password1': self.new_password, 'password2': self.new_password[1:]})
+        response = self.client.post(url_confirm, {
+            'password1': self.default_new_password,
+            'password2': self.default_new_password[1:]})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['non_field_errors'][0], constants.PASSWORD_MISMATCH)
 
         # password invalid format
-        response = self.client.post(url_confirm, {'password1': self.invalid_password, 'password2': self.invalid_password})
+        response = self.client.post(url_confirm, {
+            'password1': self.default_invalid_password,
+            'password2': self.default_invalid_password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['password1'][0], constants.PASSWORD_FORMAT)
 
@@ -476,9 +470,9 @@ class PasswordChangeTests(AccountTests):
         token, _ = self._create_activated_user(email=email)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         data = {
-            'oldPassword': self.password,
-            'password1': self.new_password,
-            'password2': self.new_password
+            'oldPassword': self.default_password,
+            'password1': self.default_new_password,
+            'password2': self.default_new_password
         }
 
         response = self.client.post(self.url_password_change, data)
@@ -491,7 +485,7 @@ class PasswordChangeTests(AccountTests):
         self.assertEqual(response.data['detail'], 'Invalid token')
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + new_token)
-        response = self.client.post(self.url_signin, {'email': email, 'password': self.new_password})
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.default_new_password})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_password_change_fail(self):
@@ -499,9 +493,9 @@ class PasswordChangeTests(AccountTests):
         token, _ = self._create_activated_user(email=email)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         data = {
-            'oldPassword': self.new_password,
-            'password1': self.new_password,
-            'password2': self.new_password
+            'oldPassword': self.default_new_password,
+            'password1': self.default_new_password,
+            'password2': self.default_new_password
         }
         response = self.client.post(self.url_password_change, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -539,13 +533,13 @@ class ProfileTests(AccountTests):
 
     def test_delete_user(self):
         email = self.emails.next()
-        token, id = self._create_activated_user(email=email, password=self.password)
+        token, id = self._create_activated_user(email=email, password=self.default_password)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         response = self.client.delete(self.url_profile)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         self.client.credentials(HTTP_AUTHORIZATION=None)
-        response = self.client.post(self.url_signin, {'email': email, 'password': self.password})
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.default_password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_edit_user_reset_documents(self):
@@ -555,26 +549,30 @@ class ProfileTests(AccountTests):
         response = self.client.patch(self.url_profile, {'firstName': 'NewF', 'profile': {}})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        user = get_user_model().objects.get(id=id)
+        user = User.objects.get(id=id)
 
         self.assertEqual(user.profile.identification_state, Profile.EMPTY)
         self.assertEqual(user.profile.proof_of_residence_state, Profile.VERIFIED)
 
         self.client.patch(self.url_profile, {'profile': {'country': 'GH'}})
-        user = get_user_model().objects.get(id=id)
+        user = User.objects.get(id=id)
         self.assertEqual(user.profile.proof_of_residence_state, Profile.EMPTY)
 
 
 class AWSTests(AccountTests):
-    # TODO: How to start using mocking?
-    # def test_aws_upload(self):
-    #     email = self.emails.next()
-    #     token, _ = self._create_user_with_profile(email=email)
-    #     self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-    #     response = self.client.get(
-    #         self.url_aws_upload + '?documenttype=' + Profile.DOCUMENT_TYPES[0] +
-    #         '&contenttype=image/png')
-    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    @patch('account.views.generate_aws_upload')
+    def test_aws_upload(self, mock_upload):
+        mock_upload.return_value = {'key': 'value'}
+        email = self.emails.next()
+        token, id = self._create_user_with_profile(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(
+            self.url_aws_upload + '?documenttype=' + Profile.DOCUMENT_TYPES[0] +
+            '&contenttype=image/png')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['key'], 'value')
+        mock_upload.assert_called_with('{}_{}'.format(Profile.DOCUMENT_TYPES[0], id), 'image/png')
 
     def test_aws_upload_invalid_params(self):
         email = self.emails.next()
@@ -602,7 +600,7 @@ class AWSTests(AccountTests):
     def test_aws_upload_invalid_document_status(self):
         email = self.emails.next()
         token, id = self._create_user_with_profile(email=email)
-        user = get_user_model().objects.get(id=id)
+        user = User.objects.get(id=id)
         user.profile.identification_state = Profile.UPLOADED
         user.profile.save()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
@@ -611,3 +609,119 @@ class AWSTests(AccountTests):
             '&contenttype=image/png')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.DOCUMENT_ALREADY_UPLOADED)
+
+
+class UploadCompleteTests(AccountTests):
+
+    def test_upload_confirmation_incomplete_profile(self):
+
+        email = self.emails.next()
+        token, _ = self._create_activated_user(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        data = {'document': Profile.IDENTIFICATION}
+        response = self.client.post(self.url_upload_complete, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.USER_PROFILE_INCOMPLETE)
+
+    def test_upload_confirmation_invalid_document_status(self):
+        email = self.emails.next()
+        token, id = self._create_user_with_profile(email=email)
+
+        user = User.objects.get(id=id)
+        user.profile.identification_state = Profile.UPLOADED
+        user.profile.proof_of_residence_state = Profile.VERIFIED
+        user.profile.save()
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
+        data = {'document': Profile.IDENTIFICATION, 'issue': '2012-2-3', 'expiry': '2022-2-3', 'number': 'C3J3ZZ7VP'}
+        response = self.client.post(self.url_upload_complete, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.DOCUMENT_ALREADY_UPLOADED)
+
+        data = {'document': Profile.PROOF_OF_RESIDENCE}
+        response = self.client.post(self.url_upload_complete, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.DOCUMENT_ALREADY_UPLOADED)
+
+    def test_upload_invalid_params(self):
+        email = self.emails.next()
+        token, id = self._create_user_with_profile(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        data = {'document': Profile.IDENTIFICATION}
+        response = self.client.post(self.url_upload_complete, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.INVALID_PARAMETERS)
+
+    def test_upload_confirmation(self):
+        no_emails = len(mailbox.outbox)
+
+        email = self.emails.next()
+        token, id = self._create_user_with_profile(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        data = {'document': Profile.IDENTIFICATION, 'issue': '2012-2-3', 'expiry': '2022-2-3', 'number': 'C3J3ZZ7VP'}
+        response = self.client.post(self.url_upload_complete, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mailbox.outbox), no_emails + 1)
+        self.assertEqual(User.objects.get(id=id).profile.identification_state, Profile.UPLOADED)
+
+
+class VerificationStatusTests(AccountTests):
+
+    def test_verification_status(self):
+        email = self.emails.next()
+        token, id = self._create_user_with_profile(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(self.url_verification_status)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[Profile.IDENTIFICATION], Profile.EMPTY)
+        self.assertEqual(response.data[Profile.PROOF_OF_RESIDENCE], Profile.EMPTY)
+        self.assertEqual(response.data['information_complete'], True)
+
+        user = User.objects.get(id=id)
+        user.profile.identification_state = Profile.UPLOADED
+        user.profile.proof_of_residence_state = Profile.VERIFIED
+        user.profile.save()
+        response = self.client.get(self.url_verification_status)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[Profile.IDENTIFICATION], Profile.UPLOADED)
+        self.assertEqual(response.data[Profile.PROOF_OF_RESIDENCE], Profile.VERIFIED)
+        self.assertEqual(response.data['information_complete'], True)
+
+        email = self.emails.next()
+        token, _ = self._create_activated_user(email=email)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(self.url_verification_status)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['PAS'], 'EMP')
+        self.assertEqual(response.data['POR'], 'EMP')
+        self.assertEqual(response.data['information_complete'], False)
+
+
+class AdminTests(AccountTests):
+
+    def test_view_account_sites(self):
+
+        admin = self._create_admin_user(self.emails.next())
+        self.client.login(username=admin.username, password=self.default_password)
+
+        response = self.client.get(reverse('admin:account_beamprofile_changelist'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(reverse('admin:account_documentstatuschange_changelist'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        email = self.emails.next()
+        token, id = self._create_user_with_profile(email=email)
+        response = self.client.get(reverse(
+            'admin:account_beamprofile_change',
+            args=(User.objects.get(id=id).profile.id,))
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    # def test_accept_document(self):
+
+# class PermissionTests(AccountTests):
+
+#     def test_

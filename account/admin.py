@@ -1,13 +1,13 @@
 from django.db import transaction as dbtransaction
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.admin import TokenAdmin
 
 from userena.admin import UserenaAdmin
-from userena.utils import get_user_model, get_protocol
 
 from beam.utils.mails import send_mail
 
@@ -105,7 +105,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
                         html_email_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_HTML,
                         context={
                             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
-                            'protocol': get_protocol(),
+                            'protocol': settings.PROTOCOL,
                             'document': Profile.DOCUMENT_VERBAL[Profile.FIELD_DOCUMENT_MAPPING[field]],
                             'site': Site.objects.get_current(),
                             'support': settings.BEAM_SUPPORT,
@@ -126,7 +126,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
                         html_email_template_name=settings.MAIL_VERIFICATION_FAILED_HTML,
                         context={
                             'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
-                            'protocol': get_protocol(),
+                            'protocol': settings.PROTOCOL,
                             'document': Profile.DOCUMENT_VERBAL[Profile.FIELD_DOCUMENT_MAPPING[field]],
                             'site': Site.objects.get_current(),
                             'verification': settings.MAIL_VERIFICATION_SITE,
@@ -138,7 +138,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
                         from_email=settings.BEAM_MAIL_ADDRESS,
                         to_email=obj.user.email
                     )
-            
+
             obj.save()
 
 
@@ -178,10 +178,10 @@ class CustomTokenAdmin(TokenAdmin):
     fields = readonly_fields
 
 try:
-    admin.site.unregister(get_user_model())
+    admin.site.unregister(User)
 except admin.sites.NotRegistered:
     pass
-admin.site.register(get_user_model(), CustomUserenaAdmin)
+admin.site.register(User, CustomUserenaAdmin)
 
 try:
     admin.site.unregister(Token)

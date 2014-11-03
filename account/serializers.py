@@ -3,10 +3,10 @@ import random
 import re
 
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 
 from userena import settings as userena_settings
 from userena.models import UserenaSignup
-from userena.utils import get_user_model
 
 from rest_framework import serializers
 from rest_framework import fields
@@ -45,8 +45,8 @@ class RequestEmailSerializer(serializers.Serializer):
 
     def restore_object(self, attrs, instance=None):
         try:
-            user = get_user_model().objects.get(email__iexact=attrs['email'])
-        except get_user_model().DoesNotExist:
+            user = User.objects.get(email__iexact=attrs['email'])
+        except User.DoesNotExist:
             raise AccountException(constants.EMAIL_UNKNOWN)
         return user
 
@@ -66,7 +66,7 @@ class SignupSerializer(PasswordSerializer):
     def validate_email(self, attrs, source):
         'Validate that the e-mail address is unique.'
 
-        if get_user_model().objects.filter(email__iexact=attrs[source]):
+        if User.objects.filter(email__iexact=attrs[source]):
             if userena_settings.USERENA_ACTIVATION_REQUIRED and\
                UserenaSignup.objects.filter(user__email__iexact=attrs[source])\
                .exclude(activation_key=userena_settings.USERENA_ACTIVATED):
@@ -84,8 +84,8 @@ class SignupSerializer(PasswordSerializer):
         while True:
             username = sha_constructor(str(random.random())).hexdigest()[:5]
             try:
-                get_user_model().objects.get(username__iexact=username)
-            except get_user_model().DoesNotExist:
+                User.objects.get(username__iexact=username)
+            except User.DoesNotExist:
                 break
 
         new_user = UserenaSignup.objects.create_user(
@@ -190,7 +190,7 @@ class UserSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(many=False)
 
     class Meta:
-        model = get_user_model()
+        model = User
         read_only_fields = ('email', )
         read_and_write_fields = ('first_name', 'last_name', 'profile')
 

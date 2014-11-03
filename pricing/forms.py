@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ObjectDoesNotExist
 
 from pricing.models import get_current_object, Pricing
 
@@ -7,12 +8,12 @@ class PricingForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(PricingForm, self).__init__(*args, **kwargs)
-        pricing = get_current_object(Pricing)
         try:
+            pricing = get_current_object(Pricing)
             self.fields['gbp_ghs'].initial = pricing.gbp_ghs
             self.fields['gbp_usd'].initial = pricing.gbp_usd
             self.fields['gbp_sll'].initial = pricing.gbp_sll
-        except KeyError:
+        except (KeyError, ObjectDoesNotExist):
             pass
 
     def clean_markup(self):

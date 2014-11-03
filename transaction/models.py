@@ -2,10 +2,9 @@ import random
 
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
-
-from userena.utils import get_user_model
 
 from django_countries.fields import CountryField
 
@@ -66,7 +65,7 @@ class Transaction(models.Model):
     )
 
     sender = models.ForeignKey(
-        get_user_model(),
+        User,
         related_name='transactions',
         help_text='Sender associated with that transaction'
     )

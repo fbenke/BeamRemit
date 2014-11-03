@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator as token_generator
+from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.db import transaction as dbtransaction
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -14,7 +15,7 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
 from userena import settings as userena_settings
 from userena.models import UserenaSignup
-from userena.utils import get_user_model, generate_sha1, get_datetime_now
+from userena.utils import generate_sha1, get_datetime_now
 
 from beam.utils.log import log_error
 from beam.utils import mails
@@ -251,7 +252,7 @@ class Email_Change(APIView):
                 raise AccountException(constants.INVALID_PARAMETERS)
             if new_email.lower() == user.email:
                 raise AccountException(constants.EMAIL_NOT_CHANGED)
-            if get_user_model().objects.filter(email__iexact=new_email):
+            if User.objects.filter(email__iexact=new_email):
                 raise AccountException(constants.EMAIL_IN_USE)
 
             # the following is a rewritten version of user.userena_signup.change_email(new_email)
@@ -358,9 +359,9 @@ class PasswordResetConfirm(APIView):
 
         try:
             uid = urlsafe_base64_decode(uidb64)
-            user = get_user_model().objects.get(pk=uid)
+            user = User.objects.get(pk=uid)
 
-        except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist):
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             user = None
 
         if user is not None and token_generator.check_token(user, token):
@@ -427,7 +428,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
 
     def get_object(self, queryset=None):
         user = self.request.user
-        return get_user_model().objects.get(id=user.id)
+        return User.objects.get(id=user.id)
 
     def update(self, request, *args, **kwargs):
 

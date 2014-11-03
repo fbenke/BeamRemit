@@ -87,7 +87,7 @@ class BeamProfile(UserenaBaseProfile):
 
     post_code = models.CharField(
         'Post Code',
-        max_length=10,
+        max_length=50,
         blank=True,
         help_text='Post Code'
     )
@@ -261,6 +261,18 @@ class DocumentStatusChange(models.Model):
     )
 
     REASONS = REASONS_IDENTIFICATION + REASONS_PROOF_OF_RESIDENCE + REASONS_GENERAL
+
+    REASON_VERBAL = {
+        INVALID_IDENTIFICATION: 'the file does not depict an identity document issued by your country. We accept passports, driver licenses and national id cards.',
+        EXPIRED_IDENTIFICATION: 'the document is expired.',
+        INCOMPLETE_IDENTIFICATION: 'important parts of the document are not visible (i.e. document number or picture) or entirely missing (i.e. second side of an id card).',
+        EXPIRED_PROOF_OF_RESIDENCE: 'the document is older than 3 months.',
+        ADDRESS_MISMATCH: 'the address on the document does not match the address you provided.',
+        INVALID_PROOF_OF_RESIDENCE: 'the document cannot be accepted as proof of residence. Please upload a utility bill, bank statement or tax return.',
+        LOW_QUALITY: 'the document quality is too low.',
+        CONTRADICTION: 'the profile information and information on the document were contradicting.',
+        MISCELLANEOUS: 'something was wrong with the document. A member of the support team will contact you in a separate email.'
+    }
 
     profile = models.ForeignKey(
         BeamProfile,
