@@ -148,10 +148,13 @@ class Limit(models.Model):
 
     def __init__(self, *args, **kwargs):
         super(Limit, self).__init__(*args, **kwargs)
-        current_object = get_current_object(Pricing)
-        self.exchange_rate_ghs = current_object.gbp_ghs * (1 - current_object.markup)
-        self.exchange_rate_sll = current_object.gbp_sll * (1 - current_object.markup)
-        self.exchange_rate_usd = current_object.gbp_usd
+        try:
+            current_object = get_current_object(Pricing)
+            self.exchange_rate_ghs = current_object.gbp_ghs * (1 - current_object.markup)
+            self.exchange_rate_sll = current_object.gbp_sll * (1 - current_object.markup)
+            self.exchange_rate_usd = current_object.gbp_usd
+        except ObjectDoesNotExist:
+            self.exchange_rate_ghs = self.exchange_rate_sll = self.exchange_rate_usd = 0
 
     transaction_min_gbp = models.FloatField(
         'Minimum amount in GBP ',
