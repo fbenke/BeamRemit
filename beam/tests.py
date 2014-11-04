@@ -1,7 +1,8 @@
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
 
-from pricing.models import Pricing, Comparison, end_previous_object
+from pricing.models import Pricing, Comparison, Limit, end_previous_object
+
+from state.models import State
 
 
 class TestUtils(object):
@@ -38,15 +39,13 @@ class TestUtils(object):
     }
 
     default_limit = {
-        'transaction_min_gbp': 1,
-        'transaction_max_gbp': 500,
+        'transaction_min_gbp': 2,
+        'transaction_max_gbp': 1000,
         'user_limit_basic_gbp': 40,
         'user_limit_complete_gbp': 500
     }
 
     default_comparison = '{"gbpGhs": {"wu": 5.0932009, "mg": 5.158165}}'
-
-    url_get_current = reverse('pricing:current')
 
     def _create_admin_user(self, email=None):
         if not email:
@@ -75,3 +74,22 @@ class TestUtils(object):
         end_previous_object(Comparison)
         comparison.save()
         return comparison
+
+    def _create_state(self, state=None):
+        if not state:
+            state = State.RUNNING
+        app_state = State(state=state)
+        end_previous_object(State)
+        app_state.save()
+        return app_state
+
+    def _create_limit(self):
+        limit = Limit(
+            transaction_min_gbp=self.default_limit['transaction_min_gbp'],
+            transaction_max_gbp=self.default_limit['transaction_max_gbp'],
+            user_limit_basic_gbp=self.default_limit['user_limit_basic_gbp'],
+            user_limit_complete_gbp=self.default_limit['user_limit_complete_gbp']
+        )
+        end_previous_object(Limit)
+        limit.save()
+        return limit

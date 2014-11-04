@@ -25,7 +25,7 @@ class PricingCurrent(APIView):
         response_dict['beam_fee_usd'] = self.pricing.fee_usd
         response_dict['comparison'] = self.comparison.price_comparison
         response_dict['comparison_retrieved'] = self.comparison.start
-        response_dict['operationMode'] = get_current_state()
+        response_dict['operation_mode'] = self.state
 
         return response_dict
 
@@ -34,6 +34,7 @@ class PricingCurrent(APIView):
         try:
             self.pricing = get_current_object(Pricing)
             self.comparison = get_current_object(Comparison)
+            self.state = get_current_state()
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
