@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.core.urlresolvers import reverse
 from django.core import mail as mailbox
+from django.test import TestCase
 from django.utils import timezone
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
@@ -19,7 +20,7 @@ from mock import patch
 from unittest import skip
 
 from account import constants
-from account.models import BeamProfile as Profile
+from account.models import DocumentStatusChange, BeamProfile as Profile
 
 from beam.tests import TestUtils
 
@@ -563,6 +564,7 @@ class ProfileTests(AccountTests):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_edit_user_reset_documents(self):
+        no_document_state_changes = DocumentStatusChange.objects.all().count()
         email = self.emails.next()
         user = self._create_fully_verified_user(email=email)
         token = self._create_token(user)
@@ -578,6 +580,13 @@ class ProfileTests(AccountTests):
         self.client.patch(self.url_profile, {'profile': {'country': 'GH'}})
         user = User.objects.get(id=user.id)
         self.assertEqual(user.profile.proof_of_residence_state, Profile.EMPTY)
+
+        self.assertEqual(DocumentStatusChange.objects.all().count(), no_document_state_changes + 2)
+        changes = DocumentStatusChange.objects.filter(profile=user.profile)
+        for c in changes:
+            self.assertEqual(c.changed_by, 'user')
+            self.assertEqual(c.changed_to, Profile.EMPTY)
+            self.assertEqual(c.reason, '')
 
 
 class AWSTests(AccountTests):
@@ -741,27 +750,149 @@ class VerificationStatusTests(AccountTests):
         self.assertEqual(response.data['POR'], 'EMP')
         self.assertEqual(response.data['information_complete'], False)
 
-@skip
-class AdminTests(AccountTests):
 
-    def test_view_account_sites(self):
+class AdminTests(TestCase, TestUtils):
 
+    def setUp(self):
         admin = self._create_admin_user(self.emails.next())
         self.client.login(username=admin.username, password=self.default_password)
 
+    def tearDown(self):
+        self.client.logout()
+
+    def test_view_account_sites(self):
+       
         response = self.client.get(reverse('admin:account_beamprofile_changelist'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self.client.get(reverse('admin:account_documentstatuschange_changelist'))
+        # response = self.client.get(reverse('admin:account_documentstatuschange_changelist'))
+        # self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user = self._create_user_with_profile()
+        response = self.client.get(reverse('admin:account_beamprofile_change', args=(user.profile.id,)))
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        email = self.emails.next()
-        token, id = self._create_user_with_profile(email=email)
-        response = self.client.get(reverse(
+    def test_accept_documents(self):
+
+        user = self._create_user_with_uploaded_documents()
+        no_document_state_changes = DocumentStatusChange.objects.all().count()
+        no_emails = len(mailbox.outbox)
+
+        data = {
+            'identification_state': Profile.VERIFIED,
+            'identification_number': self.default_identification_number,
+            'identification_issue_date': self.default_identification_issue_date,
+            'identification_expiry_date': self.default_identification_expiry_date,
+            'send_identification_mail': 'on',
+            'identification_reason': 'INI',
+            'proof_of_residence_state': Profile.VERIFIED,
+            'send_proof_of_residence_mail': 'on',
+            'proof_of_residence_reason': 'EXP',
+            'document_status_change-__prefix__-profile': user.profile.id,
+            'document_status_change-TOTAL_FORMS': '0',
+            'document_status_change-INITIAL_FORMS': '0',
+            'document_status_change-MAX_NUM_FORMS': '10',
+            '_continue': 'Save and continue editing',
+            'document_status_change-__prefix__-id': ''
+        }
+
+        response = self.client.post(reverse(
             'admin:account_beamprofile_change',
-            args=(User.objects.get(id=id).profile.id,))
+            args=(user.profile.id,)), data
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user = User.objects.get(id=user.id)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(user.profile.identification_state, Profile.VERIFIED)
+        self.assertEqual(user.profile.proof_of_residence_state, Profile.VERIFIED)
+        self.assertEqual(len(mailbox.outbox), no_emails + 2)
+        self.assertEqual(DocumentStatusChange.objects.all().count(), no_document_state_changes + 2)
 
-    # def test_accept_document(self):
+        changes = DocumentStatusChange.objects.filter(profile=user.profile)
+        for c in changes:
+            self.assertEqual(c.changed_by, self.default_username)
+            self.assertEqual(c.changed_to, Profile.VERIFIED)
+            self.assertEqual(c.reason, '')
+
+    def test_change_documents_without_notification(self):
+
+        user = self._create_user_with_uploaded_documents()
+        no_document_state_changes = DocumentStatusChange.objects.all().count()
+        no_emails = len(mailbox.outbox)
+
+        data = {
+            'identification_state': Profile.VERIFIED,
+            'identification_number': self.default_identification_number,
+            'identification_issue_date': self.default_identification_issue_date,
+            'identification_expiry_date': self.default_identification_expiry_date,
+            'identification_reason': 'INI',
+            'proof_of_residence_state': Profile.VERIFIED,
+            'proof_of_residence_reason': 'EXP',
+            'document_status_change-__prefix__-profile': user.profile.id,
+            'document_status_change-TOTAL_FORMS': '0',
+            'document_status_change-INITIAL_FORMS': '0',
+            'document_status_change-MAX_NUM_FORMS': '10',
+            '_continue': 'Save and continue editing',
+            'document_status_change-__prefix__-id': ''
+        }
+
+        response = self.client.post(reverse(
+            'admin:account_beamprofile_change',
+            args=(user.profile.id,)), data
+        )
+
+        user = User.objects.get(id=user.id)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(user.profile.identification_state, Profile.VERIFIED)
+        self.assertEqual(user.profile.proof_of_residence_state, Profile.VERIFIED)
+        self.assertEqual(len(mailbox.outbox), no_emails)
+        self.assertEqual(DocumentStatusChange.objects.all().count(), no_document_state_changes + 2)
+
+        changes = DocumentStatusChange.objects.filter(profile=user.profile)
+        for c in changes:
+            self.assertEqual(c.changed_by, self.default_username)
+            self.assertEqual(c.changed_to, Profile.VERIFIED)
+            self.assertEqual(c.reason, '')
+
+    def test_decline_documents(self):
+
+        user = self._create_user_with_uploaded_documents()
+        no_document_state_changes = DocumentStatusChange.objects.all().count()
+        no_emails = len(mailbox.outbox)
+
+        data = {
+            'identification_state': Profile.FAILED,
+            'identification_number': self.default_identification_number,
+            'identification_issue_date': self.default_identification_issue_date,
+            'identification_expiry_date': self.default_identification_expiry_date,
+            'send_identification_mail': 'on',
+            'identification_reason': DocumentStatusChange.LOW_QUALITY,
+            'proof_of_residence_state': Profile.FAILED,
+            'send_proof_of_residence_mail': 'on',
+            'proof_of_residence_reason': DocumentStatusChange.LOW_QUALITY,
+            'document_status_change-__prefix__-profile': user.profile.id,
+            'document_status_change-TOTAL_FORMS': '0',
+            'document_status_change-INITIAL_FORMS': '0',
+            'document_status_change-MAX_NUM_FORMS': '10',
+            '_continue': 'Save and continue editing',
+            'document_status_change-__prefix__-id': ''
+        }
+
+        response = self.client.post(reverse(
+            'admin:account_beamprofile_change',
+            args=(user.profile.id,)), data
+        )
+
+        user = User.objects.get(id=user.id)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(user.profile.identification_state, Profile.FAILED)
+        self.assertEqual(user.profile.proof_of_residence_state, Profile.FAILED)
+        self.assertEqual(len(mailbox.outbox), no_emails + 2)
+        self.assertEqual(DocumentStatusChange.objects.all().count(), no_document_state_changes + 2)
+
+        changes = DocumentStatusChange.objects.filter(profile=user.profile)
+        for c in changes:
+            self.assertEqual(c.changed_by, self.default_username)
+            self.assertEqual(c.changed_to, Profile.FAILED)
+            self.assertEqual(c.reason, DocumentStatusChange.LOW_QUALITY)

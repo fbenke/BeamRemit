@@ -112,6 +112,16 @@ class TestUtils(object):
         user.profile.save()
         return user
 
+    def _create_user_with_uploaded_documents(self, email=None, password=None):
+        user = self._create_user_with_profile(email=email, password=password)
+        user.profile.identification_state = Profile.UPLOADED
+        user.profile.identification_issue_date = self.default_identification_issue_date
+        user.profile.identification_expiry_date = self.default_identification_expiry_date
+        user.profile.identification_number = self.default_identification_number
+        user.profile.proof_of_residence_state = Profile.UPLOADED
+        user.profile.save()
+        return user
+
     def _create_admin_user(self, email=None):
         if not email:
             email = self.emails.next()

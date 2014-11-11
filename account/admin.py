@@ -11,7 +11,6 @@ from userena.admin import UserenaAdmin
 
 from beam.utils.mails import send_mail
 
-from account import constants
 from account import forms
 from account.models import BeamProfile as Profile
 from account.models import DocumentStatusChange
@@ -131,7 +130,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
                             'site': Site.objects.get_current(),
                             'verification': settings.MAIL_VERIFICATION_SITE,
                             'support': settings.BEAM_SUPPORT,
-                            'reason': constants.REASON_VERBAL[reason],
+                            'reason': DocumentStatusChange.REASON_VERBAL[reason],
                             'site_name': Site.objects.get_current().name,
                             'first_name': obj.user.first_name
                         },
@@ -145,17 +144,17 @@ class BeamProfileAdmin(admin.ModelAdmin):
 admin.site.register(Profile, BeamProfileAdmin)
 
 
-class DocumentStatusChangeAdmin(admin.ModelAdmin):
+# class DocumentStatusChangeAdmin(admin.ModelAdmin):
 
-    def user(self, obj):
-        return obj.profile.user.email
+#     def user(self, obj):
+#         return obj.profile.user.email
 
-    readonly_fields = ('user', 'changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
-    fields = readonly_fields
-    list_display = ('user', 'changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
-    list_filter = ('document_type', 'changed_at', 'changed_to', 'reason')
+#     readonly_fields = ('user', 'changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
+#     fields = readonly_fields
+#     list_display = ('user', 'changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
+#     list_filter = ('document_type', 'changed_at', 'changed_to', 'reason')
 
-admin.site.register(DocumentStatusChange, DocumentStatusChangeAdmin)
+# admin.site.register(DocumentStatusChange, DocumentStatusChangeAdmin)
 
 
 class CustomUserenaAdmin(UserenaAdmin):
