@@ -53,6 +53,9 @@ class AccountTests(APITestCase, TestUtils):
         user = User.objects.get(id=id)
         return urlsafe_base64_encode(force_bytes(user.pk)), token_generator.make_token(user)
 
+    def tearDown(self):
+        self.client.logout()
+
 
 class SignupTests(AccountTests):
 
@@ -831,9 +834,6 @@ class AdminTests(TestCase, TestUtils):
     def setUp(self):
         admin = self._create_admin_user(self.emails.next())
         self.client.login(username=admin.username, password=self.default_password)
-
-    def tearDown(self):
-        self.client.logout()
 
     def test_view_account_sites(self):
        
