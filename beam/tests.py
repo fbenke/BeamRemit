@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from userena.models import UserenaSignup
 from userena import settings as userena_settings
@@ -10,6 +11,8 @@ from account.models import BeamProfile as Profile
 from pricing.models import Pricing, Comparison, Limit, end_previous_object
 
 from state.models import State
+
+from transaction.models import Recipient, Transaction
 
 
 class TestUtils(object):
@@ -24,6 +27,9 @@ class TestUtils(object):
     default_identification_issue_date = '2000-01-01'
     default_identification_expiry_date = '2020-01-01'
     default_identification_number = 'C3J3ZZ7VP'
+    default_recipient_first_name = 'Nikunj'
+    default_recipient_last_name = 'Hand'
+    default_recipient_phone_number = '0245025019'
 
     default_profile = {
         'first_name': 'Falk',
@@ -131,7 +137,6 @@ class TestUtils(object):
             password=self.default_password)
 
     def _create_pricing(self):
-
         pricing = Pricing(
             markup=self.default_pricing['markup'],
             fee_usd=self.default_pricing['fee_usd'],
@@ -168,3 +173,37 @@ class TestUtils(object):
         end_previous_object(Limit)
         limit.save()
         return limit
+
+    def _create_transaction(self, sender, pricing, sent_amount, sent_currency,
+        received_amount, receiving_country):
+
+        recipient = Recipient(
+            first_name=self.default_recipient_first_name,
+            last_name=self.default_recipient_last_name,
+            phone_number=self.default_recipient_phone_number)
+
+        recipient.save()
+        transaction = Transaction(
+            recipient=recipient,
+            sender=sender,
+            pricing=pricing,
+            sent_amount=sent_amount,
+            sent_currency=sent_currency,
+            received_amount=received_amount,
+            receiving_country=receiving_country,
+            state='PAID',
+            paid_at=timezone.now()
+        )
+        transaction.save()
+        return transaction
+
+    def _create_default_transaction(self, sender, pricing):
+
+        return self._create_transaction(
+            sender=sender,
+            pricing=pricing,
+            sent_amount=10,
+            sent_currency='GBP',
+            received_amount=53,
+            receiving_country='GH',
+        )

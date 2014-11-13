@@ -144,17 +144,17 @@ class BeamProfileAdmin(admin.ModelAdmin):
 admin.site.register(Profile, BeamProfileAdmin)
 
 
-# class DocumentStatusChangeAdmin(admin.ModelAdmin):
+class DocumentStatusChangeAdmin(admin.ModelAdmin):
 
-#     def user(self, obj):
-#         return obj.profile.user.email
+    def user(self, obj):
+        return obj.profile.user.email
 
-#     readonly_fields = ('user', 'changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
-#     fields = readonly_fields
-#     list_display = ('user', 'changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
-#     list_filter = ('document_type', 'changed_at', 'changed_to', 'reason')
+    readonly_fields = ('user', 'changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
+    fields = readonly_fields
+    list_display = ('user', 'changed_by', 'document_type', 'changed_at', 'changed_to', 'reason')
+    list_filter = ('document_type', 'changed_at', 'changed_to', 'reason')
 
-# admin.site.register(DocumentStatusChange, DocumentStatusChangeAdmin)
+admin.site.register(DocumentStatusChange, DocumentStatusChangeAdmin)
 
 
 class CustomUserenaAdmin(UserenaAdmin):

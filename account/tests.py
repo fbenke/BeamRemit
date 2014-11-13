@@ -17,7 +17,7 @@ from datetime import timedelta
 import datetime
 
 from mock import patch
-from unittest import skip
+# from unittest import skip
 
 from account import constants
 from account.models import DocumentStatusChange, BeamProfile as Profile
@@ -38,6 +38,7 @@ class AccountTests(APITestCase, TestUtils):
     url_aws_upload = reverse('account:aws')
     url_upload_complete = reverse('account:upload_complete')
     url_verification_status = reverse('account:verification_status')
+    url_account_limits = reverse('account:limit')
 
     plain_url_activate = 'account:activate'
     plain_url_activate_retry = 'account:activate_retry'
@@ -751,6 +752,80 @@ class VerificationStatusTests(AccountTests):
         self.assertEqual(response.data['information_complete'], False)
 
 
+class AccountLimitTests(AccountTests):
+
+    def setUp(self):
+        self.pricing = self._create_pricing()
+        self.limit = self._create_limit()
+
+    def test_permissions(self):
+        response = self.client.get(self.url_account_limits)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_account_limits_activated_user(self):
+        user = self._create_activated_user()
+        token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(self.url_account_limits)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit_gbp'], 40)
+        self.assertEqual(response.data['limit_usd'], 64)
+        self.assertEqual(response.data['today_usd'], 0)
+        self.assertEqual(response.data['today_gbp'], 0)
+        self.assertTrue(response.data['can_extend'])
+
+    def test_account_limits_fully_verified_user(self):
+        user = self._create_fully_verified_user()
+        token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(self.url_account_limits)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit_gbp'], 500)
+        self.assertEqual(response.data['limit_usd'], 800)
+        self.assertEqual(response.data['today_usd'], 0)
+        self.assertEqual(response.data['today_gbp'], 0)
+        self.assertFalse(response.data['can_extend'])
+
+    def test_account_spending_count(self):
+
+        user = self._create_fully_verified_user()
+        token = self._create_token(user)
+        
+        self._create_transaction(
+            sender=user,
+            pricing=self.pricing,
+            sent_amount=400,
+            sent_currency='GBP',
+            received_amount=2120,
+            receiving_country='GH'
+        )
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        response = self.client.get(self.url_account_limits)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit_gbp'], 500)
+        self.assertEqual(response.data['limit_usd'], 800)
+        self.assertEqual(response.data['today_usd'], 640)
+        self.assertEqual(response.data['today_gbp'], 400)
+        self.assertFalse(response.data['can_extend'])
+
+        self._create_transaction(
+            sender=user,
+            pricing=self.pricing,
+            sent_amount=12,
+            sent_currency='USD',
+            received_amount=39.75,
+            receiving_country='GH'
+        )
+
+        response = self.client.get(self.url_account_limits)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['today_usd'], 652)
+        self.assertEqual(response.data['today_gbp'], 407.5)
+
+
 class AdminTests(TestCase, TestUtils):
 
     def setUp(self):
@@ -765,8 +840,8 @@ class AdminTests(TestCase, TestUtils):
         response = self.client.get(reverse('admin:account_beamprofile_changelist'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # response = self.client.get(reverse('admin:account_documentstatuschange_changelist'))
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(reverse('admin:account_documentstatuschange_changelist'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         user = self._create_user_with_profile()
         response = self.client.get(reverse('admin:account_beamprofile_change', args=(user.profile.id,)))

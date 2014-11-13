@@ -20,6 +20,6 @@ urlpatterns = patterns(
     url(
         r'^(?P<pk>[0-9]+)/$',
         views.GetTransaction.as_view(),
-        name='list'
+        name='get'
     )
 )
