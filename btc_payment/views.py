@@ -15,8 +15,6 @@ from transaction.models import Transaction
 
 from btc_payment.models import GoCoinInvoice
 
-from payout.models import post_paid, post_paid_problem
-
 
 class ConfirmGoCoinPayment(APIView):
 
@@ -59,7 +57,7 @@ class ConfirmGoCoinPayment(APIView):
                         transaction.gocoin_invoice.save()
                         transaction.set_paid()
 
-                    post_paid(transaction)
+                    transaction.post_paid()
 
                 # payment received, but does not fulfill the required amount
                 elif request.DATA.get('payload')['status'] == 'underpaid':
@@ -96,7 +94,7 @@ class ConfirmGoCoinPayment(APIView):
                     transaction.gocoin_invoice.save()
                     transaction.set_invalid()
 
-                post_paid_problem(transaction)
+                transaction.post_paid_problem()
 
             else:
                 raise APIException

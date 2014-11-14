@@ -4,8 +4,6 @@ from django.utils import timezone
 
 from transaction.models import Recipient, Transaction
 
-from payout.models import post_processed
-
 
 class RecipientAdmin(admin.ModelAdmin):
 
@@ -34,7 +32,7 @@ class TransactionAdmin(admin.ModelAdmin):
 
             if obj.state == Transaction.PROCESSED:
 
-                post_processed(obj)
+                obj.post_processed()
 
                 obj.processed_at = timezone.now()
 

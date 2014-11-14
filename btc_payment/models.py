@@ -73,7 +73,6 @@ class GoCoinInvoice(models.Model):
 
     @staticmethod
     def initiate(transaction):
-
         message = (str(transaction.id) + str(transaction.sent_amount + transaction.fee) +
                    settings.GOCOIN_INVOICE_CALLBACK_URL)
 

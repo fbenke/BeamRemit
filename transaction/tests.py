@@ -1,4 +1,6 @@
+from django.core import mail as mailbox
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -8,6 +10,9 @@ from userena.models import UserenaSignup
 from beam.tests import TestUtils
 
 from transaction import constants
+from transaction.models import Transaction
+
+from mock import patch
 
 
 class TransactionTests(APITestCase, TestUtils):
@@ -112,7 +117,8 @@ class ViewTransactions(TransactionTests):
 
 class CreateTransaction(TransactionTests):
 
-    def test_permissions(self):
+    @patch('transaction.views.CreateTransaction.post_save')
+    def test_permissions(self, mock_transaction):
         response = self.client.get(self.url_create_transaction)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -123,7 +129,8 @@ class CreateTransaction(TransactionTests):
         response = self.client.get(self.url_create_transaction)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_sending_currency_fail(self):
+    @patch('transaction.views.CreateTransaction.post_save')
+    def test_sending_currency_fail(self, mock_transaction):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
@@ -145,7 +152,8 @@ class CreateTransaction(TransactionTests):
         self.assertTrue('Select a valid choice.' in response.data['sent_currency'][0])
         self.assertTrue('Select a valid choice.', response.data['receiving_country'][0])
 
-    def test_pricing_expired(self):
+    @patch('transaction.views.CreateTransaction.post_save')
+    def test_pricing_expired(self, mock_transaction):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
@@ -167,7 +175,8 @@ class CreateTransaction(TransactionTests):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.PRICING_EXPIRED)
 
-    def test_profile_incomplete(self):
+    @patch('transaction.views.CreateTransaction.post_save')
+    def test_profile_incomplete(self, mock_transaction):
         user = self._create_activated_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
@@ -187,3 +196,257 @@ class CreateTransaction(TransactionTests):
         response = self.client.post(self.url_create_transaction, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.PROFILE_INCOMPLETE)
+
+    @patch('transaction.views.CreateTransaction.post_save')
+    def test_transaction_full_verification_required(self, mock_transaction):
+        user = self._create_user_with_profile()
+        token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        self._create_default_limit()
+        pricing = self._create_pricing()
+
+        self._create_transaction(
+            sender=user,
+            pricing=pricing,
+            sent_amount=40,
+            sent_currency='GBP',
+            received_amount=265,
+            receiving_country='GH'
+        )
+
+        data = {
+            'pricing_id': pricing.id,
+            'sent_amount': 10,
+            'sent_currency': 'GBP',
+            'receiving_country': 'GH',
+            'recipient': {
+                'first_name': 'Nikunj',
+                'last_name': 'Handa',
+                'phone_number': '0509392087'
+            }
+        }
+
+        response = self.client.post(self.url_create_transaction, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.ADDITIONAL_DOCUMENTS_MISSING)
+
+    @patch('transaction.views.CreateTransaction.post_save')
+    def test_transaction_documents_pending(self, mock_transaction):
+        user = self._create_user_with_uploaded_documents()
+        token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        self._create_default_limit()
+        pricing = self._create_pricing()
+
+        self._create_transaction(
+            sender=user,
+            pricing=pricing,
+            sent_amount=40,
+            sent_currency='GBP',
+            received_amount=265,
+            receiving_country='GH'
+        )
+
+        data = {
+            'pricing_id': pricing.id,
+            'sent_amount': 10,
+            'sent_currency': 'GBP',
+            'receiving_country': 'GH',
+            'recipient': {
+                'first_name': 'Nikunj',
+                'last_name': 'Handa',
+                'phone_number': '0509392087'
+            }
+        }
+
+        response = self.client.post(self.url_create_transaction, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.DOCUMENTS_NOT_VERIFIED)
+
+    @patch('transaction.views.CreateTransaction.post_save')
+    def test_transaction_max_exceeded(self, mock_transaction):
+        user = self._create_fully_verified_user()
+        token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        self._create_default_limit()
+        pricing = self._create_pricing()
+        self._create_transaction(
+            sender=user,
+            pricing=pricing,
+            sent_amount=1000,
+            sent_currency='GBP',
+            received_amount=5300,
+            receiving_country='GH'
+        )
+
+        data = {
+            'pricing_id': pricing.id,
+            'sent_amount': 10,
+            'sent_currency': 'GBP',
+            'receiving_country': 'GH',
+            'recipient': {
+                'first_name': 'Nikunj',
+                'last_name': 'Handa',
+                'phone_number': '0509392087'
+            }
+        }
+
+        response = self.client.post(self.url_create_transaction, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.TRANSACTION_LIMIT_EXCEEDED)
+
+    @patch('transaction.views.payment_class.initiate')
+    def test_transaction_create_success(self, mock_payment_initiation):
+        user = self._create_user_with_profile()
+        token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        self._create_default_limit()
+        self._create_state()
+        pricing = self._create_pricing()
+
+        mock_payment_initiation.return_value = '12345'
+
+        data = {
+            'pricing_id': pricing.id,
+            'sent_amount': 10,
+            'sent_currency': 'GBP',
+            'receiving_country': 'GH',
+            'recipient': {
+                'first_name': 'Nikunj',
+                'last_name': 'Handa',
+                'phone_number': '0509392087'
+            }
+        }
+
+        response = self.client.post(self.url_create_transaction, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['invoice_id'], '12345')
+        self.assertEqual(response.data['received_amount'], 51.5)
+        self.assertEqual(response.data['received_currency'], 'GHS')
+        self.assertEqual(response.data['operation_mode'], 'UP')
+
+        mock_payment_initiation.return_value = '67890'
+
+        data = {
+            'pricing_id': pricing.id,
+            'sent_amount': 17,
+            'sent_currency': 'USD',
+            'receiving_country': 'SL',
+            'recipient': {
+                'first_name': 'Nikunj',
+                'last_name': 'Handa',
+                'phone_number': '0509392087'
+            }
+        }
+
+        response = self.client.post(self.url_create_transaction, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['invoice_id'], '67890')
+        self.assertEqual(response.data['received_amount'], 72560)
+        self.assertEqual(response.data['received_currency'], 'SLL')
+        self.assertEqual(response.data['operation_mode'], 'UP')
+
+
+class AdminTests(TestCase, TestUtils):
+
+    @classmethod
+    def setUpClass(cls):
+        UserenaSignup.objects.check_permissions()
+
+    def setUp(self):
+        admin = self._create_admin_user(self.emails.next())
+        self.client.login(username=admin.username, password=self.default_password)
+
+    def test_cancel_transaction(self):
+        user = self._create_user_with_profile()
+        pricing = self._create_pricing()
+        transaction = self._create_default_transaction(user, pricing)
+
+        data = {
+            'state': 'CANC',
+            'comments': '',
+            '_continue': 'Save and continue editing'
+        }
+
+        response = self.client.post(reverse(
+            'admin:transaction_transaction_change',
+            args=(transaction.id,)), data
+        )
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        transaction = Transaction.objects.get(id=transaction.id)
+        self.assertEqual(transaction.state, 'CANC')
+
+    def test_comment_transaction(self):
+        user = self._create_user_with_profile()
+        pricing = self._create_pricing()
+        transaction = self._create_default_transaction(user, pricing)
+
+        data = {
+            'state': 'INIT',
+            'comments': 'Left a comment',
+            '_continue': 'Save and continue editing'
+        }
+
+        response = self.client.post(reverse(
+            'admin:transaction_transaction_change',
+            args=(transaction.id,)), data
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        transaction = Transaction.objects.get(id=transaction.id)
+        self.assertEqual(transaction.comments, 'Left a comment')
+
+    def test_process_transaction(self):
+        no_emails = len(mailbox.outbox)
+        user = self._create_user_with_profile()
+        pricing = self._create_pricing()
+        transaction = self._create_default_transaction(user, pricing)
+
+        data = {
+            'state': 'PROC',
+            'comments': '',
+            '_continue': 'Save and continue editing'
+        }
+
+        response = self.client.post(reverse(
+            'admin:transaction_transaction_change',
+            args=(transaction.id,)), data
+        )
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        transaction = Transaction.objects.get(id=transaction.id)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(transaction.state, 'PROC')
+        self.assertEqual(len(mailbox.outbox), no_emails + 1)
+
+    def test_process_transaction_bae(self):
+        no_emails = len(mailbox.outbox)
+        user = self._create_user_with_profile()
+        pricing = self._create_pricing()
+
+        transaction = self._create_transaction(
+            sender=user,
+            pricing=pricing,
+            sent_amount=10,
+            sent_currency='USD',
+            received_amount=29880,
+            receiving_country='SL'
+        )
+
+        transaction.recipient.phone_number = '5275'
+        transaction.recipient.save()
+
+        data = {
+            'state': 'PROC',
+            'comments': '',
+            '_continue': 'Save and continue editing'
+        }
+
+        response = self.client.post(reverse(
+            'admin:transaction_transaction_change',
+            args=(transaction.id,)), data
+        )
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        transaction = Transaction.objects.get(id=transaction.id)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(transaction.state, 'PROC')
+        self.assertEqual(len(mailbox.outbox), no_emails + 1)

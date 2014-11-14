@@ -759,7 +759,7 @@ class AccountLimitTests(AccountTests):
 
     def setUp(self):
         self.pricing = self._create_pricing()
-        self.limit = self._create_limit()
+        self.limit = self._create_default_limit()
 
     def test_permissions(self):
         response = self.client.get(self.url_account_limits)
@@ -971,3 +971,38 @@ class AdminTests(TestCase, TestUtils):
             self.assertEqual(c.changed_by, self.default_username)
             self.assertEqual(c.changed_to, Profile.FAILED)
             self.assertEqual(c.reason, DocumentStatusChange.LOW_QUALITY)
+
+
+class ProfileModelTests(TestCase, TestUtils):
+
+    def test_transaction_volume(self):
+        user = self._create_fully_verified_user()
+        pricing = self._create_pricing()
+        self.assertEqual(user.profile.todays_transaction_volume(), 0)
+        self.assertEqual(user.profile.todays_transaction_volume(10, 'GBP'), 10)
+        self.assertEqual(user.profile.todays_transaction_volume(10, 'USD'), 6.25)
+
+        self._create_transaction(
+            sender=user,
+            pricing=pricing,
+            sent_amount=93,
+            sent_currency='GBP',
+            received_amount=478.2,
+            receiving_country='GH'
+        )
+
+        self.assertEqual(user.profile.todays_transaction_volume(), 93)
+        self.assertEqual(user.profile.todays_transaction_volume(10, 'GBP'), 103)
+        self.assertEqual(user.profile.todays_transaction_volume(10, 'USD'), 99.25)
+
+        self._create_transaction(
+            sender=user,
+            pricing=pricing,
+            sent_amount=18,
+            sent_currency='USD',
+            received_amount=77050,
+            receiving_country='SL'
+        )
+        self.assertEqual(user.profile.todays_transaction_volume(), 104.25)
+        self.assertEqual(user.profile.todays_transaction_volume(10, 'GBP'), 114.25)
+        self.assertEqual(user.profile.todays_transaction_volume(10, 'USD'), 110.5)

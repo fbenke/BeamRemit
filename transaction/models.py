@@ -3,10 +3,13 @@ import random
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
 from django.db import models
 from django.utils import timezone
 
 from django_countries.fields import CountryField
+
+from beam.utils import mails
 
 from pricing.models import Pricing, get_current_object
 
@@ -92,7 +95,7 @@ class Transaction(models.Model):
         'Bitcoins paid to Beam',
         null=True,
         blank=True,
-        help_text='BTC sent to Beam (includes fees), determined by Payment Processor, exclusive BTC transaction fee'
+        help_text='BTC sent to Beam (before fees), determined by Payment Processor, exclusive BTC transaction fee'
     )
 
     received_amount = models.FloatField(
@@ -197,3 +200,96 @@ class Transaction(models.Model):
 
     def _generate_reference_number(self):
         self.reference_number = str(random.randint(10000, 999999))
+
+    def post_paid(self):
+
+        mails.send_mail(
+            subject_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_SUBJECT,
+            email_template_name=settings.MAIL_NOTIFY_ADMIN_PAID_TEXT,
+            context={
+                'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
+                'protocol': settings.PROTOCOL,
+                'id': self.id,
+                'site_name': Site.objects.get_current().name
+            },
+            to_email=mails.get_admin_mail_addresses()
+        )
+
+        # Bitcoin Against Ebola Project Specifics
+        if self.receiving_country == settings.SIERRA_LEONE and\
+           self.recipient.phone_number not in settings.CHARITIES.values():
+
+            mails.send_mail(
+                subject_template_name=settings.SPLASH_ONBOARD_RECIPIENT_SUBJECT,
+                email_template_name=settings.SPLASH_ONBOARD_RECIPIENT_TEXT,
+                context={
+                    'txn_id': self.id,
+                    'timestamp': timezone.now(),
+                    'amount_sll': self.received_amount,
+                    'sender_first_name': self.sender.first_name,
+                    'sender_last_name': self.sender.last_name,
+                    'city': self.sender.profile.city,
+                    'country': self.sender.profile.country,
+                    'recipient_first_name': self.recipient.first_name,
+                    'recipient_last_name': self.recipient.last_name,
+                    'phone_number': self.recipient.phone_number,
+                },
+                to_email=settings.SPLASH_EMAIL
+            )
+
+    def post_paid_problem(self):
+
+        mails.send_mail(
+            subject_template_name=settings.MAIL_NOTIFY_ADMIN_PROBLEM_SUBJECT,
+            email_template_name=settings.MAIL_NOTIFY_ADMIN_PROBLEM_TEXT,
+            context={
+                'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
+                'protocol': settings.PROTOCOL,
+                'id': self.id,
+                # TODO: decouple from specific payment provider
+                'invoice_state': self.gocoin_invoice.state,
+                'site_name': Site.objects.get_current().name
+            },
+            to_email=mails.get_admin_mail_addresses()
+        )
+
+    def post_processed(self):
+
+        context = {
+            'protocol': settings.PROTOCOL,
+            'site': Site.objects.get_current(),
+            'first_name': self.sender.first_name,
+            'sent_amount': self.sent_amount,
+            'sent_currency': self.sent_currency,
+            'received_amount': self.received_amount,
+            'received_currency': self.received_currency,
+            'mobile': self.recipient.phone_number,
+            'txn_history': settings.MAIL_TRANSACTION_HISTORY_SITE
+        }
+
+        # charities for bitcoinagainstebola project have a slightly different email
+        if self.receiving_country == settings.SIERRA_LEONE and\
+           self.recipient.phone_number in settings.CHARITIES.values():
+
+            context['recipient'] = self.recipient.last_name
+
+            mails.send_mail(
+                subject_template_name=settings.MAIL_TRANSACTION_COMPLETE_SUBJECT,
+                email_template_name=settings.SPLASH_DONATION_COMPLETE_TEXT,
+                html_email_template_name=settings.SPLASH_DONATION_COMPLETE_HTML,
+                context=context,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to_email=self.sender.email
+            )
+
+        else:
+            context['recipient'] = self.recipient.first_name
+
+            mails.send_mail(
+                subject_template_name=settings.MAIL_TRANSACTION_COMPLETE_SUBJECT,
+                email_template_name=settings.MAIL_TRANSACTION_COMPLETE_TEXT,
+                context=context,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to_email=self.sender.email,
+                html_email_template_name=settings.MAIL_TRANSACTION_COMPLETE_HTML
+            )

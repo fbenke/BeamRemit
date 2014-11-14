@@ -122,7 +122,7 @@ class LimitAPITests(APITestCase, TestUtils):
     url_get_current = reverse('pricing:limit')
 
     def test_get_limit(self):
-        limit = self._create_limit()
+        limit = self._create_default_limit()
         self._create_pricing()
 
         response = self.client.get(self.url_get_current)
@@ -152,3 +152,8 @@ class PricingConversionTests(TestCase, TestUtils):
     def test_conversion_usd(self):
         self.assertEqual(self.pricing.calculate_received_amount(18, 'USD', 'GH'), 57.9)
         self.assertEqual(self.pricing.calculate_received_amount(7, 'USD', 'SL'), 29880)
+        self.assertEqual(self.pricing.calculate_received_amount(18, 'USD', 'SL'), 76830)
+
+    def test_convert_to_base_currency(self):
+        self.assertEqual(self.pricing.convert_to_base_currency(3, 'GBP'), 3)
+        self.assertEqual(self.pricing.convert_to_base_currency(20, 'USD'), 12.5)

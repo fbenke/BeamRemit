@@ -163,7 +163,7 @@ class TestUtils(object):
         app_state.save()
         return app_state
 
-    def _create_limit(self):
+    def _create_default_limit(self):
         limit = Limit(
             transaction_min_gbp=self.default_limit['transaction_min_gbp'],
             transaction_max_gbp=self.default_limit['transaction_max_gbp'],

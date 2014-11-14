@@ -29,7 +29,6 @@ class CreateTransaction(GenericAPIView):
     permission_classes = (IsAuthenticated, IsNoAdmin)
 
     def post_save(self, obj, created=False):
-
         # initiate payment with external payment processor
         self.invoice_id = payment_class.initiate(obj)
 
