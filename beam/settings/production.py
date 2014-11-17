@@ -86,7 +86,7 @@ ENV_SITE_MAPPING = {
     ENV_LOCAL: {
         SITE_API: os.environ.get('LOCAL_SITE_API'),
         SITE_USER: os.environ.get('LOCAL_SITE_USER'),
-        SITE_USER_SL: os.environ.get('LOCAL_SITE_USER')
+        SITE_USER_SL: os.environ.get('LOCAL_SITE_USER_SL')
     },
     ENV_DEV: {
         SITE_API: 'api-dev.beamremit.com',

@@ -47,6 +47,7 @@ class CreateTransaction(GenericAPIView):
             if serializer.is_valid():
 
                 # check if Pricing has expired
+                # TODO do the same for Exchangerate
                 if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
                     return Response({'detail': constants.PRICING_EXPIRED}, status=status.HTTP_400_BAD_REQUEST)
 

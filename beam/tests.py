@@ -1,4 +1,7 @@
 from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
+from django.test import TestCase
+from django.test.client import RequestFactory
 from django.utils import timezone
 
 from userena.models import UserenaSignup
@@ -8,7 +11,10 @@ from rest_framework.authtoken.models import Token
 
 from account.models import BeamProfile as Profile
 
-from pricing.models import Pricing, Comparison, Limit, end_previous_object
+from beam.utils.angular_requests import get_site_by_request
+
+from pricing.models import Pricing, ExchangeRate, Comparison, Limit,\
+    end_previous_object, end_previous_object_by_site
 
 from state.models import State
 
@@ -45,8 +51,19 @@ class TestUtils(object):
 
     default_pricing = {
         'markup': 0.03,
-        'fee_usd': 0,
-        'fee_gbp': 1,
+        'fee': 1,
+        'fee_currency': 'GBP',
+        'site': 0
+    }
+
+    default_bae_pricing = {
+        'markup': 0.02,
+        'fee': 0,
+        'fee_currency': 'USD',
+        'site': 1
+    }
+
+    default_exchange_rate = {
         'gbp_ghs': 5.3,
         'gbp_usd': 1.6,
         'gbp_sll': 7040
@@ -136,18 +153,42 @@ class TestUtils(object):
             email=email,
             password=self.default_password)
 
-    def _create_pricing(self):
+    def _create_pricing(self, markup, fee, fee_currency, site_id):
+        site = Site.objects.get(id=site_id)
         pricing = Pricing(
-            markup=self.default_pricing['markup'],
-            fee_usd=self.default_pricing['fee_usd'],
-            fee_gbp=self.default_pricing['fee_gbp'],
-            gbp_ghs=self.default_pricing['gbp_ghs'],
-            gbp_usd=self.default_pricing['gbp_usd'],
-            gbp_sll=self.default_pricing['gbp_sll']
+            markup=markup,
+            fee=fee,
+            fee_currency=fee_currency,
+            site=site
         )
-        end_previous_object(Pricing)
+        end_previous_object_by_site(Pricing, site)
         pricing.save()
         return pricing
+
+    def _create_default_pricing(self):
+        return self._create_pricing(
+            markup=self.default_pricing['markup'],
+            fee=self.default_pricing['fee'],
+            fee_currency=self.default_pricing['fee_currency'],
+            site_id=self.default_pricing['site']
+        )
+
+    def _create_exchange_rate(self, gbp_ghs, gbp_usd, gbp_sll):
+        exchange_rate = ExchangeRate(
+            gbp_ghs=gbp_ghs,
+            gbp_usd=gbp_usd,
+            gbp_sll=gbp_sll
+        )
+        end_previous_object(ExchangeRate)
+        exchange_rate.save()
+        return exchange_rate
+
+    def _create_default_exchange_rate(self):
+        return self._create_exchange_rate(
+            gbp_ghs=self.default_exchange_rate['gbp_ghs'],
+            gbp_usd=self.default_exchange_rate['gbp_usd'],
+            gbp_sll=self.default_exchange_rate['gbp_sll']
+        )
 
     def _create_comparison(self):
         comparison = Comparison(price_comparison=self.default_comparison)
@@ -175,7 +216,7 @@ class TestUtils(object):
         return limit
 
     def _create_transaction(self, sender, pricing, sent_amount, sent_currency,
-        received_amount, receiving_country):
+                            received_amount, receiving_country):
 
         recipient = Recipient(
             first_name=self.default_recipient_first_name,
@@ -207,3 +248,31 @@ class TestUtils(object):
             received_amount=53,
             receiving_country='GH',
         )
+
+
+class SiteMappingTests(TestCase, TestUtils):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def test_get_site_by_request(self):
+        dummy_request = self.factory.get('/')
+        dummy_request.META['HTTP_REFERER'] = 'http://dev.beamremit.com/'
+        site = get_site_by_request(dummy_request)
+        self.assertIsNotNone(site)
+        self.assertEqual(site.id, 0)
+        self.assertEqual(site.domain, 'dev.beamremit.com')
+
+        dummy_request = self.factory.get('/')
+        dummy_request.META['HTTP_REFERER'] = 'http://dev.bitcoinagainstebola.org/'
+        site = get_site_by_request(dummy_request)
+        self.assertIsNotNone(site)
+        self.assertEqual(site.id, 1)
+        self.assertEqual(site.domain, 'dev.bitcoinagainstebola.org')
+
+    def test_get_site_by_request_fail(self):
+        dummy_request = self.factory.get('/')
+        dummy_request.META['HTTP_REFERER'] = 'foo'
+        site = get_site_by_request(dummy_request)
+        self.assertIsNotNone(site)
+        self.assertEqual(site.id, 0)

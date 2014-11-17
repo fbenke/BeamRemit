@@ -3,6 +3,7 @@ import collections
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.db import models
 from django.utils import timezone
 
@@ -29,21 +30,44 @@ def end_previous_object(cls):
             log_error('ERROR {} - Failed to end previous pricing.'.format(cls))
 
 
+def get_current_object_by_site(cls, site):
+    try:
+        return cls.objects.get(end__isnull=True, site=site)
+    except ObjectDoesNotExist:
+        log_error('ERROR {} - No pricing object found.'.format(cls))
+        raise ObjectDoesNotExist
+
+
+def end_previous_object_by_site(cls, site):
+    try:
+        previous_object = cls.objects.get(end__isnull=True, site=site)
+        previous_object.end = timezone.now()
+        previous_object.save()
+    except ObjectDoesNotExist:
+        if cls.objects.all().exists():
+            log_error('ERROR {} - Failed to end previous pricing.'.format(cls))
+
+
 class Pricing(models.Model):
 
-    COUNTRY_FXR = {
-        settings.GHANA: 'exchange_rate_ghs',
-        settings.SIERRA_LEONE: 'exchange_rate_sll'
-    }
+    # COUNTRY_FXR = {
+    #     settings.GHANA: 'exchange_rate_ghs',
+    #     settings.SIERRA_LEONE: 'exchange_rate_sll'
+    # }
 
-    SENT_CURRENCY_FXR = {
-        settings.USD: 'gbp_usd'
-    }
+    # SENT_CURRENCY_FXR = {
+    #     settings.USD: 'gbp_usd'
+    # }
 
-    SENT_CURRENCY_FEE = {
-        settings.USD: 'fee_usd',
-        settings.GBP: 'fee_gbp'
-    }
+    # SENT_CURRENCY_FEE = {
+    #     settings.USD: 'fee_usd',
+    #     settings.GBP: 'fee_gbp'
+    # }
+
+    FEE_CURRENCIES = (
+        (settings.GBP, 'British Pound'),
+        (settings.USD, 'US Dollar')
+    )
 
     start = models.DateTimeField(
         'Start Time',
@@ -64,14 +88,70 @@ class Pricing(models.Model):
         help_text='Percentage to be added over exchange rate. Value between 0 and 1.'
     )
 
-    fee_usd = models.FloatField(
-        'Fixed Fee in USD',
-        help_text='Fixed Fee charged for the money transfer in USD.'
+    fee = models.FloatField(
+        'Fixed Fee',
+        help_text='Fixed Fee charged for the money transfer.'
     )
 
-    fee_gbp = models.FloatField(
-        'Fixed Fee in GBP',
-        help_text='Fixed Fee charged for the money transfer in GBP.'
+    fee_currency = models.CharField(
+        'Fee currency',
+        max_length=4,
+        choices=FEE_CURRENCIES,
+        help_text='Currency the fee is denominated in.'
+    )
+
+    site = models.ForeignKey(
+        Site,
+        related_name='pricing',
+        help_text='Site associated with this pricing'
+    )
+
+    def __unicode__(self):
+        return '{}'.format(self.id)
+
+    @property
+    def exchange_rate_ghs(self):
+        return get_current_object(ExchangeRate).gbp_ghs * (1 - self.markup)
+
+    @property
+    def exchange_rate_sll(self):
+        return get_current_object(ExchangeRate).gbp_sll * (1 - self.markup)
+
+    # def calculate_received_amount(self, sent_amount, currency, country):
+
+    #     # if necessary, convert the sent amount into the base currency, no markup included
+    #     amount_gbp = self.convert_to_base_currency(sent_amount, currency)
+
+    #     # convert from base currency to received currency, this includes the markup
+    #     undrounded_amount = amount_gbp * getattr(self, self.COUNTRY_FXR[country])
+
+    #     # do country-specific rounding
+    #     if country == settings.SIERRA_LEONE:
+    #         return math.ceil(undrounded_amount / 10) * 10
+    #     else:
+    #         return math.ceil(undrounded_amount * 10) / 10
+
+    # def convert_to_base_currency(self, amount, currency):
+    #     if currency != settings.GBP:
+    #         return amount / getattr(self, self.SENT_CURRENCY_FXR[currency])
+    #     else:
+    #         return amount
+
+
+class ExchangeRate(models.Model):
+
+    start = models.DateTimeField(
+        'Start Time',
+        auto_now_add=True,
+        help_text='Time at which pricing structure came into effect'
+    )
+
+    end = models.DateTimeField(
+        'End Time',
+        blank=True,
+        null=True,
+        help_text='Time at which pricing ended. If null, it represents the current pricing structure. ' +
+                  'Only one row in this table can have a null value for this column.'
     )
 
     gbp_ghs = models.FloatField(
@@ -88,37 +168,6 @@ class Pricing(models.Model):
         'GBP to SSL Exchange Rate',
         help_text='Exchange Rate from GBP to SSL without markup'
     )
-
-    def __unicode__(self):
-        return '{}'.format(self.id)
-
-    @property
-    def exchange_rate_ghs(self):
-        return self.gbp_ghs * (1 - self.markup)
-
-    @property
-    def exchange_rate_sll(self):
-        return self.gbp_sll * (1 - self.markup)
-
-    def calculate_received_amount(self, sent_amount, currency, country):
-
-        # if necessary, convert the sent amount into the base currency, no markup included
-        amount_gbp = self.convert_to_base_currency(sent_amount, currency)
-
-        # convert from base currency to received currency, this includes the markup
-        undrounded_amount = amount_gbp * getattr(self, self.COUNTRY_FXR[country])
-
-        # do country-specific rounding
-        if country == settings.SIERRA_LEONE:
-            return math.ceil(undrounded_amount / 10) * 10
-        else:
-            return math.ceil(undrounded_amount * 10) / 10
-
-    def convert_to_base_currency(self, amount, currency):
-        if currency != settings.GBP:
-            return amount / getattr(self, self.SENT_CURRENCY_FXR[currency])
-        else:
-            return amount
 
 
 class Comparison(models.Model):

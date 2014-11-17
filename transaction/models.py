@@ -11,7 +11,7 @@ from django_countries.fields import CountryField
 
 from beam.utils import mails
 
-from pricing.models import Pricing, get_current_object
+from pricing.models import Pricing, ExchangeRate, get_current_object
 
 
 class Recipient(models.Model):
@@ -76,7 +76,13 @@ class Transaction(models.Model):
     pricing = models.ForeignKey(
         Pricing,
         related_name='transaction',
-        help_text='Pricing information to enable conversion of btc to ghs'
+        help_text='Pricing information associated with that transaction'
+    )
+
+    exchange_rate = models.ForeignKey(
+        ExchangeRate,
+        related_name='transaction',
+        help_text='Exchange Rates applied to this transaction'
     )
 
     sent_amount = models.FloatField(
