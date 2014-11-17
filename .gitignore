@@ -1,5 +1,3 @@
-*.pyc
-
 static
 htmlcov
 
@@ -7,6 +5,8 @@ htmlcov
 .idea
 .coverage
 
+*.pyc
 *.crt
 *.key
 *.dump
+*.sql
