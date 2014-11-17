@@ -758,8 +758,9 @@ class VerificationStatusTests(AccountTests):
 class AccountLimitTests(AccountTests):
 
     def setUp(self):
-        self.pricing = self._create_pricing()
-        self.limit = self._create_default_limit()
+        self.exchange_rate = self._create_default_exchange_rate()
+        self.limit_bae = self._create_default_limit_bae()
+        self.limit_beam = self._create_default_limit_beam()
 
     def test_permissions(self):
         response = self.client.get(self.url_account_limits)
@@ -769,10 +770,19 @@ class AccountLimitTests(AccountTests):
         user = self._create_activated_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.get(self.url_account_limits)
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit_gbp'], 40)
-        self.assertEqual(response.data['limit_usd'], 64)
+        self.assertEqual(response.data['limit'], 40)
+        self.assertEqual(response.data['currency'], 'GBP')
+        self.assertEqual(response.data['today_usd'], 0)
+        self.assertEqual(response.data['today_gbp'], 0)
+        self.assertTrue(response.data['can_extend'])
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 50)
+        self.assertEqual(response.data['currency'], 'USD')
         self.assertEqual(response.data['today_usd'], 0)
         self.assertEqual(response.data['today_gbp'], 0)
         self.assertTrue(response.data['can_extend'])
@@ -781,10 +791,19 @@ class AccountLimitTests(AccountTests):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.get(self.url_account_limits)
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit_gbp'], 500)
-        self.assertEqual(response.data['limit_usd'], 800)
+        self.assertEqual(response.data['limit'], 1000)
+        self.assertEqual(response.data['currency'], 'GBP')
+        self.assertEqual(response.data['today_usd'], 0)
+        self.assertEqual(response.data['today_gbp'], 0)
+        self.assertFalse(response.data['can_extend'])
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 800)
+        self.assertEqual(response.data['currency'], 'USD')
         self.assertEqual(response.data['today_usd'], 0)
         self.assertEqual(response.data['today_gbp'], 0)
         self.assertFalse(response.data['can_extend'])

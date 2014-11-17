@@ -300,6 +300,7 @@ ENV_BUCKET_MAPPING = {
 
 AWS_BUCKET = ENV_BUCKET_MAPPING[ENV]
 
+# TODO: which of these are no longer needed?
 # Countries
 GHANA = 'GH'
 SIERRA_LEONE = 'SL'
@@ -315,6 +316,16 @@ SENDING_CURRENCIES = (USD, GBP)
 COUNTRY_CURRENCY = {
     GHANA: CEDI,
     SIERRA_LEONE: LEONE
+}
+
+SITE_SENDING_CURRENCY = {
+    0: GBP,
+    1: USD
+}
+
+SITE_RECEIVING_CURRENCY = {
+    0: CEDI,
+    1: LEONE
 }
 
 # Payment Processors
@@ -356,3 +367,4 @@ SPLASH_ONBOARD_RECIPIENT_SUBJECT = 'email/splash/oboard_recipient_subject.txt'
 SPLASH_ONBOARD_RECIPIENT_TEXT = 'email/splash/oboard_recipient_message.txt'
 SPLASH_DONATION_COMPLETE_TEXT = 'email/splash/donation_complete_message.txt'
 SPLASH_DONATION_COMPLETE_HTML = 'email/splash/donation_complete_message.html'
+

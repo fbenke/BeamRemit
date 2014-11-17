@@ -53,6 +53,7 @@ class LimitCurrent(RetrieveAPIView):
 
     def get_object(self, queryset=None):
         try:
-            return get_current_object(Limit)
+            site = get_site_by_request(self.request)
+            return get_current_object_by_site(Limit, site)
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)

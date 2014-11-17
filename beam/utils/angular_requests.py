@@ -7,7 +7,7 @@ from beam.utils.log import log_error
 def get_frontend_domain(request):
     try:
         return request.META.get('HTTP_REFERER').split('?')[0].split(settings.PROTOCOL + '://')[1].replace('/', '')
-    except IndexError:
+    except (IndexError, AttributeError):
         return request.META.get('HTTP_REFERER')
 
 
@@ -15,7 +15,7 @@ def get_site_by_request(request):
     try:
         frontend_domain = get_frontend_domain(request)
         return Site.objects.get(domain__iexact=frontend_domain)
-    except Site.DoesNotExist:
+    except (Site.DoesNotExist, ValueError):
         message = 'ERROR - Site Mapping: Cannot associate {} with a Site'.format(frontend_domain)
         log_error(message)
         return Site.objects.get_current()

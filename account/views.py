@@ -26,7 +26,7 @@ from account import serializers
 from account.models import BeamProfile as Profile
 from account.utils import AccountException, generate_aws_upload
 
-from pricing.models import Pricing, Limit, get_current_object
+from pricing.models import ExchangeRate, Limit, get_current_object, get_current_object_by_site
 
 from beam.utils.ip_blocking import country_blocked, is_tor_node,\
     get_client_ip, HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
@@ -609,24 +609,25 @@ class AccountLimits(APIView):
 
     def get(self, request):
 
-        todays_vol_gbp = request.user.profile.todays_transaction_volume()
+        site = get_site_by_request(self.request)
 
-        todays_vol_usd = todays_vol_gbp * get_current_object(Pricing).gbp_usd
+        # TODO: only return site specific currency
+        todays_vol_gbp = request.user.profile.todays_transaction_volume()
+        todays_vol_usd = todays_vol_gbp * get_current_object(ExchangeRate).gbp_usd
+        limit = get_current_object_by_site(Limit, site)
 
         if request.user.profile.documents_verified:
-            account_limit_gbp = get_current_object(Limit).user_limit_complete_gbp
-            account_limit_usd = get_current_object(Limit).user_limit_complete_usd
+            account_limit = limit.user_limit_complete
             can_extend = False
         else:
-            account_limit_gbp = get_current_object(Limit).user_limit_basic_gbp
-            account_limit_usd = get_current_object(Limit).user_limit_basic_usd
+            account_limit = limit.user_limit_basic
             can_extend = True
 
         data = {
             'today_gbp': todays_vol_gbp,
             'today_usd': todays_vol_usd,
-            'limit_gbp': account_limit_gbp,
-            'limit_usd': account_limit_usd,
+            'limit': account_limit,
+            'currency': limit.currency,
             'can_extend': can_extend
         }
         return Response(data)

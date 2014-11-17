@@ -13,7 +13,7 @@ from transaction.models import Transaction
 
 from account.utils import AccountException
 
-from pricing.models import Pricing, get_current_object
+from pricing.models import ExchangeRate, get_current_object
 
 from beam.utils.log import log_error
 
@@ -215,10 +215,10 @@ class BeamProfile(UserenaBaseProfile):
             amount = 0
 
             if new_amount:
-                amount = get_current_object(Pricing).convert_to_base_currency(new_amount, new_currency)
+                amount = get_current_object(ExchangeRate).convert_to_base_currency(new_amount, new_currency)
 
             for t in transactions:
-                amount = amount + t.pricing.convert_to_base_currency(t.sent_amount, t.sent_currency)
+                amount = amount + t.exchange_rate.convert_to_base_currency(t.sent_amount, t.sent_currency)
 
             return amount
 

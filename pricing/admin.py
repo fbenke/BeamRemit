@@ -82,26 +82,24 @@ class LimitAdmin(DoNotDeleteModelAdmin):
     def get_readonly_fields(self, request, obj=None):
 
         calculated_fields = (
-            'user_limit_basic_usd', 'user_limit_complete_usd',
-            'transaction_min_usd', 'transaction_max_usd',
             'transaction_min_ghs', 'transaction_max_ghs',
             'transaction_min_sll', 'transaction_max_sll'
         )
 
         if obj:
-            return ('id', 'start', 'end', 'user_limit_basic_gbp',
-                    'user_limit_complete_gbp', 'transaction_min_gbp',
-                    'transaction_max_gbp') + calculated_fields
+            return ('id', 'start', 'end', 'site', 'user_limit_basic',
+                    'user_limit_complete', 'transaction_min',
+                    'transaction_max', 'currency') + calculated_fields
         else:
             return ('id', 'start', 'end') + calculated_fields
 
-    list_display = ('id', 'start', 'end', 'user_limit_basic_gbp',
-                    'user_limit_complete_gbp', 'transaction_min_gbp',
-                    'transaction_max_gbp')
+    list_display = ('id', 'start', 'end', 'site', 'user_limit_basic',
+                    'user_limit_complete', 'transaction_min',
+                    'transaction_max', 'currency')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
-            end_previous_object(Limit)
+            end_previous_object_by_site(Limit, obj.site)
             obj.save()
 
 admin.site.register(Limit, LimitAdmin)

@@ -70,10 +70,12 @@ class TestUtils(object):
     }
 
     default_limit = {
-        'transaction_min_gbp': 2,
-        'transaction_max_gbp': 1000,
-        'user_limit_basic_gbp': 40,
-        'user_limit_complete_gbp': 500
+        'transaction_min': 2,
+        'transaction_max': 1000,
+        'user_limit_basic': 40,
+        'user_limit_complete': 500,
+        'currency': 'GBP',
+        'site': 0
     }
 
     default_comparison = '{"gbpGhs": {"wu": 5.0932009, "mg": 5.158165}}'
@@ -165,12 +167,20 @@ class TestUtils(object):
         pricing.save()
         return pricing
 
-    def _create_default_pricing(self):
+    def _create_default_pricing_beam(self):
         return self._create_pricing(
-            markup=self.default_pricing['markup'],
-            fee=self.default_pricing['fee'],
-            fee_currency=self.default_pricing['fee_currency'],
-            site_id=self.default_pricing['site']
+            markup=0.03,
+            fee=2.9,
+            fee_currency='GBP',
+            site_id=0
+        )
+
+    def _create_default_pricing_bae(self):
+        return self._create_pricing(
+            markup=0.01,
+            fee=1.2,
+            fee_currency='USD',
+            site_id=1
         )
 
     def _create_exchange_rate(self, gbp_ghs, gbp_usd, gbp_sll):
@@ -190,6 +200,26 @@ class TestUtils(object):
             gbp_sll=self.default_exchange_rate['gbp_sll']
         )
 
+    def _create_default_limit_beam(self):
+        return self._create_limit(
+            transaction_min=2,
+            transaction_max=1000,
+            user_limit_basic=40,
+            user_limit_complete=500,
+            currency='GBP',
+            site_id=0
+        )
+
+    def _create_default_limit_bae(self):
+        return self._create_limit(
+            transaction_min=3,
+            transaction_max=600,
+            user_limit_basic=50,
+            user_limit_complete=600,
+            currency='USD',
+            site_id=1
+        )
+
     def _create_comparison(self):
         comparison = Comparison(price_comparison=self.default_comparison)
         end_previous_object(Comparison)
@@ -204,16 +234,21 @@ class TestUtils(object):
         app_state.save()
         return app_state
 
-    def _create_default_limit(self):
+    def _create_limit(self, transaction_min, transaction_max, user_limit_basic,
+                      user_limit_complete, currency, site_id):
+        site = Site.objects.get(id=site_id)
         limit = Limit(
-            transaction_min_gbp=self.default_limit['transaction_min_gbp'],
-            transaction_max_gbp=self.default_limit['transaction_max_gbp'],
-            user_limit_basic_gbp=self.default_limit['user_limit_basic_gbp'],
-            user_limit_complete_gbp=self.default_limit['user_limit_complete_gbp']
+            transaction_min=transaction_min,
+            transaction_max=transaction_max,
+            user_limit_basic=user_limit_basic,
+            user_limit_complete=user_limit_complete,
+            currency=currency,
+            site=site
         )
-        end_previous_object(Limit)
+        end_previous_object_by_site(Limit, site)
         limit.save()
         return limit
+
 
     def _create_transaction(self, sender, pricing, sent_amount, sent_currency,
                             received_amount, receiving_country):

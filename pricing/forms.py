@@ -26,6 +26,6 @@ class ExchangeRateForm(forms.ModelForm):
 
 class LimitForm(forms.ModelForm):
     def clean(self):
-        if not self.cleaned_data['transaction_min_gbp'] < self.cleaned_data['transaction_max_gbp']:
+        if not self.cleaned_data['transaction_min'] < self.cleaned_data['transaction_max']:
             raise forms.ValidationError('Minimum amount must be smaller than maximum amount.')
         return self.cleaned_data
