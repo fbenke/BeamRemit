@@ -13,7 +13,7 @@ from transaction.models import Transaction
 
 from account.utils import AccountException
 
-from pricing.models import ExchangeRate, get_current_object
+from pricing.models import get_current_exchange_rate
 
 from beam.utils.log import log_error
 
@@ -201,7 +201,7 @@ class BeamProfile(UserenaBaseProfile):
             return False
         return True
 
-    def todays_transaction_volume(self, new_amount=0, new_currency=None):
+    def todays_transaction_volume(self, site, new_amount=0, new_currency=None):
         try:
             now = timezone.now()
             today = datetime.datetime(now.year, now.month, now.day).replace(tzinfo=utc)
@@ -215,7 +215,7 @@ class BeamProfile(UserenaBaseProfile):
             amount = 0
 
             if new_amount:
-                amount = get_current_object(ExchangeRate).convert_to_base_currency(new_amount, new_currency)
+                amount = get_current_exchange_rate().convert_to_base_currency(new_amount, new_currency)
 
             for t in transactions:
                 amount = amount + t.exchange_rate.convert_to_base_currency(t.sent_amount, t.sent_currency)

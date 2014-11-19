@@ -1,3 +1,4 @@
+from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
@@ -36,10 +37,16 @@ class State(models.Model):
         default=RUNNING
     )
 
+    site = models.ForeignKey(
+        Site,
+        related_name='app_state',
+        help_text='Site associated with this state'
+    )
 
-def get_current_state():
+
+def get_current_state(site):
     try:
-        return State.objects.get(end__isnull=True).state
+        return State.objects.get(end__isnull=True, site=site)
     except ObjectDoesNotExist:
         log_error('ERROR State - No state object found.')
         raise ObjectDoesNotExist

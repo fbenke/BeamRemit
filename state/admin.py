@@ -11,11 +11,11 @@ class StateAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'state')
+            return ('id', 'start', 'end', 'state', 'site')
         else:
             return ('id', 'start', 'end')
 
-    list_display = ('id', 'start', 'end', 'state')
+    list_display = ('id', 'start', 'end', 'state', 'site')
 
     def save_model(self, request, obj, form, change):
 
@@ -23,14 +23,14 @@ class StateAdmin(admin.ModelAdmin):
             return
 
         try:
-            previous_object = State.objects.get(end__isnull=True)
+            previous_object = State.objects.get(end__isnull=True, site=obj.site)
             if previous_object.state != obj.state:
                 previous_object.end = timezone.now()
                 previous_object.save()
         except ObjectDoesNotExist:
             if State.objects.all().exists():
                 log_error('ERROR State - Failed to end previous state.')
-        
+
         obj.save()
 
 admin.site.register(State, StateAdmin)

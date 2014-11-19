@@ -1,4 +1,5 @@
 from django.core.urlresolvers import reverse
+from django.contrib.sites.models import Site
 from django.test import TestCase
 
 from rest_framework import status
@@ -7,6 +8,8 @@ from rest_framework.test import APITestCase
 from beam.tests import TestUtils
 
 from state.models import State, get_current_state
+
+# from unittest import skip
 
 
 class StatusAdminTests(TestCase, TestUtils):
@@ -18,17 +21,31 @@ class StatusAdminTests(TestCase, TestUtils):
     def tearDown(self):
         self.client.logout()
 
-    def test_add_limit(self):
+    def test_add_status(self):
 
-        self.assertEqual(State.objects.all().count(), 0)
+        no_states = State.objects.all().count()
         response = self.client.post(
             reverse('admin:state_state_add'),
-            data={'state': State.RUNNING}
+            data={
+                'state': State.RUNNING,
+                'site': '0'
+            }
         )
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
-        self.assertEqual(State.objects.all().count(), 1)
+        self.assertEqual(State.objects.all().count(), no_states + 1)
 
-        self.assertEqual(get_current_state(), State.RUNNING)
+        response = self.client.post(
+            reverse('admin:state_state_add'),
+            data={
+                'state': State.OUT_OF_CASH,
+                'site': '1'
+            }
+        )
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(State.objects.all().count(), no_states + 2)
+
+        self.assertEqual(get_current_state(Site.objects.get(id=0)).state, State.RUNNING)
+        self.assertEqual(get_current_state(Site.objects.get(id=1)).state, State.OUT_OF_CASH)
 
 
 class StatusAPITests(APITestCase, TestUtils):

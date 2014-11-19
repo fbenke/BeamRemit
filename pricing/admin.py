@@ -23,11 +23,11 @@ class PricingAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'markup', 'fee', 'fee_currency', 'site')
+            return ('id', 'start', 'end', 'markup', 'fee', 'fee_currency', 'site',)
         else:
-            return ('id', 'start', 'end')
+            return ('id', 'start', 'end', 'fee_currency')
 
-    list_display = ('id', 'start', 'end', 'markup', 'fee', 'fee_currency', 'site')
+    list_display = ('id', 'start', 'end', 'markup', 'fee', 'site')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
@@ -83,19 +83,19 @@ class LimitAdmin(DoNotDeleteModelAdmin):
 
         calculated_fields = (
             'transaction_min_ghs', 'transaction_max_ghs',
-            'transaction_min_sll', 'transaction_max_sll'
-        )
+            'transaction_min_sll', 'transaction_max_sll',
+            'currency')
 
         if obj:
             return ('id', 'start', 'end', 'site', 'user_limit_basic',
                     'user_limit_complete', 'transaction_min',
-                    'transaction_max', 'currency') + calculated_fields
+                    'transaction_max') + calculated_fields
         else:
             return ('id', 'start', 'end') + calculated_fields
 
     list_display = ('id', 'start', 'end', 'site', 'user_limit_basic',
                     'user_limit_complete', 'transaction_min',
-                    'transaction_max', 'currency')
+                    'transaction_max')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:

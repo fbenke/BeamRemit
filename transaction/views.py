@@ -82,7 +82,7 @@ class CreateTransaction(GenericAPIView):
                     {'invoice_id': self.invoice_id,
                      'received_amount': self.object.received_amount,
                      'received_currency': self.object.received_currency,
-                     'operation_mode': get_current_state()},
+                     'operation_mode': get_current_state().state},
                     status=status.HTTP_201_CREATED)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

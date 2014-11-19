@@ -226,11 +226,13 @@ class TestUtils(object):
         comparison.save()
         return comparison
 
-    def _create_state(self, state=None):
+    def _create_state(self, state=None, site=None):
         if not state:
             state = State.RUNNING
-        app_state = State(state=state)
-        end_previous_object(State)
+        if not site:
+            site = Site.objects.get(id=0)
+        app_state = State(state=state, site=site)
+        end_previous_object_by_site(State, site)
         app_state.save()
         return app_state
 
