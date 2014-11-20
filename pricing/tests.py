@@ -222,20 +222,19 @@ class PricingConversionTests(TestCase, TestUtils):
         self.pricing_beam = self._create_default_pricing_beam()
         self.pricing_bae = self._create_default_pricing_bae()
 
-    def test_conversion_gbp(self):
+    def test_conversions(self):
         self.assertEqual(self.pricing_beam.calculate_received_amount(12, 'GBP', 'GH'), 61.7)
-        self.assertEqual(self.pricing_beam.calculate_received_amount(5, 'GBP', 'SL'), 34150)
-        self.assertEqual(self.pricing_bae.calculate_received_amount(12, 'GBP', 'GH'), 63)
-        self.assertEqual(self.pricing_bae.calculate_received_amount(5, 'GBP', 'SL'), 34850)
-
-    def test_conversion_usd(self):
-        self.assertEqual(self.pricing_beam.calculate_received_amount(18, 'USD', 'GH'), 57.9)
-        self.assertEqual(self.pricing_beam.calculate_received_amount(7, 'USD', 'SL'), 29880)
-        self.assertEqual(self.pricing_beam.calculate_received_amount(18, 'USD', 'SL'), 76830)
-        self.assertEqual(self.pricing_bae.calculate_received_amount(18, 'USD', 'GH'), 59.1)
         self.assertEqual(self.pricing_bae.calculate_received_amount(7, 'USD', 'SL'), 30500)
         self.assertEqual(self.pricing_bae.calculate_received_amount(18, 'USD', 'SL'), 78410)
 
     def test_convert_to_base_currency(self):
         self.assertEqual(self.exchange_rate.convert_to_base_currency(3.245, 'GBP'), 3.245)
         self.assertEqual(self.exchange_rate.convert_to_base_currency(20, 'USD'), 12.5)
+
+    def test_base_currency_exchange_rate(self):
+        self.assertEqual(self.exchange_rate.base_currency_conversion('GBP'), 1)
+        self.assertEqual(self.exchange_rate.base_currency_conversion('USD'), 5.3)
+
+    def test_get_exchange_rate_by_site(self):
+        self.assertEqual(self.exchange_rate.exchange_rate(Site.objects.get(id=0)), 5.3)
+        self.assertEqual(self.exchange_rate.exchange_rate(Site.objects.get(id=1)), 4400)
