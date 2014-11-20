@@ -23,7 +23,7 @@ class PricingAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'markup', 'fee', 'fee_currency', 'site',)
+            return ('id', 'start', 'end', 'markup', 'fee', 'fee_currency', 'site')
         else:
             return ('id', 'start', 'end', 'fee_currency')
 
@@ -33,6 +33,8 @@ class PricingAdmin(DoNotDeleteModelAdmin):
         if not obj.id:
             end_previous_object_by_site(Pricing, obj.site)
             obj.save()
+
+    list_filter = ('site',)
 
 admin.site.register(Pricing, PricingAdmin)
 
@@ -82,9 +84,8 @@ class LimitAdmin(DoNotDeleteModelAdmin):
     def get_readonly_fields(self, request, obj=None):
 
         calculated_fields = (
-            'transaction_min_ghs', 'transaction_max_ghs',
-            'transaction_min_sll', 'transaction_max_sll',
-            'currency')
+            'transaction_min_receiving', 'transaction_max_receiving',
+            'sending_currency', 'receiving_currency')
 
         if obj:
             return ('id', 'start', 'end', 'site', 'user_limit_basic',
@@ -101,5 +102,7 @@ class LimitAdmin(DoNotDeleteModelAdmin):
         if not obj.id:
             end_previous_object_by_site(Limit, obj.site)
             obj.save()
+
+    list_filter = ('site',)
 
 admin.site.register(Limit, LimitAdmin)

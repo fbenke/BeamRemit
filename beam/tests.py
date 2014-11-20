@@ -49,17 +49,15 @@ class TestUtils(object):
         }
     }
 
-    default_pricing = {
+    default_beam_pricing = {
         'markup': 0.03,
         'fee': 1,
-        'fee_currency': 'GBP',
         'site': 0
     }
 
     default_bae_pricing = {
         'markup': 0.02,
         'fee': 0,
-        'fee_currency': 'USD',
         'site': 1
     }
 
@@ -69,13 +67,20 @@ class TestUtils(object):
         'gbp_sll': 7040
     }
 
-    default_limit = {
+    default_beam_limit = {
         'transaction_min': 2,
         'transaction_max': 1000,
         'user_limit_basic': 40,
         'user_limit_complete': 500,
-        'currency': 'GBP',
         'site': 0
+    }
+
+    default_bae_limit = {
+        'transaction_min': 1,
+        'transaction_max': 100,
+        'user_limit_basic': 37,
+        'user_limit_complete': 324,
+        'site': 1
     }
 
     default_comparison = '{"gbpGhs": {"wu": 5.0932009, "mg": 5.158165}}'
@@ -155,12 +160,11 @@ class TestUtils(object):
             email=email,
             password=self.default_password)
 
-    def _create_pricing(self, markup, fee, fee_currency, site_id):
+    def _create_pricing(self, markup, fee, site_id):
         site = Site.objects.get(id=site_id)
         pricing = Pricing(
             markup=markup,
             fee=fee,
-            fee_currency=fee_currency,
             site=site
         )
         end_previous_object_by_site(Pricing, site)
@@ -171,7 +175,6 @@ class TestUtils(object):
         return self._create_pricing(
             markup=0.03,
             fee=2.9,
-            fee_currency='GBP',
             site_id=0
         )
 
@@ -179,7 +182,6 @@ class TestUtils(object):
         return self._create_pricing(
             markup=0.01,
             fee=1.2,
-            fee_currency='USD',
             site_id=1
         )
 
@@ -195,10 +197,24 @@ class TestUtils(object):
 
     def _create_default_exchange_rate(self):
         return self._create_exchange_rate(
-            gbp_ghs=self.default_exchange_rate['gbp_ghs'],
-            gbp_usd=self.default_exchange_rate['gbp_usd'],
-            gbp_sll=self.default_exchange_rate['gbp_sll']
+            gbp_ghs=5.3,
+            gbp_usd=1.6,
+            gbp_sll=7040
         )
+
+    def _create_limit(self, transaction_min, transaction_max, user_limit_basic,
+                      user_limit_complete, site_id):
+        site = Site.objects.get(id=site_id)
+        limit = Limit(
+            transaction_min=transaction_min,
+            transaction_max=transaction_max,
+            user_limit_basic=user_limit_basic,
+            user_limit_complete=user_limit_complete,
+            site=site
+        )
+        end_previous_object_by_site(Limit, site)
+        limit.save()
+        return limit
 
     def _create_default_limit_beam(self):
         return self._create_limit(
@@ -206,7 +222,6 @@ class TestUtils(object):
             transaction_max=1000,
             user_limit_basic=40,
             user_limit_complete=500,
-            currency='GBP',
             site_id=0
         )
 
@@ -216,7 +231,6 @@ class TestUtils(object):
             transaction_max=600,
             user_limit_basic=50,
             user_limit_complete=600,
-            currency='USD',
             site_id=1
         )
 
@@ -226,31 +240,16 @@ class TestUtils(object):
         comparison.save()
         return comparison
 
-    def _create_state(self, state=None, site=None):
+    def _create_state(self, state=None, site_id=None):
         if not state:
             state = State.RUNNING
-        if not site:
-            site = Site.objects.get(id=0)
+        if not site_id:
+            site_id = 0
+        site = Site.objects.get(id=site_id)
         app_state = State(state=state, site=site)
         end_previous_object_by_site(State, site)
         app_state.save()
         return app_state
-
-    def _create_limit(self, transaction_min, transaction_max, user_limit_basic,
-                      user_limit_complete, currency, site_id):
-        site = Site.objects.get(id=site_id)
-        limit = Limit(
-            transaction_min=transaction_min,
-            transaction_max=transaction_max,
-            user_limit_basic=user_limit_basic,
-            user_limit_complete=user_limit_complete,
-            currency=currency,
-            site=site
-        )
-        end_previous_object_by_site(Limit, site)
-        limit.save()
-        return limit
-
 
     def _create_transaction(self, sender, pricing, sent_amount, sent_currency,
                             received_amount, receiving_country):

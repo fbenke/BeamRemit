@@ -300,19 +300,15 @@ ENV_BUCKET_MAPPING = {
 
 AWS_BUCKET = ENV_BUCKET_MAPPING[ENV]
 
-# TODO: which of these are no longer needed?
-
 # Countries
 GHANA = 'GH'
 SIERRA_LEONE = 'SL'
-RECEIVING_COUNTRIES = (GHANA, SIERRA_LEONE)
 
 # Currencies
-GBP = 'GBP'
 USD = 'USD'
+GBP = 'GBP'
 LEONE = 'SLL'
 CEDI = 'GHS'
-SENDING_CURRENCIES = (USD, GBP)
 
 COUNTRY_CURRENCY = {
     GHANA: CEDI,
@@ -327,6 +323,11 @@ SITE_SENDING_CURRENCY = {
 SITE_RECEIVING_CURRENCY = {
     0: CEDI,
     1: LEONE
+}
+
+SITE_RECEIVING_COUNTRY = {
+    0: (GHANA,),
+    1: (SIERRA_LEONE,)
 }
 
 # Payment Processors

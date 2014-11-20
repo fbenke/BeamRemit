@@ -22,10 +22,9 @@ class PricingCurrent(APIView):
 
         response_dict['pricing_id'] = self.pricing.id
         response_dict['exchange_rate_id'] = self.exchange_rate.id
-        response_dict['beam_rate'] = self.pricing.exchange_rate
-        response_dict['beam_fee'] = self.pricing.fee
-        response_dict['beam_sending_currency'] = self.pricing.sending_currency
-        response_dict['beam_receiving_currency'] = self.pricing.receiving_currency
+        response_dict['rate'] = self.pricing.exchange_rate
+        response_dict['fee'] = self.pricing.fee
+        response_dict['fee_currency'] = self.pricing.fee_currency
         response_dict['comparison'] = self.comparison.price_comparison
         response_dict['comparison_retrieved'] = self.comparison.start
         response_dict['operation_mode'] = self.state

@@ -1,5 +1,6 @@
 import datetime
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.db import transaction as dbtransaction
@@ -201,7 +202,7 @@ class BeamProfile(UserenaBaseProfile):
             return False
         return True
 
-    def todays_transaction_volume(self, site, new_amount=0, new_currency=None):
+    def todays_transaction_volume(self, site, new_amount=0):
         try:
             now = timezone.now()
             today = datetime.datetime(now.year, now.month, now.day).replace(tzinfo=utc)
@@ -215,6 +216,7 @@ class BeamProfile(UserenaBaseProfile):
             amount = 0
 
             if new_amount:
+                new_currency = settings.SITE_SENDING_CURRENCY[site.id]
                 amount = get_current_exchange_rate().convert_to_base_currency(new_amount, new_currency)
 
             for t in transactions:

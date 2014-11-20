@@ -11,7 +11,8 @@ from django_countries.fields import CountryField
 
 from beam.utils import mails
 
-from pricing.models import Pricing, ExchangeRate, get_current_object
+from pricing.models import Pricing, ExchangeRate, get_current_exchange_rate,\
+    get_current_pricing
 
 
 class Recipient(models.Model):
@@ -44,15 +45,15 @@ class Transaction(models.Model):
     # Constants
     INIT = 'INIT'
     PAID = 'PAID'
-    INVALID = 'INVD'
     PROCESSED = 'PROC'
     CANCELLED = 'CANC'
+    INVALID = 'INVD'
 
     TRANSACTION_STATES = (
         (INIT, 'initialized'),
         (PAID, 'paid'),
-        (CANCELLED, 'cancelled'),
         (PROCESSED, 'processed'),
+        (CANCELLED, 'cancelled'),
         (INVALID, 'invalid')
     )
 
@@ -101,7 +102,7 @@ class Transaction(models.Model):
         'Bitcoins paid to Beam',
         null=True,
         blank=True,
-        help_text='BTC sent to Beam (before fees), determined by Payment Processor, exclusive BTC transaction fee'
+        help_text='BTC to be sent to Beam (before fees), determined by Payment Processor, exclusive BTC transaction fee'
     )
 
     received_amount = models.FloatField(
@@ -181,15 +182,18 @@ class Transaction(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.pricing = get_current_object(Pricing)
+            self.pricing = get_current_pricing(kwargs['site'])
+            self.exchange_rate = get_current_exchange_rate()
             self._generate_reference_number()
             self.received_amount = self.pricing.calculate_received_amount(
-                self.sent_amount, self.sent_currency, self.receiving_country)
+                self.sent_amount, self.receiving_country)
         else:
             original = Transaction.objects.get(pk=self.pk)
             if original.pricing != self.pricing:
                 raise ValidationError('Pricing cannot be changed after initialization')
-
+            if original.exchange_rate != self.exchange_rate:
+                raise ValidationError('Exchange Rate cannot be changed after initialization')
+        kwargs.pop('site', None)
         super(Transaction, self).save(*args, **kwargs)
 
     def set_invalid(self, commit=True):

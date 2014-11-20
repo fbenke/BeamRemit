@@ -45,7 +45,7 @@ def end_previous_object_by_site(cls, site):
         previous_object.end = timezone.now()
         previous_object.save()
     except ObjectDoesNotExist:
-        if cls.objects.all().exists():
+        if cls.objects.filter(site=site).exists():
             log_error('ERROR {} - Failed to end previous pricing.'.format(cls))
             raise ObjectDoesNotExist
 
@@ -106,12 +106,8 @@ class Pricing(models.Model):
         return get_current_exchange_rate().exchange_rate(self.site) * (1 - self.markup)
 
     @property
-    def sending_currency(self):
+    def fee_currency(self):
         return settings.SITE_SENDING_CURRENCY[self.site.id]
-
-    @property
-    def receiving_currency(self):
-        return settings.SITE_RECEIVING_CURRENCY[self.site.id]
 
     def calculate_received_amount(self, sent_amount, country):
 
@@ -127,8 +123,7 @@ class Pricing(models.Model):
 class ExchangeRate(models.Model):
 
     SENT_CURRENCY_FXR = {
-        settings.USD: 'gbp_usd',
-        settings.GBP: None
+        settings.USD: 'gbp_usd'
     }
 
     RECEIVING_CURRENCY_FXR = {
@@ -169,10 +164,9 @@ class ExchangeRate(models.Model):
         return amount / self.base_currency_conversion(currency)
 
     def base_currency_conversion(self, currency):
-        try:
-            getattr(self, self.SENT_CURRENCY_FXR[currency])
-        except TypeError:
+        if currency == settings.GBP:
             return 1
+        return getattr(self, self.SENT_CURRENCY_FXR[currency])
 
     def exchange_rate(self, site):
         sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
@@ -183,13 +177,6 @@ class ExchangeRate(models.Model):
 
 
 class Limit(models.Model):
-
-    def __init__(self, *args, **kwargs):
-        super(Limit, self).__init__(*args, **kwargs)
-        try:
-            self.exchange_rate = get_current_exchange_rate()
-        except ObjectDoesNotExist:
-            self.transaction_min_receiving = self.transaction_max_receiving = 0
 
     start = models.DateTimeField(
         'Start Time',
