@@ -213,14 +213,12 @@ class BeamProfile(UserenaBaseProfile):
                 paid_at__gte=today
             )
 
-            amount = 0
+            amount = new_amount
 
-            if new_amount:
-                new_currency = settings.SITE_SENDING_CURRENCY[site.id]
-                amount = get_current_exchange_rate().convert_to_base_currency(new_amount, new_currency)
+            sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
 
             for t in transactions:
-                amount = amount + t.exchange_rate.convert_to_base_currency(t.sent_amount, t.sent_currency)
+                amount = amount + t.exchange_rate.exchange_amount(t.sent_amount, t.sent_currency, sending_currency)
 
             return amount
 

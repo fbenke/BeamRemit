@@ -122,13 +122,10 @@ class Pricing(models.Model):
 
 class ExchangeRate(models.Model):
 
-    SENT_CURRENCY_FXR = {
-        settings.USD: 'gbp_usd'
-    }
-
-    RECEIVING_CURRENCY_FXR = {
+    CURRENCY_FXR = {
+        settings.USD: 'gbp_usd',
         settings.CEDI: 'gbp_ghs',
-        settings.LEONE: 'gbp_sll'
+        settings.LEONE: 'gbp_sll',
     }
 
     start = models.DateTimeField(
@@ -160,20 +157,23 @@ class ExchangeRate(models.Model):
         help_text='Exchange Rate from GBP to SSL without markup'
     )
 
-    def convert_to_base_currency(self, amount, currency):
-        return amount / self.base_currency_conversion(currency)
-
-    def base_currency_conversion(self, currency):
+    def _get_gbp_to_currency(self, currency):
         if currency == settings.GBP:
             return 1
-        return getattr(self, self.SENT_CURRENCY_FXR[currency])
+        return getattr(self, self.CURRENCY_FXR[currency])
+
+    def _get_exchange_rate(self, sending_currency, receiving_currency):
+        gbp_to_sending_currency = self._get_gbp_to_currency(sending_currency)
+        gbp_to_receiving_currency = self._get_gbp_to_currency(receiving_currency)
+        return gbp_to_receiving_currency / gbp_to_sending_currency
+
+    def exchange_amount(self, amount, sending_currency, receiving_currency):
+        return amount * self._get_exchange_rate(sending_currency, receiving_currency)
 
     def exchange_rate(self, site):
         sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
-        sent_gbp = self.base_currency_conversion(sending_currency)
         receiving_currency = settings.SITE_RECEIVING_CURRENCY[site.id]
-        gbp_receiving = getattr(self, self.RECEIVING_CURRENCY_FXR[receiving_currency])
-        return gbp_receiving / sent_gbp
+        return self._get_exchange_rate(sending_currency, receiving_currency)
 
 
 class Limit(models.Model):

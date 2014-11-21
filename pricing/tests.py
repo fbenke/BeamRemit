@@ -214,7 +214,6 @@ class LimitAPITests(APITestCase, TestUtils):
         self.assertEqual(response.data['transaction_max_receiving'], 2613600)
 
 
-@skip
 class PricingConversionTests(TestCase, TestUtils):
 
     def setUp(self):
@@ -222,19 +221,28 @@ class PricingConversionTests(TestCase, TestUtils):
         self.pricing_beam = self._create_default_pricing_beam()
         self.pricing_bae = self._create_default_pricing_bae()
 
-    def test_conversions(self):
-        self.assertEqual(self.pricing_beam.calculate_received_amount(12, 'GBP', 'GH'), 61.7)
-        self.assertEqual(self.pricing_bae.calculate_received_amount(7, 'USD', 'SL'), 30500)
-        self.assertEqual(self.pricing_bae.calculate_received_amount(18, 'USD', 'SL'), 78410)
-
-    def test_convert_to_base_currency(self):
-        self.assertEqual(self.exchange_rate.convert_to_base_currency(3.245, 'GBP'), 3.245)
-        self.assertEqual(self.exchange_rate.convert_to_base_currency(20, 'USD'), 12.5)
-
-    def test_base_currency_exchange_rate(self):
-        self.assertEqual(self.exchange_rate.base_currency_conversion('GBP'), 1)
-        self.assertEqual(self.exchange_rate.base_currency_conversion('USD'), 5.3)
-
     def test_get_exchange_rate_by_site(self):
         self.assertEqual(self.exchange_rate.exchange_rate(Site.objects.get(id=0)), 5.3)
         self.assertEqual(self.exchange_rate.exchange_rate(Site.objects.get(id=1)), 4400)
+
+    def test_get_gbp_to_currency(self):
+        self.assertEqual(self.exchange_rate._get_gbp_to_currency('GBP'), 1)
+        self.assertEqual(self.exchange_rate._get_gbp_to_currency('USD'), 1.6)
+        self.assertEqual(self.exchange_rate._get_gbp_to_currency('SLL'), 7040)
+        self.assertEqual(self.exchange_rate._get_gbp_to_currency('GHS'), 5.3)
+
+    def test_get_exchange_rate(self):
+        self.assertEqual(self.exchange_rate._get_exchange_rate('GBP', 'USD'), 1.6)
+        self.assertEqual(self.exchange_rate._get_exchange_rate('GBP', 'SLL'), 7040)
+        self.assertEqual(self.exchange_rate._get_exchange_rate('GBP', 'GHS'), 5.3)
+        self.assertEqual(self.exchange_rate._get_exchange_rate('USD', 'GBP'), 0.625)
+        self.assertEqual(self.exchange_rate._get_exchange_rate('USD', 'SLL'), 4400)
+        self.assertTrue(abs(self.exchange_rate._get_exchange_rate('USD', 'GHS') - 3.3125) < 0.00001)
+
+    def test_exchange_amount(self):
+        self.assertTrue(abs(self.exchange_rate.exchange_amount(12, 'GBP', 'USD') - 19.2) < 0.00001)
+        self.assertEqual(self.exchange_rate.exchange_amount(13, 'GBP', 'SLL'), 91520)
+        self.assertEqual(self.exchange_rate.exchange_amount(14, 'GBP', 'GHS'), 74.2)
+        self.assertEqual(self.exchange_rate.exchange_amount(15, 'USD', 'GBP'), 9.375)
+        self.assertEqual(self.exchange_rate.exchange_amount(16, 'USD', 'SLL'), 70400)
+        self.assertTrue(abs(self.exchange_rate.exchange_amount(17, 'USD', 'GHS') - 56.3125) < 0.00001)
