@@ -4,8 +4,9 @@ from django.db import transaction as dbtransaction
 from rest_framework import serializers
 from rest_framework import fields
 
-from transaction import models
-from transaction import constants
+from transaction import models, constants
+
+from pricing.models import get_current_pricing, get_current_exchange_rate
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -64,7 +65,12 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
 
     def save(self, *args, **kwargs):
         with dbtransaction.atomic():
+            self.object.pricing = get_current_pricing(self.site)
+            self.object.exchange_rate = get_current_exchange_rate()
+            self.object.generate_reference_number()
+            self.object.received_amount = self.object.pricing.calculate_received_amount(
+                self.object.sent_amount, self.object.receiving_country)
             self.object.recipient.save()
             self.object.recipient = models.Recipient.objects.get(id=self.object.recipient.id)
-            self.object.save(site=self.site)
+            self.object.save()
         return models.Transaction.objects.get(id=self.object.id)

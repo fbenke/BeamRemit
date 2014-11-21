@@ -11,8 +11,7 @@ from django_countries.fields import CountryField
 
 from beam.utils import mails
 
-from pricing.models import Pricing, ExchangeRate, get_current_exchange_rate,\
-    get_current_pricing
+from pricing.models import Pricing, ExchangeRate
 
 
 class Recipient(models.Model):
@@ -181,19 +180,12 @@ class Transaction(models.Model):
         return '{}'.format(self.id)
 
     def save(self, *args, **kwargs):
-        if not self.pk:
-            self.pricing = get_current_pricing(kwargs['site'])
-            self.exchange_rate = get_current_exchange_rate()
-            self._generate_reference_number()
-            self.received_amount = self.pricing.calculate_received_amount(
-                self.sent_amount, self.receiving_country)
-        else:
+        if self.pk:
             original = Transaction.objects.get(pk=self.pk)
             if original.pricing != self.pricing:
                 raise ValidationError('Pricing cannot be changed after initialization')
             if original.exchange_rate != self.exchange_rate:
                 raise ValidationError('Exchange Rate cannot be changed after initialization')
-        kwargs.pop('site', None)
         super(Transaction, self).save(*args, **kwargs)
 
     def set_invalid(self, commit=True):
@@ -208,7 +200,7 @@ class Transaction(models.Model):
         if commit:
             self.save()
 
-    def _generate_reference_number(self):
+    def generate_reference_number(self):
         self.reference_number = str(random.randint(10000, 999999))
 
     def post_paid(self):

@@ -251,39 +251,43 @@ class TestUtils(object):
         app_state.save()
         return app_state
 
-    def _create_transaction(self, sender, pricing, sent_amount, sent_currency,
-                            received_amount, receiving_country):
+    def _create_transaction(self, sender, pricing, exchange_rate, sent_amount,
+                            sent_currency, received_amount, receiving_country):
 
         recipient = Recipient(
             first_name=self.default_recipient_first_name,
             last_name=self.default_recipient_last_name,
             phone_number=self.default_recipient_phone_number)
-
         recipient.save()
+        recipient = Recipient.objects.get(id=recipient.id)
+        
         transaction = Transaction(
-            recipient=recipient,
             sender=sender,
+            recipient=recipient,
             pricing=pricing,
+            exchange_rate=exchange_rate,
             sent_amount=sent_amount,
             sent_currency=sent_currency,
             received_amount=received_amount,
             receiving_country=receiving_country,
+            reference_number='12345',
             state='PAID',
             paid_at=timezone.now()
         )
         transaction.save()
         return transaction
 
-    def _create_default_transaction(self, sender, pricing):
+    # def _create_default_transaction(self, sender):
 
-        return self._create_transaction(
-            sender=sender,
-            pricing=pricing,
-            sent_amount=10,
-            sent_currency='GBP',
-            received_amount=53,
-            receiving_country='GH',
-        )
+    #     return self._create_transaction(
+    #         sender=sender,
+    #         pricing=self._create_default_pricing_beam(),
+    #         exchange_rate=self._create_default_exchange_rate(),
+    #         sent_amount=10,
+    #         sent_currency='GBP',
+    #         received_amount=53 * 0.97,
+    #         receiving_country='GH',
+    #     )
 
 
 class SiteMappingTests(TestCase, TestUtils):
