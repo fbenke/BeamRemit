@@ -14,6 +14,8 @@ from transaction.models import Transaction
 
 from mock import patch
 
+# from unittest import skip
+
 
 class TransactionTests(APITestCase, TestUtils):
     plain_url_get_transaction = 'transaction:get'
@@ -43,8 +45,7 @@ class GetTransaction(TransactionTests):
 
     def test_get_transaction(self):
         user = self._create_fully_verified_user()
-        pricing = self._create_pricing()
-        t = self._create_default_transaction(user, pricing)
+        t = self._create_default_transaction(user)
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
         response = self.client.get(reverse(self.plain_url_get_transaction, args=(t.id,)))
@@ -65,8 +66,7 @@ class GetTransaction(TransactionTests):
 
     def test_get_transactions_not_found(self):
         user = self._create_fully_verified_user()
-        pricing = self._create_pricing()
-        transaction = self._create_default_transaction(user, pricing)
+        transaction = self._create_default_transaction(user)
         another_user = self._create_fully_verified_user()
         token = self._create_token(another_user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
@@ -102,13 +102,12 @@ class ViewTransactions(TransactionTests):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 0)
 
-        pricing = self._create_pricing()
-        self._create_default_transaction(user, pricing)
-        self._create_default_transaction(user, pricing)
+        self._create_default_transaction(user)
+        self._create_default_transaction(user)
         response = self.client.get(self.url_view_transactions)
         self.assertEqual(response.data['count'], 2)
 
-        transaction = self._create_default_transaction(user, pricing)
+        transaction = self._create_default_transaction(user)
         transaction.state = 'INIT'
         transaction.save()
         response = self.client.get(self.url_view_transactions)
@@ -126,7 +125,7 @@ class CreateTransaction(TransactionTests):
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
 
-        response = self.client.get(self.url_create_transaction)
+        response = self.client.get(self.url_create_transaction, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     @patch('transaction.views.CreateTransaction.post_save')
@@ -134,10 +133,12 @@ class CreateTransaction(TransactionTests):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        pricing = self._create_pricing()
+        pricing = self._create_default_pricing_beam()
+        exchange_rate = self._create_default_exchange_rate()
 
         data = {
             'pricing_id': pricing.id,
+            'exchange_rate_id': exchange_rate.id,
             'sent_amount': 500,
             'sent_currency': 'EUR',
             'receiving_country': 'USA',
@@ -147,21 +148,49 @@ class CreateTransaction(TransactionTests):
                 'phone_number': '0509392087'
             }
         }
-        response = self.client.post(self.url_create_transaction, data)
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('Select a valid choice.' in response.data['sent_currency'][0])
         self.assertTrue('Select a valid choice.', response.data['receiving_country'][0])
+
+    @patch('transaction.views.CreateTransaction.post_save')
+    def test_site_curency_mismatch(self, mock_transaction):
+        user = self._create_fully_verified_user()
+        token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        pricing = self._create_default_pricing_beam()
+        exchange_rate = self._create_default_exchange_rate()
+
+        data = {
+            'pricing_id': pricing.id,
+            'exchange_rate_id': exchange_rate.id,
+            'sent_amount': 500,
+            'sent_currency': 'USD',
+            'receiving_country': 'SLL',
+            'recipient': {
+                'first_name': 'Nikunj',
+                'last_name': 'Handa',
+                'phone_number': '0509392087'
+            }
+        }
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(response.data['sent_currency'][0], constants.SENT_CURRENCY_NOT_SUPPORTED)
+        self.assertTrue(response.data['receiving_country'][0], constants.COUNTRY_NOT_SUPPORTED)
 
     @patch('transaction.views.CreateTransaction.post_save')
     def test_pricing_expired(self, mock_transaction):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        self._create_pricing()
-        pricing = self._create_pricing()
+        self._create_default_pricing_beam()
+        pricing = self._create_default_pricing_beam()
+        self._create_default_exchange_rate()
+        exchange_rate = self._create_default_exchange_rate()
 
         data = {
             'pricing_id': pricing.id - 1,
+            'exchange_rate_id': exchange_rate.id,
             'sent_amount': 500,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -171,7 +200,13 @@ class CreateTransaction(TransactionTests):
                 'phone_number': '0509392087'
             }
         }
-        response = self.client.post(self.url_create_transaction, data)
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.PRICING_EXPIRED)
+
+        data['pricing_id'] = pricing.id
+        data['exchange_rate_id'] = exchange_rate.id - 1
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.PRICING_EXPIRED)
 
@@ -180,10 +215,12 @@ class CreateTransaction(TransactionTests):
         user = self._create_activated_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        pricing = self._create_pricing()
+        pricing = self._create_default_pricing_beam()
+        exchange_rate = self._create_default_exchange_rate()
 
         data = {
             'pricing_id': pricing.id,
+            'exchange_rate_id': exchange_rate.id,
             'sent_amount': 500,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -193,7 +230,7 @@ class CreateTransaction(TransactionTests):
                 'phone_number': '0509392087'
             }
         }
-        response = self.client.post(self.url_create_transaction, data)
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.PROFILE_INCOMPLETE)
 
@@ -202,12 +239,14 @@ class CreateTransaction(TransactionTests):
         user = self._create_user_with_profile()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        self._create_default_limit()
-        pricing = self._create_pricing()
+        self._create_default_limit_beam()
+        pricing = self._create_default_pricing_beam()
+        exchange_rate = self._create_default_exchange_rate()
 
         self._create_transaction(
             sender=user,
             pricing=pricing,
+            exchange_rate=exchange_rate,
             sent_amount=40,
             sent_currency='GBP',
             received_amount=265,
@@ -216,6 +255,7 @@ class CreateTransaction(TransactionTests):
 
         data = {
             'pricing_id': pricing.id,
+            'exchange_rate_id': exchange_rate.id,
             'sent_amount': 10,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -226,7 +266,7 @@ class CreateTransaction(TransactionTests):
             }
         }
 
-        response = self.client.post(self.url_create_transaction, data)
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.ADDITIONAL_DOCUMENTS_MISSING)
 
@@ -235,12 +275,14 @@ class CreateTransaction(TransactionTests):
         user = self._create_user_with_uploaded_documents()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        self._create_default_limit()
-        pricing = self._create_pricing()
+        self._create_default_limit_beam()
+        pricing = self._create_default_pricing_beam()
+        exchange_rate = self._create_default_exchange_rate()
 
         self._create_transaction(
             sender=user,
             pricing=pricing,
+            exchange_rate=exchange_rate,
             sent_amount=40,
             sent_currency='GBP',
             received_amount=265,
@@ -249,6 +291,7 @@ class CreateTransaction(TransactionTests):
 
         data = {
             'pricing_id': pricing.id,
+            'exchange_rate_id': exchange_rate.id,
             'sent_amount': 10,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -259,7 +302,7 @@ class CreateTransaction(TransactionTests):
             }
         }
 
-        response = self.client.post(self.url_create_transaction, data)
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.DOCUMENTS_NOT_VERIFIED)
 
@@ -268,11 +311,14 @@ class CreateTransaction(TransactionTests):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        self._create_default_limit()
-        pricing = self._create_pricing()
+        self._create_default_limit_beam()
+        pricing = self._create_default_pricing_beam()
+        exchange_rate = self._create_default_exchange_rate()
+
         self._create_transaction(
             sender=user,
             pricing=pricing,
+            exchange_rate=exchange_rate,
             sent_amount=1000,
             sent_currency='GBP',
             received_amount=5300,
@@ -281,6 +327,7 @@ class CreateTransaction(TransactionTests):
 
         data = {
             'pricing_id': pricing.id,
+            'exchange_rate_id': exchange_rate.id,
             'sent_amount': 10,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -291,7 +338,7 @@ class CreateTransaction(TransactionTests):
             }
         }
 
-        response = self.client.post(self.url_create_transaction, data)
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.TRANSACTION_LIMIT_EXCEEDED)
 
@@ -300,14 +347,17 @@ class CreateTransaction(TransactionTests):
         user = self._create_user_with_profile()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        self._create_default_limit()
-        self._create_state()
-        pricing = self._create_pricing()
-
+        self._create_default_limit_beam()
+        self._create_state(site_id=0)
+        self._create_state(site_id=1)
+        pricing_beam = self._create_default_pricing_beam()
+        pricing_bae = self._create_default_pricing_bae()
+        exchange_rate = self._create_default_exchange_rate()
         mock_payment_initiation.return_value = '12345'
 
         data = {
-            'pricing_id': pricing.id,
+            'pricing_id': pricing_beam.id,
+            'exchange_rate_id': exchange_rate.id,
             'sent_amount': 10,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -318,7 +368,7 @@ class CreateTransaction(TransactionTests):
             }
         }
 
-        response = self.client.post(self.url_create_transaction, data)
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['invoice_id'], '12345')
         self.assertEqual(response.data['received_amount'], 51.5)
@@ -328,7 +378,8 @@ class CreateTransaction(TransactionTests):
         mock_payment_initiation.return_value = '67890'
 
         data = {
-            'pricing_id': pricing.id,
+            'pricing_id': pricing_bae.id,
+            'exchange_rate_id': exchange_rate.id,
             'sent_amount': 17,
             'sent_currency': 'USD',
             'receiving_country': 'SL',
@@ -339,10 +390,10 @@ class CreateTransaction(TransactionTests):
             }
         }
 
-        response = self.client.post(self.url_create_transaction, data)
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['invoice_id'], '67890')
-        self.assertEqual(response.data['received_amount'], 72560)
+        self.assertEqual(response.data['received_amount'], 74060)
         self.assertEqual(response.data['received_currency'], 'SLL')
         self.assertEqual(response.data['operation_mode'], 'UP')
 
@@ -359,8 +410,7 @@ class AdminTests(TestCase, TestUtils):
 
     def test_cancel_transaction(self):
         user = self._create_user_with_profile()
-        pricing = self._create_pricing()
-        transaction = self._create_default_transaction(user, pricing)
+        transaction = self._create_default_transaction(user)
 
         data = {
             'state': 'CANC',
@@ -378,8 +428,7 @@ class AdminTests(TestCase, TestUtils):
 
     def test_comment_transaction(self):
         user = self._create_user_with_profile()
-        pricing = self._create_pricing()
-        transaction = self._create_default_transaction(user, pricing)
+        transaction = self._create_default_transaction(user)
 
         data = {
             'state': 'INIT',
@@ -399,8 +448,7 @@ class AdminTests(TestCase, TestUtils):
     def test_process_transaction(self):
         no_emails = len(mailbox.outbox)
         user = self._create_user_with_profile()
-        pricing = self._create_pricing()
-        transaction = self._create_default_transaction(user, pricing)
+        transaction = self._create_default_transaction(user)
 
         data = {
             'state': 'PROC',
@@ -421,11 +469,13 @@ class AdminTests(TestCase, TestUtils):
     def test_process_transaction_bae(self):
         no_emails = len(mailbox.outbox)
         user = self._create_user_with_profile()
-        pricing = self._create_pricing()
+        pricing = self._create_default_pricing_beam()
+        exchange_rate = self._create_default_exchange_rate()
 
         transaction = self._create_transaction(
             sender=user,
             pricing=pricing,
+            exchange_rate=exchange_rate,
             sent_amount=10,
             sent_currency='USD',
             received_amount=29880,

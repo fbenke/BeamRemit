@@ -19,7 +19,7 @@ from datetime import timedelta
 import datetime
 
 from mock import patch
-from unittest import skip
+# from unittest import skip
 
 from account import constants
 from account.models import DocumentStatusChange, BeamProfile as Profile

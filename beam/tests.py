@@ -260,7 +260,7 @@ class TestUtils(object):
             phone_number=self.default_recipient_phone_number)
         recipient.save()
         recipient = Recipient.objects.get(id=recipient.id)
-        
+
         transaction = Transaction(
             sender=sender,
             recipient=recipient,
@@ -277,17 +277,17 @@ class TestUtils(object):
         transaction.save()
         return transaction
 
-    # def _create_default_transaction(self, sender):
+    def _create_default_transaction(self, sender):
 
-    #     return self._create_transaction(
-    #         sender=sender,
-    #         pricing=self._create_default_pricing_beam(),
-    #         exchange_rate=self._create_default_exchange_rate(),
-    #         sent_amount=10,
-    #         sent_currency='GBP',
-    #         received_amount=53 * 0.97,
-    #         receiving_country='GH',
-    #     )
+        return self._create_transaction(
+            sender=sender,
+            pricing=self._create_default_pricing_beam(),
+            exchange_rate=self._create_default_exchange_rate(),
+            sent_amount=10,
+            sent_currency='GBP',
+            received_amount=51.41,
+            receiving_country='GH',
+        )
 
 
 class SiteMappingTests(TestCase, TestUtils):

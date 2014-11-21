@@ -12,7 +12,7 @@ from beam.tests import TestUtils
 from pricing.models import Pricing, ExchangeRate, Comparison, Limit,\
     get_current_object, get_current_object_by_site
 
-from unittest import skip
+# from unittest import skip
 
 
 class PricingAdminTests(TestCase, TestUtils):
