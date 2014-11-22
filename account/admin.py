@@ -44,13 +44,13 @@ class BeamProfileAdmin(admin.ModelAdmin):
         return '{} {}'.format(obj.user.first_name, obj.user.last_name)
 
     readonly_fields = (
-        'user_url', 'user_email', 'user_name', 'date_of_birth',
-        'street', 'post_code', 'city', 'country', 'accepted_privacy_policy'
+        'user_url', 'user_email', 'user_name', 'date_of_birth', 'street', 'post_code',
+        'city', 'country', 'accepted_privacy_policy', 'signup_site_id'
     )
 
     fieldsets = (
         (None, {
-            'fields': ('user_url', 'user_email', 'user_name')
+            'fields': ('user_url', 'user_email', 'user_name', 'signup_site_id')
         }),
         ('Basic Information', {
             'fields': (

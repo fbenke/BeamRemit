@@ -14,8 +14,6 @@ from transaction.models import Transaction
 
 from account.utils import AccountException
 
-from pricing.models import get_current_exchange_rate
-
 from beam.utils.log import log_error
 
 
@@ -141,6 +139,11 @@ class BeamProfile(UserenaBaseProfile):
     accepted_privacy_policy = models.BooleanField(
         'Privacy Policy accepted',
         default=True
+    )
+
+    signup_site_id = models.IntegerField(
+        'Signed Up via Site (Id)',
+        null=True,
     )
 
     def get_document_state(self, document):

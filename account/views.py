@@ -97,6 +97,9 @@ class Signup(APIView):
             user = serializer.save()
 
             if user:
+                # store site the user signed up at
+                user.profile.signup_site_id = get_site_by_request(self.request).id
+                user.profile.save()
 
                 send_activation_email(user, request)
 

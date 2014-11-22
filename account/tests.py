@@ -92,6 +92,26 @@ class SignupTests(AccountTests):
         self.assertTrue(response.data['token'] is not None)
         self.assertTrue(response.data['id'] is not None)
 
+    def test_signup_site(self):
+        email = self.emails.next()
+        data = {
+            'email': email,
+            'password1': self.default_password,
+            'password2': self.default_password,
+            'acceptedPrivacyPolicy': True,
+        }
+        self.client.post(self.url_signup, data, HTTP_REFERER='http://dev.bitcoinagainstebola.org')
+        self.assertEqual(User.objects.get(email=email).profile.signup_site_id, 1)
+        email = self.emails.next()
+        data = {
+            'email': email,
+            'password1': self.default_password,
+            'password2': self.default_password,
+            'acceptedPrivacyPolicy': True,
+        }
+        self.client.post(self.url_signup, data, HTTP_REFERER='http://dev.beamremit.com')
+        self.assertEqual(User.objects.get(email=email).profile.signup_site_id, 0)
+
     def test_signup_validation_empty(self):
         'empty post'
         response = self.client.post(self.url_signup, {})
