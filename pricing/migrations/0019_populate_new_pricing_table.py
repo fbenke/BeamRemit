@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-from south.utils import datetime_utils as datetime
-from south.db import db
 from south.v2 import DataMigration
-from django.db import models
+
 
 class Migration(DataMigration):
 
@@ -12,12 +10,6 @@ class Migration(DataMigration):
 
             site_beam = orm['sites.Site'].objects.get(id=0)
             site_bae = orm['sites.Site'].objects.get(id=1)
-
-            if site_beam.name != 'Beam':
-                raise RuntimeError('Assumed wrong Site mapping')
-
-            if site_bae.name != 'Bitcoin Against Ebola':
-                raise RuntimeError('Assumed wrong Site mapping')
 
             'create Beam pricing'
             pricing_beam = orm.Pricing(
