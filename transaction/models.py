@@ -259,7 +259,7 @@ class Transaction(models.Model):
 
         context = {
             'protocol': settings.PROTOCOL,
-            'site': Site.objects.get_current(),
+            'site': self.pricing.site,
             'first_name': self.sender.first_name,
             'sent_amount': self.sent_amount,
             'sent_currency': self.sent_currency,
