@@ -9,7 +9,7 @@ class Migration(DataMigration):
     )
 
     def forwards(self, orm):
-        orm.Pricing.objects.all().delete()
+        orm.Pricing.objects.filter(id__lt=999).delete()
 
     def backwards(self, orm):
         for exchange_rate in orm.ExchangeRate.objects.all():

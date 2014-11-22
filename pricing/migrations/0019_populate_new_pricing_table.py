@@ -54,8 +54,11 @@ class Migration(DataMigration):
                     raise RuntimeError('Invalid Sent Currency')
                 t.save()
 
+        dummy_pricing = orm.Pricing.objects.get(id=999)
+        dummy_pricing.delete()
+
     def backwards(self, orm):
-        "Write your backwards methods here."
+        pass
 
     models = {
         u'auth.group': {

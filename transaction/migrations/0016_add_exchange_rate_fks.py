@@ -1,20 +1,35 @@
 # -*- coding: utf-8 -*-
 from south.v2 import DataMigration
+from django.utils import timezone
 
 
 class Migration(DataMigration):
 
     def forwards(self, orm):
-        # Note: Don't use "from appname.models import ModelName". 
+        # Note: Don't use "from appname.models import ModelName".
         # Use orm.ModelName to refer to models in this application,
         # and orm['appname.ModelName'] for models in other applications.
+
+        dummy_pricing = orm['pricing.pricing'](
+            id=999,
+            start=timezone.now(),
+            gbp_ghs=0,
+            gbp_sll=0,
+            gbp_usd=0,
+            markup=0,
+            fee_gbp=0,
+            fee_usd=0
+        )
+
+        dummy_pricing.save()
+
         for transaction in orm.Transaction.objects.all():
             transaction.exchange_rate = orm['pricing.exchangerate'].objects.get(id=transaction.pricing.id)
+            transaction.pricing = dummy_pricing
             transaction.save()
 
     def backwards(self, orm):
         for transaction in orm.Transaction.objects.all():
-            print 'yo'
             transaction.pricing = orm['pricing.pricing'].objects.get(id=transaction.exchange_rate.id)
             transaction.save()
 
