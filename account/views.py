@@ -43,7 +43,7 @@ def send_activation_email(user, request, activation_key=None):
         'user': user,
         'protocol': settings.PROTOCOL,
         'activation_days': userena_settings.USERENA_ACTIVATION_DAYS,
-        'activation_key': activation_key,
+        'activation_link': settings.MAIL_ACTIVATION_URL.format(activation_key),
         'site': get_site_by_request(request)
     }
 
@@ -268,21 +268,10 @@ class Email_Change(APIView):
             # the purpose is rewriting the following part where the emails are sent out
             context = {
                 'user': user,
-                'new_email': user.userena_signup.email_unconfirmed,
                 'protocol': settings.PROTOCOL,
-                'confirmation_key': user.userena_signup.email_confirmation_key,
+                'email_change_link': settings.MAIL_EMAIL_CHANGE_CONFIRM_URL.format(user.userena_signup.email_confirmation_key),
                 'site': get_site_by_request(request)
             }
-
-            # mail to old email account
-            mails.send_mail(
-                subject_template_name=settings.MAIL_CHANGE_EMAIL_OLD_SUBJECT,
-                email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_TEXT,
-                html_email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_HTML,
-                to_email=user.email,
-                from_email=settings.BEAM_MAIL_ADDRESS,
-                context=context
-            )
 
             # mail to new email account
             mails.send_mail(
@@ -294,6 +283,18 @@ class Email_Change(APIView):
                 context=context
             )
 
+            context['support'] = settings.BEAM_SUPPORT
+            context['new_email'] = user.userena_signup.email_unconfirmed
+
+            # mail to old email account
+            mails.send_mail(
+                subject_template_name=settings.MAIL_CHANGE_EMAIL_OLD_SUBJECT,
+                email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_TEXT,
+                html_email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_HTML,
+                to_email=user.email,
+                from_email=settings.BEAM_MAIL_ADDRESS,
+                context=context
+            )
             return Response()
 
         except AccountException as e:
@@ -327,12 +328,14 @@ class PasswordReset(APIView):
                 if not serializer.object.is_active:
                     raise AccountException(constants.USER_ACCOUNT_DISABLED)
 
+                uid = urlsafe_base64_encode(force_bytes(serializer.object.pk))
+                token = token_generator.make_token(serializer.object)
+
                 context = {
                     'email': serializer.object.email,
                     'site': get_site_by_request(request),
-                    'uid': urlsafe_base64_encode(force_bytes(serializer.object.pk)),
+                    'password_reset_link': settings.MAIL_PASSWORD_RESET_URL.format(uid, token),
                     'first_name': serializer.object.first_name,
-                    'token': token_generator.make_token(serializer.object),
                     'protocol': settings.PROTOCOL,
                 }
 

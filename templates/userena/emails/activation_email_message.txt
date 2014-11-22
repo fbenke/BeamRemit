@@ -1,9 +1,8 @@
-{% load account_extras %}
 Hello! Thank you for signing up for {{ site.name }}.
 
 To activate your account, please click on the link below:
 
-{{ protocol }}://{{ site.domain }}/{% activation_link activation_key%}
+{{ protocol }}://{{ site.domain }}/{{activation_link}}
 
 Sincerely,
 

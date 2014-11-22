@@ -1,4 +1,3 @@
-{% load account_extras %}
 <html>
 <body>
 {% if user.first_name %}
@@ -13,7 +12,7 @@
   A verification link has been sent to the new address: {{ new_email }}. Click on the verification link to activate your new email address.
 </p>
 <p>
-  If you didn’t request to change your {{site.name}} email address, please contact our support team immediately at {% get_support %}.
+  If you didn’t request to change your {{site.name}} email address, please contact our support team immediately at {{ support }}.
 </p>
 <p>
   Sincerely,<br/>
