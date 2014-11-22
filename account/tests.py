@@ -540,6 +540,9 @@ class ProfileTests(AccountTests):
         self.assertEqual(user.profile.date_of_birth, datetime.date(1985, 10, 4))
         self.assertEqual(user.profile.street, 'Platz der Vereinten Nationen 23')
         self.assertEqual(user.profile.post_code, '10249')
+        self.assertEqual(len(DocumentStatusChange.objects.filter(profile=user.profile)), 0)
+        response = self.client.patch(self.url_profile, self.default_profile)
+        self.assertEqual(len(DocumentStatusChange.objects.filter(profile=user.profile)), 0)
 
     def test_partially_update_user(self):
         user = self._create_activated_user()

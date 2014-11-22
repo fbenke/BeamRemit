@@ -443,8 +443,9 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
                 passport_params = ['first_name', 'last_name', 'date_of_birth']
                 por_params = ['street', 'post_code', 'city', 'country']
 
-                # need to reupload passport
-                if (list(set(passport_params) & set(changed_params))):
+                # need to reupload identification doc
+                if ((list(set(passport_params) & set(changed_params))) and
+                        request.user.profile.identification_state != Profile.EMPTY):
                     request.user.profile.update_document_state(Profile.IDENTIFICATION, Profile.EMPTY)
                     request.user.profile.identification_issue_date = None
                     request.user.profile.identification_expiry_date = None
@@ -452,7 +453,8 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
                     request.user.profile.save()
 
                 # need to reupload proof of residence
-                if (list(set(por_params) & set(changed_params))):
+                if ((list(set(por_params) & set(changed_params))) and
+                        request.user.profile.proof_of_residence_state != Profile.EMPTY):
                     request.user.profile.update_document_state(Profile.PROOF_OF_RESIDENCE, Profile.EMPTY)
 
                 # clear response data
