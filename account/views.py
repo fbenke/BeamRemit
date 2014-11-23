@@ -190,6 +190,11 @@ class ActivationResend(APIView):
 
                     raise AccountException(constants.USER_ACCOUNT_ALREADY_ACTIVATED)
 
+                # handle deactivated account
+                if serializer.object.userena_signup.activation_key == userena_settings.USERENA_ACTIVATED:
+
+                    raise AccountException(constants.USER_ACCOUNT_DISABLED)
+
                 new_activation_key = reissue_activation(serializer.object.userena_signup.activation_key)
 
                 if new_activation_key:

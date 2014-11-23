@@ -263,6 +263,16 @@ class ActivationTests(AccountTests):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.USER_ACCOUNT_ALREADY_ACTIVATED)
 
+    def test_activation_resend_account_disabled(self):
+        email = self.emails.next()
+        self._create_activated_user(email=email)
+        user = User.objects.get(email=email)
+        user.is_active = False
+        user.save()
+        response = self.client.post(self.url_activate_resend, {'email': email})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.USER_ACCOUNT_DISABLED)
+
     def test_activation_overwritten_key(self):
         email = self.emails.next()
         user = self._create_inactive_user(email=email)
