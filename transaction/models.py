@@ -174,7 +174,7 @@ class Transaction(models.Model):
 
     @property
     def fee(self):
-        return getattr(self.pricing, Pricing.SENT_CURRENCY_FEE[self.sent_currency])
+        return self.pricing.fee
 
     def __unicode__(self):
         return '{}'.format(self.id)
