@@ -126,8 +126,11 @@ class AuthTokenSerializer(serializers.Serializer):
         if email and password:
             user = authenticate(identification=email, password=password)
             if user:
-                if not user.is_active:
+                if not user.is_active and user.userena_signup.activation_key ==\
+                        userena_settings.USERENA_ACTIVATED:
                     raise serializers.ValidationError(constants.USER_ACCOUNT_DISABLED)
+                if not user.is_active:
+                    raise serializers.ValidationError(constants.USER_ACCOUNT_NOT_ACTIVATED_YET)
                 if user.is_staff:
                     raise serializers.ValidationError(constants.ADMIN_ACCOUNT)
                 attrs['user'] = user

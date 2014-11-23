@@ -313,6 +313,16 @@ class SigninTests(AccountTests):
         self._create_inactive_user(email=email)
         response = self.client.post(self.url_signin, {'email': email, 'password': self.default_password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['non_field_errors'][0], constants.USER_ACCOUNT_NOT_ACTIVATED_YET)
+
+    def test_singin_with_decativated_account(self):
+        email = self.emails.next()
+        self._create_activated_user(email=email)
+        user = User.objects.get(email=email)
+        user.is_active = False
+        user.save()
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.default_password})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['non_field_errors'][0], constants.USER_ACCOUNT_DISABLED)
 
     def test_signin_with_admin_account(self):
