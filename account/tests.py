@@ -459,9 +459,19 @@ class PasswordResetTests(AccountTests):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.EMAIL_UNKNOWN)
 
-    def test_password_reset_fail_user_incative(self):
+    def test_password_reset_fail_user_inactive(self):
         email = self.emails.next()
         self._create_inactive_user(email)
+        response = self.client.post(self.url_password_reset, {'email': email})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.USER_ACCOUNT_NOT_ACTIVATED_YET)
+
+    def test_password_reset_fail_user_deactivated(self):
+        email = self.emails.next()
+        self._create_activated_user(email)
+        user = User.objects.get(email=email)
+        user.is_active = False
+        user.save()
         response = self.client.post(self.url_password_reset, {'email': email})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.USER_ACCOUNT_DISABLED)

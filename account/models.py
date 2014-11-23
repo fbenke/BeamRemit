@@ -9,6 +9,7 @@ from django.utils.timezone import utc
 from django_countries.fields import CountryField
 
 from userena.models import UserenaBaseProfile
+from userena import settings as userena_settings
 
 from transaction.models import Transaction
 
@@ -204,6 +205,11 @@ class BeamProfile(UserenaBaseProfile):
         ):
             return False
         return True
+
+    @property
+    def account_deactivated(self):
+        return (self.user.userena_signup.activation_key == userena_settings.USERENA_ACTIVATED
+                and not self.user.is_active)
 
     def todays_transaction_volume(self, site, new_amount=0):
         try:

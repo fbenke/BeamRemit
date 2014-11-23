@@ -191,7 +191,7 @@ class ActivationResend(APIView):
                     raise AccountException(constants.USER_ACCOUNT_ALREADY_ACTIVATED)
 
                 # handle deactivated account
-                if serializer.object.userena_signup.activation_key == userena_settings.USERENA_ACTIVATED:
+                if serializer.object.profile.account_deactivated:
 
                     raise AccountException(constants.USER_ACCOUNT_DISABLED)
 
@@ -330,8 +330,11 @@ class PasswordReset(APIView):
 
             if serializer.is_valid():
 
-                if not serializer.object.is_active:
+                if serializer.object.profile.account_deactivated:
                     raise AccountException(constants.USER_ACCOUNT_DISABLED)
+
+                if not serializer.object.is_active:
+                    raise AccountException(constants.USER_ACCOUNT_NOT_ACTIVATED_YET)
 
                 uid = urlsafe_base64_encode(force_bytes(serializer.object.pk))
                 token = token_generator.make_token(serializer.object)
