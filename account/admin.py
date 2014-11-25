@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
+from django.contrib.sites.admin import SiteAdmin
 
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.admin import TokenAdmin
@@ -176,6 +177,11 @@ class CustomTokenAdmin(TokenAdmin):
     readonly_fields = ('user_id', 'user_email', 'key')
     fields = readonly_fields
 
+
+class CustomSiteAdmin(SiteAdmin):
+
+    list_display = ('id', 'domain', 'name')
+
 try:
     admin.site.unregister(User)
 except admin.sites.NotRegistered:
@@ -187,3 +193,10 @@ try:
 except admin.sites.NotRegistered:
     pass
 admin.site.register(Token, CustomTokenAdmin)
+
+
+try:
+    admin.site.unregister(Site)
+except admin.sites.NotRegistered:
+    pass
+admin.site.register(Site, CustomSiteAdmin)
