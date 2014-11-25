@@ -39,6 +39,9 @@ class TransactionAdmin(admin.ModelAdmin):
             elif obj.state == Transaction.CANCELLED:
                 obj.cancelled_at = timezone.now()
 
+            elif obj.state == Transaction.PAID:
+                obj.paid_at = timezone.now()
+
         obj.save()
 
     def sender_url(self, obj):
