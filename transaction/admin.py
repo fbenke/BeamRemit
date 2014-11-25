@@ -119,7 +119,7 @@ class TransactionAdmin(admin.ModelAdmin):
 
     list_display = (
         'id', 'sender_email', 'reference_number', 'state', 'sent_amount',
-        'sent_currency', 'receiving_country'
+        'sent_currency', 'received_amount', 'receiving_country'
     )
 
     list_filter = ('state', 'initialized_at', 'paid_at')
