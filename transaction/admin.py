@@ -56,6 +56,13 @@ class TransactionAdmin(admin.ModelAdmin):
     pricing_url.allow_tags = True
     pricing_url.short_description = 'pricing'
 
+    def exchange_rate_url(self, obj):
+        path = settings.API_BASE_URL + '/admin/pricing/exchangerate'
+        return '<a href="{}/{}/">{}</a>'.format(path, obj.exchange_rate.id, obj.exchange_rate.id)
+
+    exchange_rate_url.allow_tags = True
+    exchange_rate_url.short_description = 'exchange_rate'
+
     def sender_email(self, obj):
         return obj.sender.email
 
@@ -68,7 +75,7 @@ class TransactionAdmin(admin.ModelAdmin):
     recipient_url.short_description = 'recipient'
 
     def amount_paid_to_beam(self, obj):
-        return obj.sent_amount + obj.fee
+        return obj.sent_amount + obj.pricing.fee
 
     def payment_processor_invoice(self, obj):
         path = settings.API_BASE_URL + '/admin/btc_payment/gocoininvoice'
@@ -80,7 +87,7 @@ class TransactionAdmin(admin.ModelAdmin):
     payment_processor_invoice.short_description = 'invoice'
 
     readonly_fields = (
-        'id', 'recipient_url', 'pricing_url', 'sender_url', 'receiving_country',
+        'id', 'recipient_url', 'pricing_url', 'exchange_rate_url', 'sender_url', 'receiving_country',
         'sent_amount', 'sent_currency', 'received_amount', 'amount_paid_to_beam',
         'amount_btc', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
         'cancelled_at', 'invalidated_at', 'received_currency', 'payment_processor_invoice'
@@ -88,7 +95,8 @@ class TransactionAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('id', 'pricing_url', 'payment_processor_invoice', 'amount_btc', 'reference_number')
+            'fields': ('id', 'pricing_url', 'exchange_rate_url', 'payment_processor_invoice',
+            'amount_btc', 'reference_number')
         }),
         ('Sender', {
             'fields': (
@@ -111,7 +119,7 @@ class TransactionAdmin(admin.ModelAdmin):
 
     list_display = (
         'id', 'sender_email', 'reference_number', 'state', 'sent_amount',
-        'sent_currency', 'receiving_country'
+        'sent_currency', 'received_amount', 'receiving_country'
     )
 
     list_filter = ('state', 'initialized_at', 'paid_at')

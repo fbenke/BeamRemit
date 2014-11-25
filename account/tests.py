@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator as token_generator
+from django.contrib.sites.models import Site
+
 from django.core.urlresolvers import reverse
 from django.core import mail as mailbox
 from django.test import TestCase
@@ -89,6 +91,26 @@ class SignupTests(AccountTests):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['token'] is not None)
         self.assertTrue(response.data['id'] is not None)
+
+    def test_signup_site(self):
+        email = self.emails.next()
+        data = {
+            'email': email,
+            'password1': self.default_password,
+            'password2': self.default_password,
+            'acceptedPrivacyPolicy': True,
+        }
+        self.client.post(self.url_signup, data, HTTP_REFERER='http://dev.bitcoinagainstebola.org')
+        self.assertEqual(User.objects.get(email=email).profile.signup_site_id, 1)
+        email = self.emails.next()
+        data = {
+            'email': email,
+            'password1': self.default_password,
+            'password2': self.default_password,
+            'acceptedPrivacyPolicy': True,
+        }
+        self.client.post(self.url_signup, data, HTTP_REFERER='http://dev.beamremit.com')
+        self.assertEqual(User.objects.get(email=email).profile.signup_site_id, 0)
 
     def test_signup_validation_empty(self):
         'empty post'
@@ -241,6 +263,16 @@ class ActivationTests(AccountTests):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.USER_ACCOUNT_ALREADY_ACTIVATED)
 
+    def test_activation_resend_account_disabled(self):
+        email = self.emails.next()
+        self._create_activated_user(email=email)
+        user = User.objects.get(email=email)
+        user.is_active = False
+        user.save()
+        response = self.client.post(self.url_activate_resend, {'email': email})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.USER_ACCOUNT_DISABLED)
+
     def test_activation_overwritten_key(self):
         email = self.emails.next()
         user = self._create_inactive_user(email=email)
@@ -279,6 +311,16 @@ class SigninTests(AccountTests):
     def test_singin_without_activation(self):
         email = self.emails.next()
         self._create_inactive_user(email=email)
+        response = self.client.post(self.url_signin, {'email': email, 'password': self.default_password})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['non_field_errors'][0], constants.USER_ACCOUNT_NOT_ACTIVATED_YET)
+
+    def test_singin_with_decativated_account(self):
+        email = self.emails.next()
+        self._create_activated_user(email=email)
+        user = User.objects.get(email=email)
+        user.is_active = False
+        user.save()
         response = self.client.post(self.url_signin, {'email': email, 'password': self.default_password})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['non_field_errors'][0], constants.USER_ACCOUNT_DISABLED)
@@ -417,9 +459,19 @@ class PasswordResetTests(AccountTests):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.EMAIL_UNKNOWN)
 
-    def test_password_reset_fail_user_incative(self):
+    def test_password_reset_fail_user_inactive(self):
         email = self.emails.next()
         self._create_inactive_user(email)
+        response = self.client.post(self.url_password_reset, {'email': email})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.USER_ACCOUNT_NOT_ACTIVATED_YET)
+
+    def test_password_reset_fail_user_deactivated(self):
+        email = self.emails.next()
+        self._create_activated_user(email)
+        user = User.objects.get(email=email)
+        user.is_active = False
+        user.save()
         response = self.client.post(self.url_password_reset, {'email': email})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.USER_ACCOUNT_DISABLED)
@@ -538,6 +590,9 @@ class ProfileTests(AccountTests):
         self.assertEqual(user.profile.date_of_birth, datetime.date(1985, 10, 4))
         self.assertEqual(user.profile.street, 'Platz der Vereinten Nationen 23')
         self.assertEqual(user.profile.post_code, '10249')
+        self.assertEqual(len(DocumentStatusChange.objects.filter(profile=user.profile)), 0)
+        response = self.client.patch(self.url_profile, self.default_profile)
+        self.assertEqual(len(DocumentStatusChange.objects.filter(profile=user.profile)), 0)
 
     def test_partially_update_user(self):
         user = self._create_activated_user()
@@ -758,8 +813,9 @@ class VerificationStatusTests(AccountTests):
 class AccountLimitTests(AccountTests):
 
     def setUp(self):
-        self.pricing = self._create_pricing()
-        self.limit = self._create_default_limit()
+        self.exchange_rate = self._create_default_exchange_rate()
+        self.limit_bae = self._create_default_limit_bae()
+        self.limit_beam = self._create_default_limit_beam()
 
     def test_permissions(self):
         response = self.client.get(self.url_account_limits)
@@ -769,64 +825,94 @@ class AccountLimitTests(AccountTests):
         user = self._create_activated_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.get(self.url_account_limits)
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit_gbp'], 40)
-        self.assertEqual(response.data['limit_usd'], 64)
-        self.assertEqual(response.data['today_usd'], 0)
-        self.assertEqual(response.data['today_gbp'], 0)
+        self.assertEqual(response.data['limit'], 40)
+        self.assertEqual(response.data['currency'], 'GBP')
+        self.assertEqual(response.data['today'], 0)
+        self.assertTrue(response.data['can_extend'])
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 50)
+        self.assertEqual(response.data['currency'], 'USD')
+        self.assertEqual(response.data['today'], 0)
         self.assertTrue(response.data['can_extend'])
 
     def test_account_limits_fully_verified_user(self):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.get(self.url_account_limits)
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit_gbp'], 500)
-        self.assertEqual(response.data['limit_usd'], 800)
-        self.assertEqual(response.data['today_usd'], 0)
-        self.assertEqual(response.data['today_gbp'], 0)
+        self.assertEqual(response.data['limit'], 500)
+        self.assertEqual(response.data['currency'], 'GBP')
+        self.assertEqual(response.data['today'], 0)
+        self.assertFalse(response.data['can_extend'])
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 600)
+        self.assertEqual(response.data['currency'], 'USD')
+        self.assertEqual(response.data['today'], 0)
         self.assertFalse(response.data['can_extend'])
 
     def test_account_spending_count(self):
 
         user = self._create_fully_verified_user()
         token = self._create_token(user)
-        
+
         self._create_transaction(
             sender=user,
-            pricing=self.pricing,
-            sent_amount=400,
+            exchange_rate=self.exchange_rate,
+            pricing=self._create_default_pricing_beam(),
+            sent_amount=200,
             sent_currency='GBP',
-            received_amount=2120,
+            received_amount=1028.2,
             receiving_country='GH'
         )
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        response = self.client.get(self.url_account_limits)
-        
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit_gbp'], 500)
-        self.assertEqual(response.data['limit_usd'], 800)
-        self.assertEqual(response.data['today_usd'], 640)
-        self.assertEqual(response.data['today_gbp'], 400)
+        self.assertEqual(response.data['limit'], 500)
+        self.assertEqual(response.data['currency'], 'GBP')
+        self.assertEqual(response.data['today'], 200)
+        self.assertFalse(response.data['can_extend'])
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 600)
+        self.assertEqual(response.data['currency'], 'USD')
+        self.assertEqual(response.data['today'], 320)
         self.assertFalse(response.data['can_extend'])
 
         self._create_transaction(
             sender=user,
-            pricing=self.pricing,
+            exchange_rate=self.exchange_rate,
+            pricing=self._create_default_pricing_bae(),
             sent_amount=12,
             sent_currency='USD',
             received_amount=39.75,
-            receiving_country='GH'
+            receiving_country='SL'
         )
 
-        response = self.client.get(self.url_account_limits)
-        
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['today_usd'], 652)
-        self.assertEqual(response.data['today_gbp'], 407.5)
+        self.assertEqual(response.data['limit'], 500)
+        self.assertEqual(response.data['currency'], 'GBP')
+        self.assertEqual(response.data['today'], 207.5)
+        self.assertFalse(response.data['can_extend'])
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 600)
+        self.assertEqual(response.data['currency'], 'USD')
+        self.assertEqual(response.data['today'], 332)
+        self.assertFalse(response.data['can_extend'])
 
 
 class AdminTests(TestCase, TestUtils):
@@ -836,7 +922,7 @@ class AdminTests(TestCase, TestUtils):
         self.client.login(username=admin.username, password=self.default_password)
 
     def test_view_account_sites(self):
-       
+
         response = self.client.get(reverse('admin:account_beamprofile_changelist'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -977,32 +1063,43 @@ class ProfileModelTests(TestCase, TestUtils):
 
     def test_transaction_volume(self):
         user = self._create_fully_verified_user()
-        pricing = self._create_pricing()
-        self.assertEqual(user.profile.todays_transaction_volume(), 0)
-        self.assertEqual(user.profile.todays_transaction_volume(10, 'GBP'), 10)
-        self.assertEqual(user.profile.todays_transaction_volume(10, 'USD'), 6.25)
+        pricing_beam = self._create_default_pricing_beam()
+        pricing_bae = self._create_default_pricing_bae()
+        exchange_rate = self._create_default_exchange_rate()
+        site_beam = Site.objects.get(id=0)
+        site_bae = Site.objects.get(id=1)
+
+        self.assertEqual(user.profile.todays_transaction_volume(site_beam), 0)
+        self.assertEqual(user.profile.todays_transaction_volume(site_bae), 0)
+        self.assertEqual(user.profile.todays_transaction_volume(site_beam, 1.23), 1.23)
+        self.assertEqual(user.profile.todays_transaction_volume(site_bae, 9.81), 9.81)
 
         self._create_transaction(
             sender=user,
-            pricing=pricing,
+            pricing=pricing_beam,
+            exchange_rate=exchange_rate,
             sent_amount=93,
             sent_currency='GBP',
             received_amount=478.2,
             receiving_country='GH'
         )
 
-        self.assertEqual(user.profile.todays_transaction_volume(), 93)
-        self.assertEqual(user.profile.todays_transaction_volume(10, 'GBP'), 103)
-        self.assertEqual(user.profile.todays_transaction_volume(10, 'USD'), 99.25)
+        self.assertEqual(user.profile.todays_transaction_volume(site_beam), 93)
+        self.assertEqual(user.profile.todays_transaction_volume(site_bae), 148.8)
+        self.assertEqual(user.profile.todays_transaction_volume(site_beam, 10), 103)
+        self.assertEqual(user.profile.todays_transaction_volume(site_bae, 10), 158.8)
 
         self._create_transaction(
             sender=user,
-            pricing=pricing,
+            pricing=pricing_bae,
             sent_amount=18,
+            exchange_rate=exchange_rate,
             sent_currency='USD',
             received_amount=77050,
             receiving_country='SL'
         )
-        self.assertEqual(user.profile.todays_transaction_volume(), 104.25)
-        self.assertEqual(user.profile.todays_transaction_volume(10, 'GBP'), 114.25)
-        self.assertEqual(user.profile.todays_transaction_volume(10, 'USD'), 110.5)
+
+        self.assertEqual(user.profile.todays_transaction_volume(site_beam), 104.25)
+        self.assertEqual(user.profile.todays_transaction_volume(site_bae), 166.8)
+        self.assertEqual(user.profile.todays_transaction_volume(site_beam, 15), 119.25)
+        self.assertEqual(user.profile.todays_transaction_volume(site_bae, 15), 181.8)

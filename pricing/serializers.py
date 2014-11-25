@@ -5,28 +5,22 @@ from pricing import models
 
 class LimitSerializer(serializers.ModelSerializer):
 
-    user_limit_basic_usd = serializers.FloatField()
-    user_limit_complete_usd = serializers.FloatField()
-    transaction_min_usd = serializers.FloatField()
-    transaction_max_usd = serializers.FloatField()
-    transaction_min_ghs = serializers.FloatField()
-    transaction_max_ghs = serializers.FloatField()
-    transaction_min_sll = serializers.FloatField()
-    transaction_max_sll = serializers.FloatField()
+    transaction_min_receiving = serializers.FloatField()
+    transaction_max_receiving = serializers.FloatField()
+    sending_currency = serializers.FloatField()
+    receiving_currency = serializers.FloatField()
 
     class Meta:
         model = models.Limit
 
         read_only_fields = (
-            'user_limit_basic_gbp', 'user_limit_complete_gbp',
-            'transaction_min_gbp', 'transaction_max_gbp'
+            'user_limit_basic', 'user_limit_complete',
+            'transaction_min', 'transaction_max',
         )
 
         calculated_fields = (
-            'user_limit_basic_usd', 'user_limit_complete_usd',
-            'transaction_min_usd', 'transaction_max_usd',
-            'transaction_min_ghs', 'transaction_max_ghs',
-            'transaction_min_sll', 'transaction_max_sll'
+            'transaction_min_receiving', 'transaction_max_receiving',
+            'sending_currency', 'receiving_currency'
         )
 
         fields = read_only_fields + calculated_fields

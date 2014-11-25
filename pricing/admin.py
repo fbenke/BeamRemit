@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from pricing.models import Pricing, Comparison, Limit, end_previous_object
+from pricing.models import Pricing, ExchangeRate, Comparison, Limit,\
+    end_previous_object, end_previous_object_by_site
 
 from pricing import forms
 
@@ -22,18 +23,40 @@ class PricingAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'markup', 'fee_gbp', 'fee_usd', 'gbp_ghs', 'gbp_usd', 'gbp_sll')
+            return ('id', 'start', 'end', 'markup', 'fee', 'fee_currency', 'site')
         else:
-            return ('id', 'start', 'end')
+            return ('id', 'start', 'end', 'fee_currency')
 
-    list_display = ('id', 'start', 'end', 'markup', 'gbp_ghs', 'fee_gbp', 'fee_usd')
+    list_display = ('id', 'start', 'end', 'markup', 'fee', 'site')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
-            end_previous_object(Pricing)
+            end_previous_object_by_site(Pricing, obj.site)
             obj.save()
 
+    list_filter = ('site',)
+
 admin.site.register(Pricing, PricingAdmin)
+
+
+class ExchangeRateAdmin(DoNotDeleteModelAdmin):
+
+    form = forms.ExchangeRateForm
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll')
+        else:
+            return ('id', 'start', 'end')
+
+    list_display = ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll')
+
+    def save_model(self, request, obj, form, change):
+        if not obj.id:
+            end_previous_object(ExchangeRate)
+            obj.save()
+
+admin.site.register(ExchangeRate, ExchangeRateAdmin)
 
 
 class ComparisonAdmin(DoNotDeleteModelAdmin):
@@ -61,26 +84,25 @@ class LimitAdmin(DoNotDeleteModelAdmin):
     def get_readonly_fields(self, request, obj=None):
 
         calculated_fields = (
-            'user_limit_basic_usd', 'user_limit_complete_usd',
-            'transaction_min_usd', 'transaction_max_usd',
-            'transaction_min_ghs', 'transaction_max_ghs',
-            'transaction_min_sll', 'transaction_max_sll'
-        )
+            'transaction_min_receiving', 'transaction_max_receiving',
+            'sending_currency', 'receiving_currency')
 
         if obj:
-            return ('id', 'start', 'end', 'user_limit_basic_gbp',
-                    'user_limit_complete_gbp', 'transaction_min_gbp',
-                    'transaction_max_gbp') + calculated_fields
+            return ('id', 'start', 'end', 'site', 'user_limit_basic',
+                    'user_limit_complete', 'transaction_min',
+                    'transaction_max') + calculated_fields
         else:
             return ('id', 'start', 'end') + calculated_fields
 
-    list_display = ('id', 'start', 'end', 'user_limit_basic_gbp',
-                    'user_limit_complete_gbp', 'transaction_min_gbp',
-                    'transaction_max_gbp')
+    list_display = ('id', 'start', 'end', 'site', 'user_limit_basic',
+                    'user_limit_complete', 'transaction_min',
+                    'transaction_max')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
-            end_previous_object(Limit)
+            end_previous_object_by_site(Limit, obj.site)
             obj.save()
+
+    list_filter = ('site',)
 
 admin.site.register(Limit, LimitAdmin)

@@ -4,6 +4,7 @@ from django.db import transaction as dbtransaction
 
 from transaction.models import Transaction
 
+from beam.utils.log import log_error
 from beam.utils.security import generate_signature
 
 from btc_payment.api_calls import gocoin
@@ -89,19 +90,24 @@ class GoCoinInvoice(models.Model):
             redirect_url=redirect_url
         )
 
-        gocoin_invoice = GoCoinInvoice(
-            transaction=transaction,
-            invoice_id=result['id'],
-            btc_address=result['payment_address'],
-            btc_usd=result['inverse_spot_rate'],
-            sender_usd=result['usd_spot_rate']
-        )
+        try:
+            gocoin_invoice = GoCoinInvoice(
+                transaction=transaction,
+                invoice_id=result['id'],
+                btc_address=result['payment_address'],
+                btc_usd=result['inverse_spot_rate'],
+                sender_usd=result['usd_spot_rate']
+            )
 
-        transaction.amount_btc = result['price']
+            transaction.amount_btc = result['price']
 
-        with dbtransaction.atomic():
-            gocoin_invoice.save()
-            transaction.gocoin_invoice = GoCoinInvoice.objects.get(id=gocoin_invoice.id)
-            transaction.save()
+            with dbtransaction.atomic():
+                gocoin_invoice.save()
+                transaction.gocoin_invoice = GoCoinInvoice.objects.get(id=gocoin_invoice.id)
+                transaction.save()
 
-        return gocoin_invoice.invoice_id
+            return gocoin_invoice.invoice_id
+
+        except KeyError as e:
+            message = 'ERROR - GoCoin Create Invoice: received invalid response, {}, {}'
+            log_error(message.format(e, result))

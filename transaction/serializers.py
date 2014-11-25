@@ -4,8 +4,9 @@ from django.db import transaction as dbtransaction
 from rest_framework import serializers
 from rest_framework import fields
 
-from transaction import models
-from transaction import constants
+from transaction import models, constants
+
+from pricing.models import get_current_pricing, get_current_exchange_rate
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -28,20 +29,21 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
         model = models.Transaction
         depth = 1
         read_only_fields = ()
-        read_and_write_fields = ('recipient', 'receiving_country', 'sent_amount', 'sent_currency')
+        read_and_write_fields = ('recipient', 'sent_amount', 'receiving_country', 'sent_currency')
         fields = read_only_fields + read_and_write_fields
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, user, site, *args, **kwargs):
         self.user = user
+        self.site = site
         super(CreateTransactionSerializer, self).__init__(*args, **kwargs)
 
     def validate_receiving_country(self, attrs, source):
-        if attrs[source] not in settings.RECEIVING_COUNTRIES:
+        if attrs[source] not in settings.SITE_RECEIVING_COUNTRY[self.site.id]:
             raise serializers.ValidationError(constants.COUNTRY_NOT_SUPPORTED)
         return attrs
 
     def validate_sent_currency(self, attrs, source):
-        if attrs[source] not in settings.SENDING_CURRENCIES:
+        if attrs[source] not in settings.SITE_SENDING_CURRENCY[self.site.id]:
             raise serializers.ValidationError(constants.SENT_CURRENCY_NOT_SUPPORTED)
         return attrs
 
@@ -56,13 +58,18 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
             sender=self.user,
             sent_amount=attrs['sent_amount'],
             sent_currency=attrs['sent_currency'],
-            receiving_country=attrs['receiving_country']
+            receiving_country=attrs['receiving_country'],
         )
 
         return transaction
 
     def save(self, *args, **kwargs):
         with dbtransaction.atomic():
+            self.object.pricing = get_current_pricing(self.site)
+            self.object.exchange_rate = get_current_exchange_rate()
+            self.object.generate_reference_number()
+            self.object.received_amount = self.object.pricing.calculate_received_amount(
+                self.object.sent_amount, self.object.receiving_country)
             self.object.recipient.save()
             self.object.recipient = models.Recipient.objects.get(id=self.object.recipient.id)
             self.object.save()

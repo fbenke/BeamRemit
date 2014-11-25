@@ -5,16 +5,17 @@ from rest_framework.generics import GenericAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from beam.utils.angular_requests import get_site_by_request
 from beam.utils.exceptions import APIException
 from beam.utils.ip_blocking import country_blocked, is_tor_node,\
     get_client_ip, HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
 
 from transaction import constants
 from transaction import serializers
-from transaction.models import Transaction, Pricing
+from transaction.models import Transaction
 from transaction.permissions import IsNoAdmin
 
-from pricing.models import Limit, get_current_object
+from pricing.models import get_current_pricing, get_current_exchange_rate, get_current_limit
 
 from state.models import get_current_state
 
@@ -42,12 +43,14 @@ class CreateTransaction(GenericAPIView):
 
         try:
 
-            serializer = self.serializer_class(user=request.user, data=request.DATA)
+            site = get_site_by_request(self.request)
+            serializer = self.serializer_class(user=request.user, site=site, data=request.DATA)
 
             if serializer.is_valid():
 
-                # check if Pricing has expired
-                if get_current_object(Pricing).id != request.DATA.get('pricing_id'):
+                # check if Pricing or Exchange Rate has expired
+                if get_current_pricing(site).id != request.DATA.get('pricing_id') or\
+                        get_current_exchange_rate().id != request.DATA.get('exchange_rate_id'):
                     return Response({'detail': constants.PRICING_EXPIRED}, status=status.HTTP_400_BAD_REQUEST)
 
                 # basic profile information incomplete
@@ -56,13 +59,13 @@ class CreateTransaction(GenericAPIView):
 
                 # calculate today's transaction volume for the user
                 todays_vol = request.user.profile.todays_transaction_volume(
-                    request.DATA.get('sent_amount'), request.DATA.get('sent_currency'))
+                    site, request.DATA.get('sent_amount'))
 
                 # sender has exceeded basic transaction limit
-                if todays_vol > get_current_object(Limit).user_limit_basic_gbp:
+                if todays_vol > get_current_limit(site).user_limit_basic:
 
                     # sender has exceeded maximum daily transaction limit
-                    if todays_vol > get_current_object(Limit).user_limit_complete_gbp:
+                    if todays_vol > get_current_limit(site).user_limit_complete:
                         return Response({'detail': constants.TRANSACTION_LIMIT_EXCEEDED}, status=status.HTTP_400_BAD_REQUEST)
 
                     #  sender has not provided additional document
@@ -81,7 +84,7 @@ class CreateTransaction(GenericAPIView):
                     {'invoice_id': self.invoice_id,
                      'received_amount': self.object.received_amount,
                      'received_currency': self.object.received_currency,
-                     'operation_mode': get_current_state()},
+                     'operation_mode': get_current_state(site).state},
                     status=status.HTTP_201_CREATED)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

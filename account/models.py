@@ -1,5 +1,6 @@
 import datetime
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.db import transaction as dbtransaction
@@ -8,12 +9,11 @@ from django.utils.timezone import utc
 from django_countries.fields import CountryField
 
 from userena.models import UserenaBaseProfile
+from userena import settings as userena_settings
 
 from transaction.models import Transaction
 
 from account.utils import AccountException
-
-from pricing.models import Pricing, get_current_object
 
 from beam.utils.log import log_error
 
@@ -142,6 +142,11 @@ class BeamProfile(UserenaBaseProfile):
         default=True
     )
 
+    signup_site_id = models.IntegerField(
+        'Signed Up via Site (Id)',
+        null=True,
+    )
+
     def get_document_state(self, document):
         return getattr(self, self.DOCUMENT_FIELD_MAPPING[document])
 
@@ -201,7 +206,12 @@ class BeamProfile(UserenaBaseProfile):
             return False
         return True
 
-    def todays_transaction_volume(self, new_amount=0, new_currency=None):
+    @property
+    def account_deactivated(self):
+        return (self.user.userena_signup.activation_key == userena_settings.USERENA_ACTIVATED
+                and not self.user.is_active)
+
+    def todays_transaction_volume(self, site, new_amount=0):
         try:
             now = timezone.now()
             today = datetime.datetime(now.year, now.month, now.day).replace(tzinfo=utc)
@@ -212,13 +222,12 @@ class BeamProfile(UserenaBaseProfile):
                 paid_at__gte=today
             )
 
-            amount = 0
+            amount = new_amount
 
-            if new_amount:
-                amount = get_current_object(Pricing).convert_to_base_currency(new_amount, new_currency)
+            sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
 
             for t in transactions:
-                amount = amount + t.pricing.convert_to_base_currency(t.sent_amount, t.sent_currency)
+                amount = amount + t.exchange_rate.exchange_amount(t.sent_amount, t.sent_currency, sending_currency)
 
             return amount
 

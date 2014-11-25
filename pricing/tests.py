@@ -1,14 +1,18 @@
 import copy
 
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from django.contrib.sites.models import Site
 
+from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from beam.tests import TestUtils
 
-from pricing.models import Pricing, Comparison, Limit, get_current_object
+from pricing.models import Pricing, ExchangeRate, Comparison, Limit,\
+    get_current_object, get_current_object_by_site
+
+# from unittest import skip
 
 
 class PricingAdminTests(TestCase, TestUtils):
@@ -21,25 +25,51 @@ class PricingAdminTests(TestCase, TestUtils):
         self.client.logout()
 
     def test_add_pricing(self):
+        no_pricings = Pricing.objects.all().count()
 
-        self.assertEqual(Pricing.objects.all().count(), 0)
-        response = self.client.post(reverse('admin:pricing_pricing_add'), data=self.default_pricing)
+        response = self.client.post(reverse('admin:pricing_pricing_add'), data=self.default_beam_pricing)
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
-        self.assertEqual(Pricing.objects.all().count(), 1)
+        self.assertEqual(Pricing.objects.all().count(), no_pricings + 1)
+        pricing = get_current_object_by_site(Pricing, Site.objects.get(id=0))
+        self.assertEqual(pricing.markup, 0.03)
+        self.assertEqual(pricing.fee, 1)
+        self.assertEqual(pricing.fee_currency, 'GBP')
+        self.assertEqual(pricing.site.id, 0)
 
-        pricing = get_current_object(Pricing)
-        self.assertEqual(self.default_pricing['markup'], pricing.markup)
-        self.assertEqual(self.default_pricing['fee_usd'], pricing.fee_usd)
-        self.assertEqual(self.default_pricing['fee_gbp'], pricing.fee_gbp)
-        self.assertEqual(self.default_pricing['gbp_ghs'], pricing.gbp_ghs)
-        self.assertEqual(self.default_pricing['gbp_usd'], pricing.gbp_usd)
-        self.assertEqual(self.default_pricing['gbp_sll'], pricing.gbp_sll)
+        response = self.client.post(reverse('admin:pricing_pricing_add'), data=self.default_bae_pricing)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(Pricing.objects.all().count(), no_pricings + 2)
+        pricing = get_current_object_by_site(Pricing, Site.objects.get(id=1))
+        self.assertEqual(pricing.markup, 0.02)
+        self.assertEqual(pricing.fee, 0)
+        self.assertEqual(pricing.fee_currency, 'USD')
+        self.assertEqual(pricing.site.id, 1)
 
     def test_add_pricing_validaton_error(self):
-        new_pricing = copy.deepcopy(self.default_pricing)
+        new_pricing = copy.deepcopy(self.default_beam_pricing)
         new_pricing['markup'] = 10
         response = self.client.post(reverse('admin:pricing_pricing_add'), data=new_pricing)
         self.assertContains(response, 'Markup has to be a value between 0 and 1')
+
+
+class ExchangeRateAdminTests(TestCase, TestUtils):
+    def setUp(self):
+        admin = self._create_admin_user()
+        self.client.login(username=admin.username, password=self.default_password)
+
+    def tearDown(self):
+        self.client.logout()
+
+    def test_add_currency(self):
+        no_exchange_rates = ExchangeRate.objects.all().count()
+
+        response = self.client.post(reverse('admin:pricing_exchangerate_add'), data=self.default_exchange_rate)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(ExchangeRate.objects.all().count(), no_exchange_rates + 1)
+        exchange_rate = get_current_object(ExchangeRate)
+        self.assertEqual(exchange_rate.gbp_ghs, 5.3)
+        self.assertEqual(exchange_rate.gbp_usd, 1.6)
+        self.assertEqual(exchange_rate.gbp_sll, 7040)
 
 
 class ComparisonAdminTests(TestCase, TestUtils):
@@ -73,24 +103,44 @@ class LimitAdminTests(TestCase, TestUtils):
 
     def test_add_limit(self):
 
-        self.assertEqual(Limit.objects.all().count(), 0)
+        no_limits = Limit.objects.all().count()
+
         response = self.client.post(
             reverse('admin:pricing_limit_add'),
-            data=self.default_limit
+            data=self.default_beam_limit
         )
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
-        self.assertEqual(Limit.objects.all().count(), 1)
+        self.assertEqual(Limit.objects.all().count(), no_limits + 1)
 
-        limit = get_current_object(Limit)
-        self.assertEqual(limit.transaction_min_gbp, self.default_limit['transaction_min_gbp'])
-        self.assertEqual(limit.transaction_max_gbp, self.default_limit['transaction_max_gbp'])
-        self.assertEqual(limit.user_limit_basic_gbp, self.default_limit['user_limit_basic_gbp'])
-        self.assertEqual(limit.user_limit_complete_gbp, self.default_limit['user_limit_complete_gbp'])
+        limit = get_current_object_by_site(Limit, Site.objects.get(id=0))
+        self.assertEqual(limit.transaction_min, 2)
+        self.assertEqual(limit.transaction_max, 1000)
+        self.assertEqual(limit.user_limit_basic, 40)
+        self.assertEqual(limit.user_limit_complete, 500)
+        self.assertEqual(limit.sending_currency, 'GBP')
+        self.assertEqual(limit.receiving_currency, 'GHS')
+        self.assertEqual(limit.site.id, 0)
+
+        response = self.client.post(
+            reverse('admin:pricing_limit_add'),
+            data=self.default_bae_limit
+        )
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(Limit.objects.all().count(), no_limits + 2)
+
+        limit = get_current_object_by_site(Limit, Site.objects.get(id=1))
+        self.assertEqual(limit.transaction_min, 1)
+        self.assertEqual(limit.transaction_max, 100)
+        self.assertEqual(limit.user_limit_basic, 37)
+        self.assertEqual(limit.user_limit_complete, 324)
+        self.assertEqual(limit.sending_currency, 'USD')
+        self.assertEqual(limit.receiving_currency, 'SLL')
+        self.assertEqual(limit.site.id, 1)
 
     def test_add_limit_validaton_error(self):
-        new_limt = self.default_limit
-        new_limt['transaction_min_gbp'] = 1000
-        response = self.client.post(reverse('admin:pricing_limit_add'), data=new_limt)
+        new_limit = copy.deepcopy(self.default_beam_limit)
+        new_limit['transaction_min'] = 1000
+        response = self.client.post(reverse('admin:pricing_limit_add'), data=new_limit)
         self.assertContains(response, 'Minimum amount must be smaller than maximum amount.')
 
 
@@ -100,60 +150,99 @@ class PricingAPITests(APITestCase, TestUtils):
 
     def test_get_current_pricing(self):
 
-        pricing = self._create_pricing()
+        beam_pricing = self._create_default_pricing_beam()
+        bae_pricing = self._create_default_pricing_bae()
+        exchange_rate = self._create_default_exchange_rate()
         comparison = self._create_comparison()
-        state = self._create_state()
+        state = self._create_state(site_id=0)
+        state = self._create_state(site_id=1)
 
-        response = self.client.get(self.url_get_current)
+        response = self.client.get(self.url_get_current, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['pricing_id'], pricing.id)
-        self.assertEqual(response.data['beam_fee_usd'], pricing.fee_usd)
-        self.assertEqual(response.data['beam_fee_gbp'], pricing.fee_gbp)
+        self.assertEqual(response.data['pricing_id'], beam_pricing.id)
+        self.assertEqual(response.data['exchange_rate_id'], exchange_rate.id)
+        self.assertEqual(response.data['fee'], 2.9)
+        self.assertEqual(response.data['rate'], 5.141)
+        self.assertEqual(response.data['fee_currency'], 'GBP')
         self.assertEqual(response.data['comparison'], comparison.price_comparison)
         self.assertEqual(response.data['comparison_retrieved'], comparison.start)
         self.assertEqual(response.data['operation_mode'], state.state)
-        self.assertEqual(response.data['beam_rate_ghs'], 5.141)
-        self.assertEqual(response.data['beam_rate_sll'], 6828.8)
-        self.assertEqual(response.data['beam_rate_usd'], 1.6)
+
+        response = self.client.get(self.url_get_current, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['pricing_id'], bae_pricing.id)
+        self.assertEqual(response.data['exchange_rate_id'], exchange_rate.id)
+        self.assertEqual(response.data['fee'], 1.2)
+        self.assertEqual(response.data['rate'], 4356)
+        self.assertEqual(response.data['fee_currency'], 'USD')
+        self.assertEqual(response.data['comparison'], comparison.price_comparison)
+        self.assertEqual(response.data['comparison_retrieved'], comparison.start)
+        self.assertEqual(response.data['operation_mode'], state.state)
 
 
 class LimitAPITests(APITestCase, TestUtils):
 
     url_get_current = reverse('pricing:limit')
 
-    def test_get_limit(self):
-        limit = self._create_default_limit()
-        self._create_pricing()
+    def setUp(self):
+        self._create_default_exchange_rate()
 
-        response = self.client.get(self.url_get_current)
-        self.assertEqual(response.data['user_limit_basic_gbp'], limit.user_limit_basic_gbp)
-        self.assertEqual(response.data['user_limit_complete_gbp'], limit.user_limit_complete_gbp)
-        self.assertEqual(response.data['transaction_min_gbp'], limit.transaction_min_gbp)
-        self.assertEqual(response.data['transaction_max_gbp'], limit.transaction_max_gbp)
-        self.assertEqual(response.data['user_limit_basic_usd'], 64)
-        self.assertEqual(response.data['user_limit_complete_usd'], 800)
-        self.assertEqual(response.data['transaction_min_usd'], 3.2)
-        self.assertEqual(response.data['transaction_max_usd'], 1600)
-        self.assertEqual(response.data['transaction_min_sll'], 13657.6)
-        self.assertEqual(response.data['transaction_max_sll'], 6828800)
-        self.assertEqual(response.data['transaction_min_ghs'], 10.282)
-        self.assertEqual(response.data['transaction_max_ghs'], 5141)
+    def test_get_limit(self):
+        self._create_default_pricing_beam()
+        self._create_default_limit_beam()
+        response = self.client.get(self.url_get_current, {}, HTTP_REFERER='http://dev.beamremit.com/')
+        self.assertEqual(response.data['user_limit_basic'], 40)
+        self.assertEqual(response.data['user_limit_complete'], 500)
+        self.assertEqual(response.data['transaction_min'], 2)
+        self.assertEqual(response.data['transaction_max'], 1000)
+        self.assertEqual(response.data['sending_currency'], 'GBP')
+        self.assertEqual(response.data['receiving_currency'], 'GHS')
+        self.assertEqual(response.data['transaction_min_receiving'], 10.282)
+        self.assertEqual(response.data['transaction_max_receiving'], 5141)
+
+    def test_get_limit_bae(self):
+        self._create_default_pricing_bae()
+        self._create_default_limit_bae()
+        response = self.client.get(self.url_get_current, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
+        self.assertEqual(response.data['user_limit_basic'], 50)
+        self.assertEqual(response.data['user_limit_complete'], 600)
+        self.assertEqual(response.data['transaction_min'], 3)
+        self.assertEqual(response.data['transaction_max'], 600)
+        self.assertEqual(response.data['sending_currency'], 'USD')
+        self.assertEqual(response.data['receiving_currency'], 'SLL')
+        self.assertEqual(response.data['transaction_min_receiving'], 13068)
+        self.assertEqual(response.data['transaction_max_receiving'], 2613600)
 
 
 class PricingConversionTests(TestCase, TestUtils):
 
     def setUp(self):
-        self.pricing = self._create_pricing()
+        self.exchange_rate = self._create_default_exchange_rate()
+        self.pricing_beam = self._create_default_pricing_beam()
+        self.pricing_bae = self._create_default_pricing_bae()
 
-    def test_conversion_gbp(self):
-        self.assertEqual(self.pricing.calculate_received_amount(12, 'GBP', 'GH'), 61.7)
-        self.assertEqual(self.pricing.calculate_received_amount(5, 'GBP', 'SL'), 34150)
+    def test_get_exchange_rate_by_site(self):
+        self.assertEqual(self.exchange_rate.exchange_rate(Site.objects.get(id=0)), 5.3)
+        self.assertEqual(self.exchange_rate.exchange_rate(Site.objects.get(id=1)), 4400)
 
-    def test_conversion_usd(self):
-        self.assertEqual(self.pricing.calculate_received_amount(18, 'USD', 'GH'), 57.9)
-        self.assertEqual(self.pricing.calculate_received_amount(7, 'USD', 'SL'), 29880)
-        self.assertEqual(self.pricing.calculate_received_amount(18, 'USD', 'SL'), 76830)
+    def test_get_gbp_to_currency(self):
+        self.assertEqual(self.exchange_rate._get_gbp_to_currency('GBP'), 1)
+        self.assertEqual(self.exchange_rate._get_gbp_to_currency('USD'), 1.6)
+        self.assertEqual(self.exchange_rate._get_gbp_to_currency('SLL'), 7040)
+        self.assertEqual(self.exchange_rate._get_gbp_to_currency('GHS'), 5.3)
 
-    def test_convert_to_base_currency(self):
-        self.assertEqual(self.pricing.convert_to_base_currency(3, 'GBP'), 3)
-        self.assertEqual(self.pricing.convert_to_base_currency(20, 'USD'), 12.5)
+    def test_get_exchange_rate(self):
+        self.assertEqual(self.exchange_rate._get_exchange_rate('GBP', 'USD'), 1.6)
+        self.assertEqual(self.exchange_rate._get_exchange_rate('GBP', 'SLL'), 7040)
+        self.assertEqual(self.exchange_rate._get_exchange_rate('GBP', 'GHS'), 5.3)
+        self.assertEqual(self.exchange_rate._get_exchange_rate('USD', 'GBP'), 0.625)
+        self.assertEqual(self.exchange_rate._get_exchange_rate('USD', 'SLL'), 4400)
+        self.assertTrue(abs(self.exchange_rate._get_exchange_rate('USD', 'GHS') - 3.3125) < 0.00001)
+
+    def test_exchange_amount(self):
+        self.assertTrue(abs(self.exchange_rate.exchange_amount(12, 'GBP', 'USD') - 19.2) < 0.00001)
+        self.assertEqual(self.exchange_rate.exchange_amount(13, 'GBP', 'SLL'), 91520)
+        self.assertEqual(self.exchange_rate.exchange_amount(14, 'GBP', 'GHS'), 74.2)
+        self.assertEqual(self.exchange_rate.exchange_amount(15, 'USD', 'GBP'), 9.375)
+        self.assertEqual(self.exchange_rate.exchange_amount(16, 'USD', 'SLL'), 70400)
+        self.assertTrue(abs(self.exchange_rate.exchange_amount(17, 'USD', 'GHS') - 56.3125) < 0.00001)

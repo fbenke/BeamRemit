@@ -1,4 +1,3 @@
-{% load account_extras %}
 <html>
 <body>
     {% if user.first_name %}
@@ -11,7 +10,7 @@
     </p>
     <p>
         To confirm this email as your new address, please click on the link below:<br>
-        {{ protocol }}://{{ site.domain }}/{% email_change_link confirmation_key%}
+        {{ protocol }}://{{ site.domain }}/{{ email_change_link }}
     </p>
     <p>
         Sincerely,<br/>

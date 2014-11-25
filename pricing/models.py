@@ -3,6 +3,7 @@ import collections
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.db import models
 from django.utils import timezone
 
@@ -27,23 +28,45 @@ def end_previous_object(cls):
     except ObjectDoesNotExist:
         if cls.objects.all().exists():
             log_error('ERROR {} - Failed to end previous pricing.'.format(cls))
+            raise ObjectDoesNotExist
+
+
+def get_current_object_by_site(cls, site):
+    try:
+        return cls.objects.get(end__isnull=True, site=site)
+    except ObjectDoesNotExist:
+        log_error('ERROR {} - No pricing object found.'.format(cls))
+        raise ObjectDoesNotExist
+
+
+def end_previous_object_by_site(cls, site):
+    try:
+        previous_object = cls.objects.get(end__isnull=True, site=site)
+        previous_object.end = timezone.now()
+        previous_object.save()
+    except ObjectDoesNotExist:
+        if cls.objects.filter(site=site).exists():
+            log_error('ERROR {} - Failed to end previous pricing.'.format(cls))
+            raise ObjectDoesNotExist
+
+
+def get_current_pricing(site):
+    return get_current_object_by_site(Pricing, site)
+
+
+def get_current_limit(site):
+    return get_current_object_by_site(Limit, site)
+
+
+def get_current_exchange_rate():
+    return get_current_object(ExchangeRate)
+
+
+def get_current_comparison():
+    return get_current_object(Comparison)
 
 
 class Pricing(models.Model):
-
-    COUNTRY_FXR = {
-        settings.GHANA: 'exchange_rate_ghs',
-        settings.SIERRA_LEONE: 'exchange_rate_sll'
-    }
-
-    SENT_CURRENCY_FXR = {
-        settings.USD: 'gbp_usd'
-    }
-
-    SENT_CURRENCY_FEE = {
-        settings.USD: 'fee_usd',
-        settings.GBP: 'fee_gbp'
-    }
 
     start = models.DateTimeField(
         'Start Time',
@@ -64,14 +87,59 @@ class Pricing(models.Model):
         help_text='Percentage to be added over exchange rate. Value between 0 and 1.'
     )
 
-    fee_usd = models.FloatField(
-        'Fixed Fee in USD',
-        help_text='Fixed Fee charged for the money transfer in USD.'
+    fee = models.FloatField(
+        'Fixed Fee',
+        help_text='Fixed Fee charged for the money transfer.'
     )
 
-    fee_gbp = models.FloatField(
-        'Fixed Fee in GBP',
-        help_text='Fixed Fee charged for the money transfer in GBP.'
+    site = models.ForeignKey(
+        Site,
+        related_name='pricing',
+        help_text='Site associated with this pricing'
+    )
+
+    def __unicode__(self):
+        return '{}'.format(self.id)
+
+    @property
+    def exchange_rate(self):
+        return get_current_exchange_rate().exchange_rate(self.site) * (1 - self.markup)
+
+    @property
+    def fee_currency(self):
+        return settings.SITE_SENDING_CURRENCY[self.site.id]
+
+    def calculate_received_amount(self, sent_amount, country):
+
+        unrounded_amount = sent_amount * self.exchange_rate
+
+        # do country-specific rounding
+        if country == settings.SIERRA_LEONE:
+            return math.ceil(unrounded_amount / 10) * 10
+        else:
+            return math.ceil(unrounded_amount * 10) / 10
+
+
+class ExchangeRate(models.Model):
+
+    CURRENCY_FXR = {
+        settings.USD: 'gbp_usd',
+        settings.CEDI: 'gbp_ghs',
+        settings.LEONE: 'gbp_sll',
+    }
+
+    start = models.DateTimeField(
+        'Start Time',
+        auto_now_add=True,
+        help_text='Time at which pricing structure came into effect'
+    )
+
+    end = models.DateTimeField(
+        'End Time',
+        blank=True,
+        null=True,
+        help_text='Time at which pricing ended. If null, it represents the current pricing structure. ' +
+                  'Only one row in this table can have a null value for this column.'
     )
 
     gbp_ghs = models.FloatField(
@@ -89,36 +157,82 @@ class Pricing(models.Model):
         help_text='Exchange Rate from GBP to SSL without markup'
     )
 
-    def __unicode__(self):
-        return '{}'.format(self.id)
+    def _get_gbp_to_currency(self, currency):
+        if currency == settings.GBP:
+            return 1
+        return getattr(self, self.CURRENCY_FXR[currency])
+
+    def _get_exchange_rate(self, sending_currency, receiving_currency):
+        gbp_to_sending_currency = self._get_gbp_to_currency(sending_currency)
+        gbp_to_receiving_currency = self._get_gbp_to_currency(receiving_currency)
+        return gbp_to_receiving_currency / gbp_to_sending_currency
+
+    def exchange_amount(self, amount, sending_currency, receiving_currency):
+        return amount * self._get_exchange_rate(sending_currency, receiving_currency)
+
+    def exchange_rate(self, site):
+        sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
+        receiving_currency = settings.SITE_RECEIVING_CURRENCY[site.id]
+        return self._get_exchange_rate(sending_currency, receiving_currency)
+
+
+class Limit(models.Model):
+
+    start = models.DateTimeField(
+        'Start Time',
+        auto_now_add=True,
+        help_text='Time at which limit became effective'
+    )
+
+    end = models.DateTimeField(
+        'End Time',
+        blank=True,
+        null=True,
+        help_text='Time at which limit was replaced. If null, it represents the current limit. ' +
+                  'Only one row in this table can have a null value for this column.'
+    )
+
+    transaction_min = models.FloatField(
+        'Minimum amount',
+        help_text='Minimum remittance amount per transaction in sending currency'
+    )
+
+    transaction_max = models.FloatField(
+        'Maximum amount',
+        help_text='Maximum remittance amount per transaction in sending currency'
+    )
+
+    user_limit_basic = models.FloatField(
+        'Maximum for basic users',
+        help_text='Maximum amount a basic user is allowed to send per day in sending currency'
+    )
+
+    user_limit_complete = models.FloatField(
+        'Maximum for fully verified users',
+        help_text='Maximum amount a fully verfied user is allowed to send per day in sending currency'
+    )
+
+    site = models.ForeignKey(
+        Site,
+        related_name='limit',
+        help_text='Site associated with this limit'
+    )
 
     @property
-    def exchange_rate_ghs(self):
-        return self.gbp_ghs * (1 - self.markup)
+    def sending_currency(self):
+        return settings.SITE_SENDING_CURRENCY[self.site.id]
 
     @property
-    def exchange_rate_sll(self):
-        return self.gbp_sll * (1 - self.markup)
+    def receiving_currency(self):
+        return settings.SITE_RECEIVING_CURRENCY[self.site.id]
 
-    def calculate_received_amount(self, sent_amount, currency, country):
+    @property
+    def transaction_min_receiving(self):
+        return get_current_pricing(self.site).exchange_rate * self.transaction_min
 
-        # if necessary, convert the sent amount into the base currency, no markup included
-        amount_gbp = self.convert_to_base_currency(sent_amount, currency)
-
-        # convert from base currency to received currency, this includes the markup
-        undrounded_amount = amount_gbp * getattr(self, self.COUNTRY_FXR[country])
-
-        # do country-specific rounding
-        if country == settings.SIERRA_LEONE:
-            return math.ceil(undrounded_amount / 10) * 10
-        else:
-            return math.ceil(undrounded_amount * 10) / 10
-
-    def convert_to_base_currency(self, amount, currency):
-        if currency != settings.GBP:
-            return amount / getattr(self, self.SENT_CURRENCY_FXR[currency])
-        else:
-            return amount
+    @property
+    def transaction_max_receiving(self):
+        return get_current_pricing(self.site).exchange_rate * self.transaction_max
 
 
 class Comparison(models.Model):
@@ -142,85 +256,3 @@ class Comparison(models.Model):
         help_text='Time at which comparison ended. If null, it represents the current comparison. ' +
                   'Only one row in this table can have a null value for this column.'
     )
-
-
-class Limit(models.Model):
-
-    def __init__(self, *args, **kwargs):
-        super(Limit, self).__init__(*args, **kwargs)
-        try:
-            current_object = get_current_object(Pricing)
-            self.exchange_rate_ghs = current_object.gbp_ghs * (1 - current_object.markup)
-            self.exchange_rate_sll = current_object.gbp_sll * (1 - current_object.markup)
-            self.exchange_rate_usd = current_object.gbp_usd
-        except ObjectDoesNotExist:
-            self.exchange_rate_ghs = self.exchange_rate_sll = self.exchange_rate_usd = 0
-
-    transaction_min_gbp = models.FloatField(
-        'Minimum amount in GBP ',
-        help_text='Minimum remittance amount in GBB per transaction'
-    )
-
-    transaction_max_gbp = models.FloatField(
-        'Maximum amount in GBP ',
-        help_text='Maximum remittance amount in GBB per transaction'
-    )
-
-    user_limit_basic_gbp = models.FloatField(
-        'Maximum for basic users',
-        help_text='Maximum amount a basic user is allowed to send per day in GBP'
-    )
-
-    user_limit_complete_gbp = models.FloatField(
-        'Maximum for fully verified users',
-        help_text='Maximum amount a fully verfied user is allowed to send per day in GBP'
-    )
-
-    start = models.DateTimeField(
-        'Start Time',
-        auto_now_add=True,
-        help_text='Time at which limit became effective'
-    )
-
-    end = models.DateTimeField(
-        'End Time',
-        blank=True,
-        null=True,
-        help_text='Time at which limit was replaced. If null, it represents the current limit. ' +
-                  'Only one row in this table can have a null value for this column.'
-    )
-
-    # USD Limits
-    @property
-    def transaction_min_usd(self):
-        return self.exchange_rate_usd * self.transaction_min_gbp
-
-    @property
-    def transaction_max_usd(self):
-        return self.exchange_rate_usd * self.transaction_max_gbp
-
-    @property
-    def user_limit_basic_usd(self):
-        return self.exchange_rate_usd * self.user_limit_basic_gbp
-
-    @property
-    def user_limit_complete_usd(self):
-        return self.exchange_rate_usd * self.user_limit_complete_gbp
-
-    # SSL Limits
-    @property
-    def transaction_min_sll(self):
-        return self.exchange_rate_sll * self.transaction_min_gbp
-
-    @property
-    def transaction_max_sll(self):
-        return self.exchange_rate_sll * self.transaction_max_gbp
-
-    # GHS Limits
-    @property
-    def transaction_min_ghs(self):
-        return self.exchange_rate_ghs * self.transaction_min_gbp
-
-    @property
-    def transaction_max_ghs(self):
-        return self.exchange_rate_ghs * self.transaction_max_gbp

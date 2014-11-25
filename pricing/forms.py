@@ -1,20 +1,10 @@
 from django import forms
 from django.core.exceptions import ObjectDoesNotExist
 
-from pricing.models import get_current_object, Pricing
+from pricing.models import ExchangeRate, get_current_object
 
 
 class PricingForm(forms.ModelForm):
-
-    def __init__(self, *args, **kwargs):
-        super(PricingForm, self).__init__(*args, **kwargs)
-        try:
-            pricing = get_current_object(Pricing)
-            self.fields['gbp_ghs'].initial = pricing.gbp_ghs
-            self.fields['gbp_usd'].initial = pricing.gbp_usd
-            self.fields['gbp_sll'].initial = pricing.gbp_sll
-        except (KeyError, ObjectDoesNotExist):
-            pass
 
     def clean_markup(self):
         if not (0.0 <= self.cleaned_data['markup'] <= 1.0):
@@ -22,8 +12,20 @@ class PricingForm(forms.ModelForm):
         return self.cleaned_data['markup']
 
 
+class ExchangeRateForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ExchangeRateForm, self).__init__(*args, **kwargs)
+        try:
+            exchange_rate = get_current_object(ExchangeRate)
+            self.fields['gbp_ghs'].initial = exchange_rate.gbp_ghs
+            self.fields['gbp_usd'].initial = exchange_rate.gbp_usd
+            self.fields['gbp_sll'].initial = exchange_rate.gbp_sll
+        except (KeyError, ObjectDoesNotExist):
+            pass
+
+
 class LimitForm(forms.ModelForm):
     def clean(self):
-        if not self.cleaned_data['transaction_min_gbp'] < self.cleaned_data['transaction_max_gbp']:
+        if not self.cleaned_data['transaction_min'] < self.cleaned_data['transaction_max']:
             raise forms.ValidationError('Minimum amount must be smaller than maximum amount.')
         return self.cleaned_data

@@ -26,7 +26,7 @@ from account import serializers
 from account.models import BeamProfile as Profile
 from account.utils import AccountException, generate_aws_upload
 
-from pricing.models import Pricing, Limit, get_current_object
+from pricing.models import get_current_limit
 
 from beam.utils.ip_blocking import country_blocked, is_tor_node,\
     get_client_ip, HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
@@ -43,7 +43,7 @@ def send_activation_email(user, request, activation_key=None):
         'user': user,
         'protocol': settings.PROTOCOL,
         'activation_days': userena_settings.USERENA_ACTIVATION_DAYS,
-        'activation_key': activation_key,
+        'activation_link': settings.MAIL_ACTIVATION_URL.format(activation_key),
         'site': get_site_by_request(request)
     }
 
@@ -97,6 +97,9 @@ class Signup(APIView):
             user = serializer.save()
 
             if user:
+                # store site the user signed up at
+                user.profile.signup_site_id = get_site_by_request(self.request).id
+                user.profile.save()
 
                 send_activation_email(user, request)
 
@@ -187,6 +190,11 @@ class ActivationResend(APIView):
 
                     raise AccountException(constants.USER_ACCOUNT_ALREADY_ACTIVATED)
 
+                # handle deactivated account
+                if serializer.object.profile.account_deactivated:
+
+                    raise AccountException(constants.USER_ACCOUNT_DISABLED)
+
                 new_activation_key = reissue_activation(serializer.object.userena_signup.activation_key)
 
                 if new_activation_key:
@@ -265,21 +273,10 @@ class Email_Change(APIView):
             # the purpose is rewriting the following part where the emails are sent out
             context = {
                 'user': user,
-                'new_email': user.userena_signup.email_unconfirmed,
                 'protocol': settings.PROTOCOL,
-                'confirmation_key': user.userena_signup.email_confirmation_key,
+                'email_change_link': settings.MAIL_EMAIL_CHANGE_CONFIRM_URL.format(user.userena_signup.email_confirmation_key),
                 'site': get_site_by_request(request)
             }
-
-            # mail to old email account
-            mails.send_mail(
-                subject_template_name=settings.MAIL_CHANGE_EMAIL_OLD_SUBJECT,
-                email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_TEXT,
-                html_email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_HTML,
-                to_email=user.email,
-                from_email=settings.BEAM_MAIL_ADDRESS,
-                context=context
-            )
 
             # mail to new email account
             mails.send_mail(
@@ -291,6 +288,18 @@ class Email_Change(APIView):
                 context=context
             )
 
+            context['support'] = settings.BEAM_SUPPORT
+            context['new_email'] = user.userena_signup.email_unconfirmed
+
+            # mail to old email account
+            mails.send_mail(
+                subject_template_name=settings.MAIL_CHANGE_EMAIL_OLD_SUBJECT,
+                email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_TEXT,
+                html_email_template_name=settings.MAIL_CHANGE_EMAIL_OLD_HTML,
+                to_email=user.email,
+                from_email=settings.BEAM_MAIL_ADDRESS,
+                context=context
+            )
             return Response()
 
         except AccountException as e:
@@ -321,15 +330,20 @@ class PasswordReset(APIView):
 
             if serializer.is_valid():
 
-                if not serializer.object.is_active:
+                if serializer.object.profile.account_deactivated:
                     raise AccountException(constants.USER_ACCOUNT_DISABLED)
+
+                if not serializer.object.is_active:
+                    raise AccountException(constants.USER_ACCOUNT_NOT_ACTIVATED_YET)
+
+                uid = urlsafe_base64_encode(force_bytes(serializer.object.pk))
+                token = token_generator.make_token(serializer.object)
 
                 context = {
                     'email': serializer.object.email,
                     'site': get_site_by_request(request),
-                    'uid': urlsafe_base64_encode(force_bytes(serializer.object.pk)),
+                    'password_reset_link': settings.MAIL_PASSWORD_RESET_URL.format(uid, token),
                     'first_name': serializer.object.first_name,
-                    'token': token_generator.make_token(serializer.object),
                     'protocol': settings.PROTOCOL,
                 }
 
@@ -443,8 +457,9 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
                 passport_params = ['first_name', 'last_name', 'date_of_birth']
                 por_params = ['street', 'post_code', 'city', 'country']
 
-                # need to reupload passport
-                if (list(set(passport_params) & set(changed_params))):
+                # need to reupload identification doc
+                if ((list(set(passport_params) & set(changed_params))) and
+                        request.user.profile.identification_state != Profile.EMPTY):
                     request.user.profile.update_document_state(Profile.IDENTIFICATION, Profile.EMPTY)
                     request.user.profile.identification_issue_date = None
                     request.user.profile.identification_expiry_date = None
@@ -452,7 +467,8 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
                     request.user.profile.save()
 
                 # need to reupload proof of residence
-                if (list(set(por_params) & set(changed_params))):
+                if ((list(set(por_params) & set(changed_params))) and
+                        request.user.profile.proof_of_residence_state != Profile.EMPTY):
                     request.user.profile.update_document_state(Profile.PROOF_OF_RESIDENCE, Profile.EMPTY)
 
                 # clear response data
@@ -609,24 +625,23 @@ class AccountLimits(APIView):
 
     def get(self, request):
 
-        todays_vol_gbp = request.user.profile.todays_transaction_volume()
+        site = get_site_by_request(self.request)
 
-        todays_vol_usd = todays_vol_gbp * get_current_object(Pricing).gbp_usd
+        todays_vol = request.user.profile.todays_transaction_volume(site)
+
+        limit = get_current_limit(site)
 
         if request.user.profile.documents_verified:
-            account_limit_gbp = get_current_object(Limit).user_limit_complete_gbp
-            account_limit_usd = get_current_object(Limit).user_limit_complete_usd
+            account_limit = limit.user_limit_complete
             can_extend = False
         else:
-            account_limit_gbp = get_current_object(Limit).user_limit_basic_gbp
-            account_limit_usd = get_current_object(Limit).user_limit_basic_usd
+            account_limit = limit.user_limit_basic
             can_extend = True
 
         data = {
-            'today_gbp': todays_vol_gbp,
-            'today_usd': todays_vol_usd,
-            'limit_gbp': account_limit_gbp,
-            'limit_usd': account_limit_usd,
+            'today': todays_vol,
+            'limit': account_limit,
+            'currency': settings.SITE_SENDING_CURRENCY[site.id],
             'can_extend': can_extend
         }
         return Response(data)

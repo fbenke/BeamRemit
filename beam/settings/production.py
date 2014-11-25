@@ -86,7 +86,7 @@ ENV_SITE_MAPPING = {
     ENV_LOCAL: {
         SITE_API: os.environ.get('LOCAL_SITE_API'),
         SITE_USER: os.environ.get('LOCAL_SITE_USER'),
-        SITE_USER_SL: os.environ.get('LOCAL_SITE_USER')
+        SITE_USER_SL: os.environ.get('LOCAL_SITE_USER_SL')
     },
     ENV_DEV: {
         SITE_API: 'api-dev.beamremit.com',
@@ -303,18 +303,31 @@ AWS_BUCKET = ENV_BUCKET_MAPPING[ENV]
 # Countries
 GHANA = 'GH'
 SIERRA_LEONE = 'SL'
-RECEIVING_COUNTRIES = (GHANA, SIERRA_LEONE)
 
 # Currencies
-GBP = 'GBP'
 USD = 'USD'
+GBP = 'GBP'
 LEONE = 'SLL'
 CEDI = 'GHS'
-SENDING_CURRENCIES = (USD, GBP)
 
 COUNTRY_CURRENCY = {
     GHANA: CEDI,
     SIERRA_LEONE: LEONE
+}
+
+SITE_SENDING_CURRENCY = {
+    0: GBP,
+    1: USD
+}
+
+SITE_RECEIVING_CURRENCY = {
+    0: CEDI,
+    1: LEONE
+}
+
+SITE_RECEIVING_COUNTRY = {
+    0: (GHANA,),
+    1: (SIERRA_LEONE,)
 }
 
 # Payment Processors
@@ -356,3 +369,4 @@ SPLASH_ONBOARD_RECIPIENT_SUBJECT = 'email/splash/oboard_recipient_subject.txt'
 SPLASH_ONBOARD_RECIPIENT_TEXT = 'email/splash/oboard_recipient_message.txt'
 SPLASH_DONATION_COMPLETE_TEXT = 'email/splash/donation_complete_message.txt'
 SPLASH_DONATION_COMPLETE_HTML = 'email/splash/donation_complete_message.html'
+

@@ -8,48 +8,19 @@ from django.db import models
 class Migration(SchemaMigration):
 
     depends_on = (
-        ('pricing', '0001_initial'),
+        ('pricing', '0016_duplicate_pricing_in_exchangerate'),
     )
 
     def forwards(self, orm):
-        # Adding model 'Recipient'
-        db.create_table(u'transaction_recipient', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=50)),
-            ('phone_number', self.gf('django.db.models.fields.CharField')(max_length=15)),
-            ('notification_email', self.gf('django.db.models.fields.EmailField')(max_length=75, blank=True)),
-        ))
-        db.send_create_signal(u'transaction', ['Recipient'])
-
-        # Adding model 'Transaction'
-        db.create_table(u'transaction_transaction', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('recipient', self.gf('django.db.models.fields.related.ForeignKey')(related_name='transactions', to=orm['transaction.Recipient'])),
-            ('sender', self.gf('django.db.models.fields.related.ForeignKey')(related_name='transactions', to=orm['auth.User'])),
-            ('pricing', self.gf('django.db.models.fields.related.ForeignKey')(related_name='transactions', to=orm['pricing.Pricing'])),
-            ('amount_gbp', self.gf('django.db.models.fields.FloatField')()),
-            ('amount_btc', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('amount_ghs', self.gf('django.db.models.fields.FloatField')(null=True)),
-            ('coinbase_button_code', self.gf('django.db.models.fields.CharField')(max_length=50)),
-            ('reference_number', self.gf('django.db.models.fields.CharField')(max_length=6)),
-            ('coinbase_order_reference', self.gf('django.db.models.fields.CharField')(max_length=10)),
-            ('state', self.gf('django.db.models.fields.CharField')(default='INIT', max_length=4)),
-            ('initialized_at', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('paid_at', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
-            ('processed_at', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
-            ('declined_at', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
-            ('cancelled_at', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
-            ('invalidated_at', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'transaction', ['Transaction'])
+        # Adding field 'Transaction.exchange_rate'
+        db.add_column(u'transaction_transaction', 'exchange_rate',
+                      self.gf('django.db.models.fields.related.ForeignKey')(related_name='transaction', null=True, to=orm['pricing.ExchangeRate']),
+                      keep_default=False)
 
 
     def backwards(self, orm):
-        # Deleting model 'Recipient'
-        db.delete_table(u'transaction_recipient')
-
-        # Deleting model 'Transaction'
-        db.delete_table(u'transaction_transaction')
+        # Deleting field 'Transaction.exchange_rate'
+        db.delete_column(u'transaction_transaction', 'exchange_rate_id')
 
 
     models = {
@@ -89,39 +60,56 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
         },
+        u'pricing.exchangerate': {
+            'Meta': {'object_name': 'ExchangeRate'},
+            'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'fee_gbp': ('django.db.models.fields.FloatField', [], {}),
+            'fee_usd': ('django.db.models.fields.FloatField', [], {}),
+            'gbp_ghs': ('django.db.models.fields.FloatField', [], {}),
+            'gbp_sll': ('django.db.models.fields.FloatField', [], {}),
+            'gbp_usd': ('django.db.models.fields.FloatField', [], {}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'markup': ('django.db.models.fields.FloatField', [], {}),
+            'start': ('django.db.models.fields.DateTimeField', [], {})
+        },
         u'pricing.pricing': {
             'Meta': {'object_name': 'Pricing'},
             'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'ghs_usd': ('django.db.models.fields.FloatField', [], {}),
+            'fee_gbp': ('django.db.models.fields.FloatField', [], {}),
+            'fee_usd': ('django.db.models.fields.FloatField', [], {}),
+            'gbp_ghs': ('django.db.models.fields.FloatField', [], {}),
+            'gbp_sll': ('django.db.models.fields.FloatField', [], {}),
+            'gbp_usd': ('django.db.models.fields.FloatField', [], {}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'markup': ('django.db.models.fields.FloatField', [], {}),
-            'start': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'})
+            'start': ('django.db.models.fields.DateTimeField', [], {})
         },
         u'transaction.recipient': {
             'Meta': {'object_name': 'Recipient'},
+            'first_name': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
-            'notification_email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
+            'last_name': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'phone_number': ('django.db.models.fields.CharField', [], {'max_length': '15'})
         },
         u'transaction.transaction': {
             'Meta': {'ordering': "['-initialized_at']", 'object_name': 'Transaction'},
-            'amount_btc': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'amount_gbp': ('django.db.models.fields.FloatField', [], {}),
-            'amount_ghs': ('django.db.models.fields.FloatField', [], {'null': 'True'}),
+            'amount_btc': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'cancelled_at': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'coinbase_button_code': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
-            'coinbase_order_reference': ('django.db.models.fields.CharField', [], {'max_length': '10'}),
-            'declined_at': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'exchange_rate': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'transaction'", 'null': 'True', 'to': u"orm['pricing.ExchangeRate']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'initialized_at': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'invalidated_at': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'paid_at': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'pricing': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'transactions'", 'to': u"orm['pricing.Pricing']"}),
+            'pricing': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'transaction'", 'to': u"orm['pricing.Pricing']"}),
             'processed_at': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'received_amount': ('django.db.models.fields.FloatField', [], {}),
+            'receiving_country': ('django_countries.fields.CountryField', [], {'max_length': '2'}),
             'recipient': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'transactions'", 'to': u"orm['transaction.Recipient']"}),
             'reference_number': ('django.db.models.fields.CharField', [], {'max_length': '6'}),
             'sender': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'transactions'", 'to': u"orm['auth.User']"}),
+            'sent_amount': ('django.db.models.fields.FloatField', [], {}),
+            'sent_currency': ('django.db.models.fields.CharField', [], {'max_length': '4'}),
             'state': ('django.db.models.fields.CharField', [], {'default': "'INIT'", 'max_length': '4'})
         }
     }

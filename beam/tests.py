@@ -1,4 +1,7 @@
 from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
+from django.test import TestCase
+from django.test.client import RequestFactory
 from django.utils import timezone
 
 from userena.models import UserenaSignup
@@ -8,7 +11,10 @@ from rest_framework.authtoken.models import Token
 
 from account.models import BeamProfile as Profile
 
-from pricing.models import Pricing, Comparison, Limit, end_previous_object
+from beam.utils.angular_requests import get_site_by_request
+
+from pricing.models import Pricing, ExchangeRate, Comparison, Limit,\
+    end_previous_object, end_previous_object_by_site
 
 from state.models import State
 
@@ -43,20 +49,38 @@ class TestUtils(object):
         }
     }
 
-    default_pricing = {
+    default_beam_pricing = {
         'markup': 0.03,
-        'fee_usd': 0,
-        'fee_gbp': 1,
+        'fee': 1,
+        'site': 0
+    }
+
+    default_bae_pricing = {
+        'markup': 0.02,
+        'fee': 0,
+        'site': 1
+    }
+
+    default_exchange_rate = {
         'gbp_ghs': 5.3,
         'gbp_usd': 1.6,
         'gbp_sll': 7040
     }
 
-    default_limit = {
-        'transaction_min_gbp': 2,
-        'transaction_max_gbp': 1000,
-        'user_limit_basic_gbp': 40,
-        'user_limit_complete_gbp': 500
+    default_beam_limit = {
+        'transaction_min': 2,
+        'transaction_max': 1000,
+        'user_limit_basic': 40,
+        'user_limit_complete': 500,
+        'site': 0
+    }
+
+    default_bae_limit = {
+        'transaction_min': 1,
+        'transaction_max': 100,
+        'user_limit_basic': 37,
+        'user_limit_complete': 324,
+        'site': 1
     }
 
     default_comparison = '{"gbpGhs": {"wu": 5.0932009, "mg": 5.158165}}'
@@ -136,18 +160,79 @@ class TestUtils(object):
             email=email,
             password=self.default_password)
 
-    def _create_pricing(self):
+    def _create_pricing(self, markup, fee, site_id):
+        site = Site.objects.get(id=site_id)
         pricing = Pricing(
-            markup=self.default_pricing['markup'],
-            fee_usd=self.default_pricing['fee_usd'],
-            fee_gbp=self.default_pricing['fee_gbp'],
-            gbp_ghs=self.default_pricing['gbp_ghs'],
-            gbp_usd=self.default_pricing['gbp_usd'],
-            gbp_sll=self.default_pricing['gbp_sll']
+            markup=markup,
+            fee=fee,
+            site=site
         )
-        end_previous_object(Pricing)
+        end_previous_object_by_site(Pricing, site)
         pricing.save()
         return pricing
+
+    def _create_default_pricing_beam(self):
+        return self._create_pricing(
+            markup=0.03,
+            fee=2.9,
+            site_id=0
+        )
+
+    def _create_default_pricing_bae(self):
+        return self._create_pricing(
+            markup=0.01,
+            fee=1.2,
+            site_id=1
+        )
+
+    def _create_exchange_rate(self, gbp_ghs, gbp_usd, gbp_sll):
+        exchange_rate = ExchangeRate(
+            gbp_ghs=gbp_ghs,
+            gbp_usd=gbp_usd,
+            gbp_sll=gbp_sll
+        )
+        end_previous_object(ExchangeRate)
+        exchange_rate.save()
+        return exchange_rate
+
+    def _create_default_exchange_rate(self):
+        return self._create_exchange_rate(
+            gbp_ghs=5.3,
+            gbp_usd=1.6,
+            gbp_sll=7040
+        )
+
+    def _create_limit(self, transaction_min, transaction_max, user_limit_basic,
+                      user_limit_complete, site_id):
+        site = Site.objects.get(id=site_id)
+        limit = Limit(
+            transaction_min=transaction_min,
+            transaction_max=transaction_max,
+            user_limit_basic=user_limit_basic,
+            user_limit_complete=user_limit_complete,
+            site=site
+        )
+        end_previous_object_by_site(Limit, site)
+        limit.save()
+        return limit
+
+    def _create_default_limit_beam(self):
+        return self._create_limit(
+            transaction_min=2,
+            transaction_max=1000,
+            user_limit_basic=40,
+            user_limit_complete=500,
+            site_id=0
+        )
+
+    def _create_default_limit_bae(self):
+        return self._create_limit(
+            transaction_min=3,
+            transaction_max=600,
+            user_limit_basic=50,
+            user_limit_complete=600,
+            site_id=1
+        )
 
     def _create_comparison(self):
         comparison = Comparison(price_comparison=self.default_comparison)
@@ -155,55 +240,79 @@ class TestUtils(object):
         comparison.save()
         return comparison
 
-    def _create_state(self, state=None):
+    def _create_state(self, state=None, site_id=None):
         if not state:
             state = State.RUNNING
-        app_state = State(state=state)
-        end_previous_object(State)
+        if not site_id:
+            site_id = 0
+        site = Site.objects.get(id=site_id)
+        app_state = State(state=state, site=site)
+        end_previous_object_by_site(State, site)
         app_state.save()
         return app_state
 
-    def _create_default_limit(self):
-        limit = Limit(
-            transaction_min_gbp=self.default_limit['transaction_min_gbp'],
-            transaction_max_gbp=self.default_limit['transaction_max_gbp'],
-            user_limit_basic_gbp=self.default_limit['user_limit_basic_gbp'],
-            user_limit_complete_gbp=self.default_limit['user_limit_complete_gbp']
-        )
-        end_previous_object(Limit)
-        limit.save()
-        return limit
-
-    def _create_transaction(self, sender, pricing, sent_amount, sent_currency,
-        received_amount, receiving_country):
+    def _create_transaction(self, sender, pricing, exchange_rate, sent_amount,
+                            sent_currency, received_amount, receiving_country):
 
         recipient = Recipient(
             first_name=self.default_recipient_first_name,
             last_name=self.default_recipient_last_name,
             phone_number=self.default_recipient_phone_number)
-
         recipient.save()
+        recipient = Recipient.objects.get(id=recipient.id)
+
         transaction = Transaction(
-            recipient=recipient,
             sender=sender,
+            recipient=recipient,
             pricing=pricing,
+            exchange_rate=exchange_rate,
             sent_amount=sent_amount,
             sent_currency=sent_currency,
             received_amount=received_amount,
             receiving_country=receiving_country,
+            reference_number='12345',
             state='PAID',
             paid_at=timezone.now()
         )
         transaction.save()
         return transaction
 
-    def _create_default_transaction(self, sender, pricing):
+    def _create_default_transaction(self, sender):
 
         return self._create_transaction(
             sender=sender,
-            pricing=pricing,
+            pricing=self._create_default_pricing_beam(),
+            exchange_rate=self._create_default_exchange_rate(),
             sent_amount=10,
             sent_currency='GBP',
-            received_amount=53,
+            received_amount=51.41,
             receiving_country='GH',
         )
+
+
+class SiteMappingTests(TestCase, TestUtils):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def test_get_site_by_request(self):
+        dummy_request = self.factory.get('/')
+        dummy_request.META['HTTP_REFERER'] = 'http://dev.beamremit.com/'
+        site = get_site_by_request(dummy_request)
+        self.assertIsNotNone(site)
+        self.assertEqual(site.id, 0)
+        self.assertEqual(site.domain, 'dev.beamremit.com')
+
+        dummy_request = self.factory.get('/')
+        dummy_request.META['HTTP_REFERER'] = 'http://dev.bitcoinagainstebola.org/'
+        site = get_site_by_request(dummy_request)
+        self.assertIsNotNone(site)
+        self.assertEqual(site.id, 1)
+        self.assertEqual(site.domain, 'dev.bitcoinagainstebola.org')
+
+    def test_get_site_by_request_fail(self):
+        dummy_request = self.factory.get('/')
+        dummy_request.META['HTTP_REFERER'] = 'foo'
+        site = get_site_by_request(dummy_request)
+        self.assertIsNotNone(site)
+        self.assertEqual(site.id, 0)
