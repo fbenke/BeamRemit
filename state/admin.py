@@ -27,10 +27,13 @@ class StateAdmin(admin.ModelAdmin):
             if previous_object.state != obj.state:
                 previous_object.end = timezone.now()
                 previous_object.save()
+            else:
+                return
         except ObjectDoesNotExist:
             if State.objects.all().exists():
                 log_error('ERROR State - Failed to end previous state.')
 
         obj.save()
+
 
 admin.site.register(State, StateAdmin)
