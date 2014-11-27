@@ -68,7 +68,7 @@ class BeamProfileAdmin(admin.ModelAdmin):
         }),
     )
 
-    list_display = ('user_email', 'country', 'city')
+    list_display = ('id', 'user_email', 'country', 'city')
 
     list_display_links = ('user_email', )
 
