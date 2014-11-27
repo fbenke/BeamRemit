@@ -1058,6 +1058,48 @@ class AdminTests(TestCase, TestUtils):
             self.assertEqual(c.changed_to, Profile.FAILED)
             self.assertEqual(c.reason, DocumentStatusChange.LOW_QUALITY)
 
+    def test_mark_documents_archived(self):
+
+        user = self._create_user_with_uploaded_documents()
+        no_document_state_changes = DocumentStatusChange.objects.all().count()
+        no_emails = len(mailbox.outbox)
+
+        data = {
+            'identification_state': Profile.ARCHIVED,
+            'identification_number': self.default_identification_number,
+            'identification_issue_date': self.default_identification_issue_date,
+            'identification_expiry_date': self.default_identification_expiry_date,
+            'send_identification_mail': 'on',
+            'identification_reason': DocumentStatusChange.LOW_QUALITY,
+            'proof_of_residence_state': Profile.ARCHIVED,
+            'send_proof_of_residence_mail': 'on',
+            'proof_of_residence_reason': DocumentStatusChange.LOW_QUALITY,
+            'document_status_change-__prefix__-profile': user.profile.id,
+            'document_status_change-TOTAL_FORMS': '0',
+            'document_status_change-INITIAL_FORMS': '0',
+            'document_status_change-MAX_NUM_FORMS': '10',
+            '_continue': 'Save and continue editing',
+            'document_status_change-__prefix__-id': ''
+        }
+
+        response = self.client.post(reverse(
+            'admin:account_beamprofile_change',
+            args=(user.profile.id,)), data
+        )
+
+        user = User.objects.get(id=user.id)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(user.profile.identification_state, Profile.ARCHIVED)
+        self.assertEqual(user.profile.proof_of_residence_state, Profile.ARCHIVED)
+        self.assertEqual(len(mailbox.outbox), no_emails)
+        self.assertEqual(DocumentStatusChange.objects.all().count(), no_document_state_changes + 2)
+
+        changes = DocumentStatusChange.objects.filter(profile=user.profile)
+        for c in changes:
+            self.assertEqual(c.changed_by, self.default_username)
+            self.assertEqual(c.changed_to, Profile.ARCHIVED)
+            self.assertEqual(c.reason, '')
+
 
 class ProfileModelTests(TestCase, TestUtils):
 

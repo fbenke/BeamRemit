@@ -15,11 +15,11 @@
 
 	<div class="form-row">
 
-		{% if original.identification_state != 'EMP' %}
+		{% if original.identification_state != 'EMP' and original.identification_state != 'ARC' %}
 			<a href="{% aws_document_link "PAS" original.user.id %}" target="_blank" class="viewsitelink">See Passport Document</a>
 		{% endif%}
 
-		{% if original.proof_of_residence_state != 'EMP' %}
+		{% if original.proof_of_residence_state != 'EMP' and original.proof_of_residence_state != 'ARC'%}
 			<a href="{% aws_document_link "POR" original.user.id %}" target="_blank" class="viewsitelink">See Proof of Residence</a>
 		{% endif%}
 

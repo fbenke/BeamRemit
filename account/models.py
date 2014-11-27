@@ -40,14 +40,16 @@ class BeamProfile(UserenaBaseProfile):
     UPLOADED = 'UPL'
     VERIFIED = 'VER'
     FAILED = 'FAL'
+    ARCHIVED = 'ARC'
 
-    DOCUMENT_STATES = (EMPTY, UPLOADED, VERIFIED, FAILED)
+    DOCUMENT_STATES = (EMPTY, UPLOADED, VERIFIED, FAILED, ARCHIVED)
 
     DOCUMENT_STATE_CHOICES = (
         (EMPTY, 'not provided'),
         (UPLOADED, 'uploaded'),
         (VERIFIED, 'verified'),
-        (FAILED, 'failed')
+        (FAILED, 'failed'),
+        (ARCHIVED, 'archived')
     )
 
     IDENTIFICATION_FIELD = 'identification_state'
