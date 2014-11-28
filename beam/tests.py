@@ -142,6 +142,13 @@ class TestUtils(object):
         user.profile.save()
         return user
 
+    def _create_user_with_archived_docs(self, email=None, password=None):
+        user = self._create_fully_verified_user(email=email, password=password)
+        user.profile.proof_of_residence_state = Profile.ARCHIVED
+        user.profile.identification_state = Profile.ARCHIVED
+        user.profile.save()
+        return user
+
     def _create_user_with_uploaded_documents(self, email=None, password=None):
         user = self._create_user_with_profile(email=email, password=password)
         user.profile.identification_state = Profile.UPLOADED

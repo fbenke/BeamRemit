@@ -859,6 +859,25 @@ class AccountLimitTests(AccountTests):
         self.assertEqual(response.data['today'], 0)
         self.assertFalse(response.data['can_extend'])
 
+    def test_account_limits_with_archived_docs(self):
+        user = self._create_user_with_archived_docs()
+        token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 500)
+        self.assertEqual(response.data['currency'], 'GBP')
+        self.assertEqual(response.data['today'], 0)
+        self.assertFalse(response.data['can_extend'])
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 600)
+        self.assertEqual(response.data['currency'], 'USD')
+        self.assertEqual(response.data['today'], 0)
+        self.assertFalse(response.data['can_extend'])
+
     def test_account_spending_count(self):
 
         user = self._create_fully_verified_user()
@@ -1145,3 +1164,29 @@ class ProfileModelTests(TestCase, TestUtils):
         self.assertEqual(user.profile.todays_transaction_volume(site_bae), 166.8)
         self.assertEqual(user.profile.todays_transaction_volume(site_beam, 15), 119.25)
         self.assertEqual(user.profile.todays_transaction_volume(site_bae, 15), 181.8)
+
+    def test_profile_information_complete(self):
+        user = self._create_activated_user()
+        self.assertFalse(user.profile.information_complete)
+        user = self._create_user_with_profile()
+        self.assertTrue(user.profile.information_complete)
+
+    def test_documents_provided(self):
+        user = self._create_activated_user()
+        self.assertFalse(user.profile.documents_provided)
+        user = self._create_user_with_profile()
+        self.assertFalse(user.profile.documents_provided)
+        user = self._create_fully_verified_user()
+        self.assertTrue(user.profile.documents_provided)
+        user = self._create_user_with_archived_docs()
+        self.assertTrue(user.profile.documents_provided)
+
+    def test_documents_verified(self):
+        user = self._create_activated_user()
+        self.assertFalse(user.profile.documents_verified)
+        user = self._create_user_with_profile()
+        self.assertFalse(user.profile.documents_verified)
+        user = self._create_fully_verified_user()
+        self.assertTrue(user.profile.documents_verified)
+        user = self._create_user_with_archived_docs()
+        self.assertTrue(user.profile.documents_verified)
