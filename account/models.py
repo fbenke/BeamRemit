@@ -202,8 +202,8 @@ class BeamProfile(UserenaBaseProfile):
     def documents_verified(self):
         if (
             not self.information_complete or
-            self.identification_state != self.VERIFIED or
-            self.proof_of_residence_state != self.VERIFIED
+            self.identification_state not in (self.VERIFIED, self.ARCHIVED) or
+            self.proof_of_residence_state not in (self.VERIFIED, self.ARCHIVED)
         ):
             return False
         return True
