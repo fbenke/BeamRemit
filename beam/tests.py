@@ -320,6 +320,7 @@ class SiteMappingTests(TestCase, TestUtils):
     def test_get_site_by_request_fail(self):
         dummy_request = self.factory.get('/')
         dummy_request.META['HTTP_REFERER'] = 'foo'
+        dummy_request.DATA = {'hello': 'error'}
         site = get_site_by_request(dummy_request)
         self.assertIsNotNone(site)
         self.assertEqual(site.id, 0)
