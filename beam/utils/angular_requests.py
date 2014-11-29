@@ -15,9 +15,10 @@ def get_site_by_request(request):
     try:
         frontend_domain = get_frontend_domain(request)
         return Site.objects.get(domain__iexact=frontend_domain)
+        print request.META
+        print request.DATA
     except (Site.DoesNotExist, ValueError):
-        post_data = request.DATA
-        message = 'ERROR - Site Mapping: Cannot associate {} with a Site. {} {}'.format(frontend_domain, request.META, post_data)
+        message = 'ERROR - Site Mapping: Cannot associate {} with a Site. {} {}'.format(frontend_domain, request.META, request.DATA)
         log_error(message)
         return Site.objects.get_current()
 
