@@ -11,5 +11,15 @@ urlpatterns = patterns(
         r'^gocoin/$',
         views.ConfirmGoCoinPayment.as_view(),
         name='gocoin'
-    )
+    ),
+    url(
+        r'^blockchain/$',
+        views.ConfirmBlockchainPayment.as_view(),
+        name='blockchain'
+    ),
+    url(
+        r'^test/$',
+        views.Test.as_view(),
+        name='test'
+    ),
 )

@@ -14,6 +14,7 @@ from beam.utils.security import generate_signature
 from transaction.models import Transaction
 
 from btc_payment.models import GoCoinInvoice
+from btc_payment.api_calls.blockchain import generate_receiving_address
 
 
 class ConfirmGoCoinPayment(APIView):
@@ -109,3 +110,23 @@ class ConfirmGoCoinPayment(APIView):
             message = 'ERROR - GoCoin Callback: received unexpected payment notification, {}'
             log_error(message.format(json.dumps(request.DATA)))
         return Response(status=status.HTTP_200_OK)
+
+
+class ConfirmBlockchainPayment(APIView):
+
+    def get(self, request):
+        print request.QUERY_PARAMS['value']
+        print request.QUERY_PARAMS['input_address']
+        print request.QUERY_PARAMS['confirmations']
+        print request.QUERY_PARAMS['transaction_hash']
+        print request.QUERY_PARAMS['input_transaction_hash']
+        print request.QUERY_PARAMS['destination_address']
+
+        return Response(data='*ok*', status=status.HTTP_200_OK)
+
+
+class Test(APIView):
+
+    def get(self, request):
+        print generate_receiving_address()
+        return Response()
