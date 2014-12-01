@@ -331,7 +331,8 @@ SITE_RECEIVING_COUNTRY = {
 }
 
 # Payment Processors
-PAYMENT_PROCESSOR = 'GoCoinInvoice'
+# PAYMENT_PROCESSOR = 'GoCoinInvoice'
+PAYMENT_PROCESSOR = 'BlockchainInvoice'
 
 # GoCoin Settings
 # API Key with permission 'invoice_read_write'
@@ -370,3 +371,11 @@ SPLASH_ONBOARD_RECIPIENT_TEXT = 'email/splash/oboard_recipient_message.txt'
 SPLASH_DONATION_COMPLETE_TEXT = 'email/splash/donation_complete_message.txt'
 SPLASH_DONATION_COMPLETE_HTML = 'email/splash/donation_complete_message.html'
 
+BTC_SATOSHI = 100000000
+
+# Blockchain API
+BLOCKCHAIN_BASE_URL = 'https://blockchain.info/api/'
+BLOCKCHAIN_CREATE_BTC_ADDRESS_URL = BLOCKCHAIN_BASE_URL + 'receive'
+BLOCKCHAIN_INVOICE_CALLBACK_URL = API_BASE_URL + '/api/v1/btc_payment/blockchain/'
+BLOCKCHAIN_DESTINATION_ADDRESS = '1ENNEzMRVdNoC1ZdbPrTdU4z72UNuus1Uj'
+BLOCKCHAIN_TIMEOUT = 15

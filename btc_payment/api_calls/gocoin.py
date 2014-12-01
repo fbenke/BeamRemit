@@ -24,7 +24,7 @@ def make_request(url, body=None):
     try:
         return opener.open(req)
     except urllib2.HTTPError as e:
-        log_error('ERROR - ' + 'GoCoin: Failed to send request ({}: {}). {}'.format(e.code, e.reason, body))
+        log_error('ERROR - GoCoin: Failed to send request ({}: {}). {}'.format(e.code, e.reason, body))
         raise APIException
 
 

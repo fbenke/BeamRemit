@@ -1,34 +1,38 @@
 import requests
 
+from django.conf import settings
+
+from beam.utils.exceptions import APIException
+from beam.utils.log import log_error
+
 
 def generate_receiving_address():
-
-    # TODO: move to settings later
-    TIMEOUT = 15
-    resource = 'https://blockchain.info/api/receive'
-    destination_address = '1ENNEzMRVdNoC1ZdbPrTdU4z72UNuus1Uj'
-    callback_url = 'https://dev.beamremit.com/api/v1/btc_payment/blockchain/'
 
     try:
         payload = {
             'method': 'create',
-            'address': destination_address,
-            'callback': callback_url
+            'address': settings.BLOCKCHAIN_DESTINATION_ADDRESS,
+            'callback': settings.BLOCKCHAIN_INVOICE_CALLBACK_URL
         }
 
-        # response = requests.options(resource)
-        # print response.text
-        # print response.status_code
+        response = requests.get(
+            settings.BLOCKCHAIN_CREATE_BTC_ADDRESS_URL,
+            params=payload,
+            timeout=settings.BLOCKCHAIN_TIMEOUT
+        )
+        response = response.json()
 
-        response = requests.get(resource, params=payload, timeout=TIMEOUT)
-        print response.url
-        print response.text
-        print response.status_code
-        # return response.json()
+        # sanity checks
+        if response['callback_url'].replace('\\', '') != settings.BLOCKCHAIN_DESTINATION_ADDRESS:
+            log_error('ERROR - Blockchain Generate Receive Address: Unexpected Callback URL {}'.format(response['callback_url']))
 
+        if response['destination'] != settings.BLOCKCHAIN_DESTINATION_ADDRESS:
+            log_error('ERROR - Blockchain Generate Receive Address: Unexpected Destination Address {}'.format(response['destination']))
 
-        # {"callback_url":"https:\/\/dev.beamremit.com\/api\/v1\/btc_payment\/blockchain\/","input_address":"1GDLdmuYpCmiKyrd34yd7Qb75yWZfYDPPj","destination":"1ENNEzMRVdNoC1ZdbPrTdU4z72UNuus1Uj","fee_percent":0}
+        return response['input_address']
+
+        return '1234'
 
     except requests.RequestException as e:
-        message = 'ERROR - ACCEPT (btc transfer request to blockchain): {}'.format(repr(e))
-        print message
+        log_error('ERROR - Blockchain Generate Receive Address: Failed to send request {}'.format(repr(e)))
+        raise APIException
