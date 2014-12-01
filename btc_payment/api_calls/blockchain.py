@@ -31,7 +31,7 @@ def generate_receiving_address():
 
         return response['input_address']
 
-        return '1234'
+        # return '1234'
 
     except requests.RequestException as e:
         log_error('ERROR - Blockchain Generate Receive Address: Failed to send request {}'.format(repr(e)))

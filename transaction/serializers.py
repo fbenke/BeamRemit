@@ -59,6 +59,7 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
             sent_amount=attrs['sent_amount'],
             sent_currency=attrs['sent_currency'],
             receiving_country=attrs['receiving_country'],
+            payment_processor=settings.CURRENT_PAYMENT_PROCESSOR
         )
 
         return transaction

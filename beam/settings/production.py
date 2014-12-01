@@ -331,8 +331,14 @@ SITE_RECEIVING_COUNTRY = {
 }
 
 # Payment Processors
-# PAYMENT_PROCESSOR = 'GoCoinInvoice'
-PAYMENT_PROCESSOR = 'BlockchainInvoice'
+GOCOIN = 'GOCO'
+BLOCKCHAIN = 'BLOC'
+PAYMENT_PROCESSORS = (GOCOIN, BLOCKCHAIN)
+CURRENT_PAYMENT_PROCESSOR = BLOCKCHAIN
+PROCESSOR_INVOICE_CLASS = {
+    GOCOIN: ('GoCoinInvoice', 'gocoin_invoice'),
+    BLOCKCHAIN: ('BlockchainInvoice', 'blockchain_invoice')
+}
 
 # GoCoin Settings
 # API Key with permission 'invoice_read_write'

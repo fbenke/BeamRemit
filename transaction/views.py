@@ -21,8 +21,9 @@ from state.models import get_current_state
 
 from account.utils import AccountException
 
-mod = __import__('btc_payment.models', fromlist=[settings.PAYMENT_PROCESSOR])
-payment_class = getattr(mod, settings.PAYMENT_PROCESSOR)
+invoice_class = settings.PROCESSOR_INVOICE_CLASS[settings.CURRENT_PAYMENT_PROCESSOR][0]
+mod = __import__('btc_payment.models', fromlist=[invoice_class])
+payment_class = getattr(mod, invoice_class)
 
 
 class CreateTransaction(GenericAPIView):

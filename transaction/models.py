@@ -97,6 +97,12 @@ class Transaction(models.Model):
         help_text='Currency the sent amount is denominated in'
     )
 
+    payment_processor = models.CharField(
+        'Payment Processor',
+        max_length=4,
+        help_text='Payment Processor for accepting Bitcoin'
+    )
+
     amount_btc = models.FloatField(
         'Bitcoins paid to Beam',
         null=True,

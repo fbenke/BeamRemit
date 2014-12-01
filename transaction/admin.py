@@ -81,25 +81,28 @@ class TransactionAdmin(admin.ModelAdmin):
         return obj.sent_amount + obj.pricing.fee
 
     def payment_processor_invoice(self, obj):
-        path = settings.API_BASE_URL + '/admin/btc_payment/gocoininvoice'
-        # TODO make this more flexible once we add other payment processors
-        return '<a href="{}/{}/">{}</a>'.format(
-            path, obj.gocoin_invoice.id, obj.gocoin_invoice.id)
+        invoice_class = settings.PROCESSOR_INVOICE_CLASS[obj.payment_processor][0]
+        invoice_referer = settings.PROCESSOR_INVOICE_CLASS[obj.payment_processor][1]
+        path = settings.API_BASE_URL + '/admin/btc_payment/' + invoice_class.lower()
+        invoice = getattr(obj, invoice_referer)
+        return '<a href="{}/{}/">{}</a>'.format(path, invoice.id, invoice.id)
 
     payment_processor_invoice.allow_tags = True
     payment_processor_invoice.short_description = 'invoice'
 
     readonly_fields = (
         'id', 'recipient_url', 'pricing_url', 'exchange_rate_url', 'sender_url', 'receiving_country',
-        'sent_amount', 'sent_currency', 'received_amount', 'amount_paid_to_beam',
+        'sent_amount', 'sent_currency', 'received_amount', 'amount_paid_to_beam', 'payment_processor',
         'amount_btc', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
         'cancelled_at', 'invalidated_at', 'received_currency', 'payment_processor_invoice'
     )
 
     fieldsets = (
         (None, {
-            'fields': ('id', 'pricing_url', 'exchange_rate_url', 'payment_processor_invoice',
-            'amount_btc', 'reference_number')
+            'fields': (
+                'id', 'pricing_url', 'exchange_rate_url',
+                ('payment_processor_invoice', 'payment_processor'),
+                'amount_btc', 'reference_number')
         }),
         ('Sender', {
             'fields': (

@@ -47,7 +47,7 @@ class BlockchainInvoiceAdmin(InvoiceAdmin):
     read_and_write_fields = ()
     fields = readonly_fields + read_and_write_fields
 
-    list_display = ('id', 'transaction_url', 'state')
+    list_display = ('id', 'invoice_id', 'transaction_url', 'state')
 
     inlines = (BlockchainPaymentChangeInline, )
 
