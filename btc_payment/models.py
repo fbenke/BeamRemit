@@ -185,30 +185,22 @@ class BlockchainInvoice(models.Model):
 
     @staticmethod
     def initiate(transaction):
-        # message = (str(transaction.id) + str(transaction.sent_amount + transaction.fee) +
-        #            settings.GOCOIN_INVOICE_CALLBACK_URL)
-
-        # signature = generate_signature(message, settings.GOCOIN_API_KEY)
-
-        # price=transaction.sent_amount + transaction.fee,
-        # reference_number=transaction.reference_number,
-        # transaction_id=transaction.id,
-        # signature=signature,
-        # currency=transaction.sent_currency,
 
         invoice_id = uuid4()
 
-        btc_address = blockchain.generate_receiving_address(invoice_id)
+        btc_address = blockchain.generate_receiving_address(
+            invoice_id=invoice_id,
+        )
 
         blockchain_invoice = BlockchainInvoice(
             transaction=transaction,
             btc_address=btc_address,
             invoice_id=invoice_id,
-            # TODO
+            # TODO pricing API
             btc_usd=375,
             sender_usd=1
         )
-
+        # TODO
         transaction.amount_btc = 0.001
 
         with dbtransaction.atomic():
