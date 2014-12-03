@@ -1,5 +1,6 @@
 import json
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction as db_transaction
 from django.conf import settings
 
@@ -13,7 +14,7 @@ from beam.utils.security import generate_signature
 
 from transaction.models import Transaction
 
-from btc_payment.models import GoCoinInvoice
+from btc_payment.models import GoCoinInvoice, BlockchainPayment, BlockchainInvoice
 
 
 class ConfirmGoCoinPayment(APIView):
@@ -128,20 +129,34 @@ class ConfirmBlockchainPayment(APIView):
             input_address = request.QUERY_PARAMS['input_address']
 
             # transaction hashes of payment and forwarding transaction, stored for logging purposes
-            forward_hash = request.QUERY_PARAMS['transaction_hash']
-            input_hash = request.QUERY_PARAMS['input_transaction_hash']
+            input_transaction_hash = request.QUERY_PARAMS['input_transaction_hash']
+            forward_transaction_hash = request.QUERY_PARAMS['transaction_hash']
+            invoice_id = request.QUERY_PARAMS['invoice_id']
 
-            amount = int(request.QUERY_PARAMS['value']) / settings.BTC_SATOSHI
+            amount = float(request.QUERY_PARAMS['value']) / settings.BTC_SATOSHI
 
+            payment = BlockchainPayment(
+                input_transaction_hash=input_transaction_hash,
+                forward_transaction_hash=forward_transaction_hash,
+                amount=amount
+            )
 
+            invoice = BlockchainInvoice.objects.get(btc_address=input_address, invoice_id=invoice_id)
+            payment.invoice = invoice
+            payment.save()
 
             # only send ok when NUMBER_CONFIRMATIONS_REQUIRED is reached
             no_confirmations = int(request.QUERY_PARAMS['confirmations'])
             if no_confirmations >= settings.BLOCKCHAIN_MIN_CONFIRMATIONS:
+
                 return Response(data='*ok*', status=status.HTTP_200_OK)
 
-        except KeyError:
-            message = 'ERROR - Blockchain Callback: received unexpected payment notification, {}'
+        except KeyError as e:
+            message = 'ERROR - Blockchain Callback: received unexpected payment notification, {}, {}'
+            log_error(message.format(json.dumps(request.QUERY_PARAMS), format(repr(e))))
+
+        except ObjectDoesNotExist:
+            message = 'ERROR - Blockchain Callback: invoice not found, {}'
             log_error(message.format(json.dumps(request.QUERY_PARAMS)))
 
         return Response()

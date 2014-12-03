@@ -196,12 +196,14 @@ class BlockchainInvoice(models.Model):
         # signature=signature,
         # currency=transaction.sent_currency,
 
-        btc_address = blockchain.generate_receiving_address()
+        invoice_id = uuid4()
+
+        btc_address = blockchain.generate_receiving_address(invoice_id)
 
         blockchain_invoice = BlockchainInvoice(
             transaction=transaction,
             btc_address=btc_address,
-            invoice_id=uuid4(),
+            invoice_id=invoice_id,
             # TODO
             btc_usd=375,
             sender_usd=1
@@ -219,7 +221,7 @@ class BlockchainInvoice(models.Model):
 
 class BlockchainPayment(models.Model):
 
-    input_address = models.ForeignKey(
+    invoice = models.ForeignKey(
         BlockchainInvoice,
         related_name='payments',
         help_text='Invoice associated with that transaction'
