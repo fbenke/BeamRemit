@@ -188,20 +188,25 @@ class BlockchainInvoice(models.Model):
 
         invoice_id = uuid4()
 
-        btc_address = blockchain.generate_receiving_address(
-            invoice_id=invoice_id,
+        # btc_address = blockchain.generate_receiving_address(
+        #     invoice_id=invoice_id,
+        # )
+
+        amount_btc = blockchain.convert_to_btc(
+            amount=transaction.sent_amount + transaction.fee,
+            currency=transaction.sent_currency
         )
 
         blockchain_invoice = BlockchainInvoice(
             transaction=transaction,
-            btc_address=btc_address,
+            btc_address='1234',
             invoice_id=invoice_id,
             # TODO pricing API
             btc_usd=375,
             sender_usd=1
         )
-        # TODO
-        transaction.amount_btc = 0.001
+
+        transaction.amount_btc = amount_btc
 
         with dbtransaction.atomic():
             blockchain_invoice.save()

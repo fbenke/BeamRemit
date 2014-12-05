@@ -42,4 +42,31 @@ def generate_receiving_address(invoice_id):
 
     except requests.RequestException as e:
         log_error('ERROR - Blockchain Generate Receive Address: Failed to send request {}'.format(repr(e)))
+
         raise APIException
+
+
+def convert_to_btc(amount, currency):
+    try:
+
+        payload = {
+            'value': amount,
+            'currency': currency
+        }
+
+        response = requests.get(
+            settings.BLOCKCHAIN_CONVERT_TO_BTC_URL,
+            params=payload,
+            timeout=settings.BLOCKCHAIN_TIMEOUT
+        )
+
+        return float(response.text)
+    except requests.RequestException as e:
+        log_error('ERROR - Blockchain Convert to Bitcoin: Failed to send request {}'.format(repr(e)))
+        raise APIException
+
+    except TypeError as e:
+        log_error('ERROR - Blockchain Convert to Bitcoin: Unexpected Response {}'.format(repr(e)))
+        raise APIException
+
+
