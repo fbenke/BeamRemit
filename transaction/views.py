@@ -32,7 +32,7 @@ class CreateTransaction(GenericAPIView):
 
     def post_save(self, obj, created=False):
         # initiate payment with external payment processor
-        self.invoice_id = payment_class.initiate(obj)
+        self.response_params = payment_class.initiate(obj)
 
     def post(self, request):
 
@@ -81,12 +81,11 @@ class CreateTransaction(GenericAPIView):
 
                 self.post_save(self.object, created=True)
 
-                return Response(
-                    {'invoice_id': self.invoice_id,
-                     'received_amount': self.object.received_amount,
-                     'received_currency': self.object.received_currency,
-                     'operation_mode': get_current_state(site).state},
-                    status=status.HTTP_201_CREATED)
+                self.response_params['received_amount'] = self.object.received_amount
+                self.response_params['received_currency'] = self.object.received_currency
+                self.response_params['operation_mode'] = get_current_state(site).state
+
+                return Response(self.response_params, status=status.HTTP_201_CREATED)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

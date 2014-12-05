@@ -194,7 +194,7 @@ class ActivationTests(AccountTests):
         user = self._create_inactive_user(email=email)
 
         # manipulate db so that activation key is expired
-        user.date_joined = timezone.now() - timedelta(settings.USERENA_ACTIVATION_DAYS)
+        user.date_joined = timezone.now() - timedelta(minutes=settings.USERENA_ACTIVATION_DAYS)
         user.save()
 
         # get activation key and send activate get request

@@ -11,6 +11,8 @@ from beam.utils.security import generate_signature
 
 from btc_payment.api_calls import gocoin, blockchain
 
+from datetime import timedelta
+
 
 class GoCoinInvoice(models.Model):
 
@@ -108,7 +110,7 @@ class GoCoinInvoice(models.Model):
                 transaction.gocoin_invoice = GoCoinInvoice.objects.get(id=gocoin_invoice.id)
                 transaction.save()
 
-            return gocoin_invoice.invoice_id
+            return {'invoice_id': gocoin_invoice.invoice_id}
 
         except KeyError as e:
             message = 'ERROR - GoCoin Create Invoice: received invalid response, {}, {}'
@@ -172,7 +174,7 @@ class BlockchainInvoice(models.Model):
     balance_due = models.FloatField(
         'Balance Due',
         null=True,
-        help_text='GoCoin allows several BTC payments for one item, which are added up. Negative balance means "overpaid"'
+        help_text='Several BTC payments for one item are possible. Negative balance means "overpaid"'
     )
 
     state = models.CharField(
@@ -188,22 +190,24 @@ class BlockchainInvoice(models.Model):
 
         invoice_id = uuid4()
 
-        # btc_address = blockchain.generate_receiving_address(
-        #     invoice_id=invoice_id,
-        # )
+        btc_address = blockchain.generate_receiving_address(
+            invoice_id=invoice_id,
+        )
 
-        amount_btc = blockchain.convert_to_btc(
-            amount=transaction.sent_amount + transaction.fee,
+        transaction_value = transaction.sent_amount + transaction.fee
+
+        amount_btc, btc_usd, sender_usd = blockchain.convert_to_btc(
+            amount=transaction_value,
             currency=transaction.sent_currency
         )
 
         blockchain_invoice = BlockchainInvoice(
             transaction=transaction,
-            btc_address='1234',
+            btc_address=btc_address,
             invoice_id=invoice_id,
-            # TODO pricing API
-            btc_usd=375,
-            sender_usd=1
+            btc_usd=btc_usd,
+            sender_usd=sender_usd,
+            balance_due=amount_btc
         )
 
         transaction.amount_btc = amount_btc
@@ -213,7 +217,11 @@ class BlockchainInvoice(models.Model):
             transaction.blockchain_invoice = BlockchainInvoice.objects.get(id=blockchain_invoice.id)
             transaction.save()
 
-        return transaction.blockchain_invoice.invoice_id
+        return {
+            'amount_btc': amount_btc,
+            'btc_address': btc_address,
+            'expires': blockchain_invoice.created_at + timedelta(minutes=settings.BLOCKCHAIN_TIMEOUT)
+        }
 
 
 class BlockchainPayment(models.Model):
@@ -247,5 +255,3 @@ class BlockchainPayment(models.Model):
         auto_now_add=True,
         help_text='Time at which callback for this payment was received'
     )
-
-

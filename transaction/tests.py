@@ -353,7 +353,7 @@ class CreateTransaction(TransactionTests):
         pricing_beam = self._create_default_pricing_beam()
         pricing_bae = self._create_default_pricing_bae()
         exchange_rate = self._create_default_exchange_rate()
-        mock_payment_initiation.return_value = '12345'
+        mock_payment_initiation.return_value = {'invoice_id': '12345'}
 
         data = {
             'pricing_id': pricing_beam.id,
@@ -375,7 +375,7 @@ class CreateTransaction(TransactionTests):
         self.assertEqual(response.data['received_currency'], 'GHS')
         self.assertEqual(response.data['operation_mode'], 'UP')
 
-        mock_payment_initiation.return_value = '67890'
+        mock_payment_initiation.return_value = {'invoice_id': '67890'}
 
         data = {
             'pricing_id': pricing_bae.id,

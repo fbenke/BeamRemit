@@ -47,26 +47,20 @@ def generate_receiving_address(invoice_id):
 
 
 def convert_to_btc(amount, currency):
+
     try:
-
-        payload = {
-            'value': amount,
-            'currency': currency
-        }
-
         response = requests.get(
             settings.BLOCKCHAIN_CONVERT_TO_BTC_URL,
-            params=payload,
             timeout=settings.BLOCKCHAIN_TIMEOUT
         )
 
-        return float(response.text)
+        rates = response.json()
+
+        btc_currency = float(rates.get(currency)['sell'])
+        btc_usd = float(rates.get(settings.USD)['sell'])
+        amount_btc = round(amount / btc_currency, 4)
+        return amount_btc, btc_usd, btc_usd / btc_currency
+
     except requests.RequestException as e:
-        log_error('ERROR - Blockchain Convert to Bitcoin: Failed to send request {}'.format(repr(e)))
+        log_error('ERROR - Blockchain Convert Currency to Bitcoin: Failed to send request {}'.format(repr(e)))
         raise APIException
-
-    except TypeError as e:
-        log_error('ERROR - Blockchain Convert to Bitcoin: Unexpected Response {}'.format(repr(e)))
-        raise APIException
-
-
