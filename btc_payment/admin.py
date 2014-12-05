@@ -32,7 +32,7 @@ admin.site.register(GoCoinInvoice, GoCoinInvoiceAdmin)
 class BlockchainPaymentChangeInline(admin.TabularInline):
 
     model = BlockchainPayment
-    readonly_fields = ('received_at', 'amount', 'input_transaction_hash', 'forward_transaction_hash')
+    readonly_fields = ('state', 'received_at', 'amount', 'input_transaction_hash', 'forward_transaction_hash')
     extra = 0
     max_num = 0
     can_delete = False

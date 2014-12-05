@@ -185,6 +185,10 @@ class BlockchainInvoice(models.Model):
         help_text='State of the Invoice'
     )
 
+    @property
+    def expires_at(self):
+        return self.created_at + timedelta(minutes=settings.BLOCKCHAIN_TIMEOUT)
+
     @staticmethod
     def initiate(transaction):
 
@@ -220,11 +224,42 @@ class BlockchainInvoice(models.Model):
         return {
             'amount_btc': amount_btc,
             'btc_address': btc_address,
-            'expires': blockchain_invoice.created_at + timedelta(minutes=settings.BLOCKCHAIN_TIMEOUT)
+            'expires': blockchain_invoice.expires_at
         }
+
+    def update(self, payment):
+
+       # handle notifications sent late
+        if payment.received_at > self.expires_at:
+            self.state = self.MERCHANT_REVIEW
+        else:
+            self.balance_due = self.balance_due - payment.amount
+            if self.balance_due < 0:
+                self.state = self.PAID
+            else:
+                self.state = self.UNDERPAID
+
+        self.save()
+
+    def confirm(self):
+        if self.balance_due > 0:
+            return
+        for p in self.payments:
+            if p.state == BlockchainPayment.PENDING:
+                return
+        self.state = self.READY_TO_SHIP
+        self.save()
 
 
 class BlockchainPayment(models.Model):
+
+    PENDING = 'PEND'
+    CONFIRMED = 'CONF'
+
+    PAYMENT_STATES = (
+        (PENDING, 'pending'),
+        (CONFIRMED, 'confirmed')
+    )
 
     invoice = models.ForeignKey(
         BlockchainInvoice,
@@ -247,11 +282,19 @@ class BlockchainPayment(models.Model):
     amount = models.FloatField(
         'Amount',
         null=True,
-        help_text='Outstanding Balance for this invoice. Negative balance means "overpaid"'
+        help_text='Amount in BTC'
     )
 
     received_at = models.DateTimeField(
         'Received at',
         auto_now_add=True,
         help_text='Time at which callback for this payment was received'
+    )
+
+    state = models.CharField(
+        'State',
+        max_length=4,
+        choices=PAYMENT_STATES,
+        default=PENDING,
+        help_text='State of the Invoice'
     )
