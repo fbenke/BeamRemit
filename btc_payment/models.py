@@ -234,7 +234,7 @@ class BlockchainInvoice(models.Model):
             self.state = self.MERCHANT_REVIEW
         else:
             self.balance_due = self.balance_due - payment.amount
-            if self.balance_due < 0:
+            if self.balance_due <= 0:
                 self.state = self.PAID
             else:
                 self.state = self.UNDERPAID
@@ -244,7 +244,7 @@ class BlockchainInvoice(models.Model):
     def confirm(self):
         if self.balance_due > 0:
             return
-        for p in self.payments:
+        for p in self.payments.all():
             if p.state == BlockchainPayment.PENDING:
                 return
         self.state = self.READY_TO_SHIP

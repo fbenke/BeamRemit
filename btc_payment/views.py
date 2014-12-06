@@ -120,13 +120,13 @@ class ConfirmBlockchainPayment(APIView):
 
             message = (request.QUERY_PARAMS['destination_address'] + request.QUERY_PARAMS['invoice_id'])
 
-            # signature = generate_signature(message, settings.BLOCKCHAIN_API_KEY)
+            signature = generate_signature(message, settings.BLOCKCHAIN_API_KEY)
 
-            # if request.QUERY_PARAMS['signature'] != signature:
+            if request.QUERY_PARAMS['signature'] != signature:
 
-            #     message = 'ERROR - Blockchain Callback: security param does not match, {}'
-            #     log_error(message.format(json.dumps(request.QUERY_PARAMS)))
-            #     raise APIException
+                message = 'ERROR - Blockchain Callback: security param does not match, {}'
+                log_error(message.format(json.dumps(request.QUERY_PARAMS)))
+                raise APIException
 
             with db_transaction.atomic():
 
