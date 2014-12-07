@@ -153,8 +153,12 @@ class ConfirmBlockchainPayment(APIView):
 
                     amount = float(request.QUERY_PARAMS['value']) / settings.BTC_SATOSHI
 
+                    print input_address
+                    print invoice_id
+
                     invoice = BlockchainInvoice.objects.get(btc_address=input_address, invoice_id=invoice_id)
 
+                    print 'got here'
                     payment = BlockchainPayment(
                         input_transaction_hash=input_transaction_hash,
                         forward_transaction_hash=forward_transaction_hash,
@@ -164,10 +168,9 @@ class ConfirmBlockchainPayment(APIView):
                     payment.invoice = invoice
                     payment.save()
 
+                    print 'second one'
                     # update balance of the corresponding invoice
                     invoice.update(payment)
-
-                    return Response()
 
                 # handle payments confirmed by the blockchain
                 if no_confirmations >= settings.BLOCKCHAIN_MIN_CONFIRMATIONS:
@@ -181,6 +184,8 @@ class ConfirmBlockchainPayment(APIView):
 
                     # no need to send this callback again
                     return Response(data='*ok*', status=status.HTTP_200_OK)
+
+                return Response()
 
         except KeyError as e:
             message = 'ERROR - Blockchain Callback: received unexpected payment notification, {}, {}'
