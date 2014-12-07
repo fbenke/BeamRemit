@@ -49,8 +49,14 @@ def generate_receiving_address(invoice_id):
 def convert_to_btc(amount, currency):
 
     try:
+
+        payload = {
+            'api_code': settings.BLOCKCHAIN_API_KEY
+        }
+
         response = requests.get(
             settings.BLOCKCHAIN_CONVERT_TO_BTC_URL,
+            params=payload,
             timeout=settings.BLOCKCHAIN_TIMEOUT
         )
 

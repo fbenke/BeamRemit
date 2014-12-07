@@ -232,10 +232,14 @@ class BlockchainInvoice(models.Model):
        # handle notifications sent late
         if payment.received_at > self.expires_at:
             self.state = self.MERCHANT_REVIEW
+            self.transaction.set_invalid()
+            self.transaction.post_paid_problem()
         else:
             self.balance_due = self.balance_due - payment.amount
             if self.balance_due <= 0:
                 self.state = self.PAID
+                self.transaction.set_paid()
+                self.transaction.post_paid()
             else:
                 self.state = self.UNDERPAID
 
