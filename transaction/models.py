@@ -175,6 +175,10 @@ class Transaction(models.Model):
     )
 
     @property
+    def invoice(self):
+        return getattr(self, settings.PROCESSOR_INVOICE_CLASS[self.payment_processor][1])
+
+    @property
     def received_currency(self):
         return settings.COUNTRY_CURRENCY[self.receiving_country]
 
@@ -254,8 +258,7 @@ class Transaction(models.Model):
                 'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                 'protocol': settings.PROTOCOL,
                 'id': self.id,
-                # TODO: decouple from specific payment provider
-                'invoice_state': self.gocoin_invoice.state,
+                'invoice_state': self.invoice.state,
                 'site_name': Site.objects.get_current().name
             },
             to_email=mails.get_admin_mail_addresses()
