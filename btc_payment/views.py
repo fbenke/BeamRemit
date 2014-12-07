@@ -167,6 +167,8 @@ class ConfirmBlockchainPayment(APIView):
                     # update balance of the corresponding invoice
                     invoice.update(payment)
 
+                    return Response()
+
                 # handle payments confirmed by the blockchain
                 if no_confirmations >= settings.BLOCKCHAIN_MIN_CONFIRMATIONS:
 
@@ -191,6 +193,4 @@ class ConfirmBlockchainPayment(APIView):
         except APIException:
             pass
 
-        return Response()
-
-
+        return Response(data='*ok*', status=status.HTTP_200_OK)
