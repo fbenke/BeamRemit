@@ -46,7 +46,7 @@ def generate_receiving_address(transaction_id, invoice_id):
         raise APIException
 
 
-def convert_to_btc(amount, currency):
+def live_ticker():
 
     try:
 
@@ -60,13 +60,23 @@ def convert_to_btc(amount, currency):
             timeout=settings.BLOCKCHAIN_TIMEOUT
         )
 
-        rates = response.json()
-
-        btc_currency = float(rates.get(currency)['sell'])
-        btc_usd = float(rates.get(settings.USD)['sell'])
-        amount_btc = round(amount / btc_currency, 4)
-        return amount_btc, btc_usd, btc_usd / btc_currency
+        return response.json()
 
     except requests.RequestException as e:
         log_error('ERROR - Blockchain Convert Currency to Bitcoin: Failed to send request {}'.format(repr(e)))
         raise APIException
+
+
+def convert_to_btc(currency, amount):
+
+    rates = live_ticker()
+    btc_currency = float(rates.get(currency)['sell'])
+    btc_usd = float(rates.get(settings.USD)['sell'])
+    amount_btc = round(amount / btc_currency, 4)
+    return amount_btc, btc_usd, btc_usd / btc_currency
+
+
+def get_btc_exchange_rate(currency):
+
+    rates = live_ticker()
+    return float(rates.get(currency)['sell'])

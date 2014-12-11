@@ -18,7 +18,7 @@ urlpatterns = patterns(
         name='blockchain'
     ),
     url(
-        r'^blockchain/pricing$',
+        r'^blockchain/pricing/$',
         views.BlockchainPricing.as_view(),
         name='blockchain-pricing'
     ),

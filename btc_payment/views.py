@@ -8,12 +8,14 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from beam.utils.angular_requests import get_site_by_request
 from beam.utils.exceptions import APIException
 from beam.utils.log import log_error
 from beam.utils.security import generate_signature
 
 from transaction.models import Transaction
 
+from btc_payment.api_calls import blockchain
 from btc_payment.models import GoCoinInvoice, BlockchainPayment, BlockchainInvoice
 
 
@@ -198,4 +200,10 @@ class ConfirmBlockchainPayment(APIView):
 
 
 class BlockchainPricing(APIView):
-    pass
+
+    def get(self, request):
+
+        site = get_site_by_request(self.request)
+        sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
+        btc_currency = blockchain.get_btc_exchange_rate(currency=sending_currency)
+        return Response(data={'btc_currency': btc_currency, 'currency': sending_currency})
