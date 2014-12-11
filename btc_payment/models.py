@@ -195,7 +195,7 @@ class BlockchainInvoice(models.Model):
         invoice_id = uuid4()
 
         btc_address = blockchain.generate_receiving_address(
-            invoice_id=invoice_id,
+            invoice_id=invoice_id, transaction_id=transaction.id
         )
 
         transaction_value = transaction.sent_amount + transaction.fee

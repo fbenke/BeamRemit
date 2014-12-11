@@ -7,15 +7,15 @@ from beam.utils.log import log_error
 from beam.utils.security import generate_signature
 
 
-def generate_receiving_address(invoice_id):
+def generate_receiving_address(transaction_id, invoice_id):
 
     try:
 
-        message = (settings.BLOCKCHAIN_DESTINATION_ADDRESS + str(invoice_id))
+        message = (settings.BLOCKCHAIN_DESTINATION_ADDRESS + str(invoice_id) + str(transaction_id))
 
         signature = generate_signature(message, settings.BLOCKCHAIN_API_KEY)
 
-        callback_url = settings.BLOCKCHAIN_INVOICE_CALLBACK_URL.format(invoice_id, signature)
+        callback_url = settings.BLOCKCHAIN_INVOICE_CALLBACK_URL.format(invoice_id, signature, transaction_id)
 
         payload = {
             'method': 'create',

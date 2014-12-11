@@ -118,7 +118,8 @@ class ConfirmBlockchainPayment(APIView):
 
         try:
 
-            message = (request.QUERY_PARAMS['destination_address'] + request.QUERY_PARAMS['invoice_id'])
+            message = request.QUERY_PARAMS['destination_address'] + request.QUERY_PARAMS['invoice_id'] +\
+                request.QUERY_PARAMS['txn_id']
 
             signature = generate_signature(message, settings.BLOCKCHAIN_API_KEY)
 
@@ -194,3 +195,7 @@ class ConfirmBlockchainPayment(APIView):
             pass
 
         return Response(data='*ok*', status=status.HTTP_200_OK)
+
+
+class BlockchainPricing(APIView):
+    pass

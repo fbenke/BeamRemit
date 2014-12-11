@@ -17,4 +17,9 @@ urlpatterns = patterns(
         views.ConfirmBlockchainPayment.as_view(),
         name='blockchain'
     ),
+    url(
+        r'^blockchain/pricing$',
+        views.BlockchainPricing.as_view(),
+        name='blockchain-pricing'
+    ),
 )
