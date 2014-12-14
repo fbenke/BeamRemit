@@ -221,7 +221,7 @@ class ConfirmCoinapultPayment(APIView):
 
     def post(self, request):
         try:
-            print request.DATA.get['data']
+            print request.DATA.get('data')
             print request.META.get('HTTP_CPT_KEY')
             print request.META.get('HTTP_CPT_HMAC')
 
