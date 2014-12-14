@@ -239,6 +239,9 @@ class ConfirmCoinapultPayment(APIView):
         except CoinapultError:
             print 'Failure'
 
+        except AttributeError:
+            pass
+
         return Response()
 
 
