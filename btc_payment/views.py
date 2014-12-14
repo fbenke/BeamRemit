@@ -218,7 +218,27 @@ class BlockchainPricing(APIView):
 
 class ConfirmCoinapultPayment(APIView):
 
-    pass
+    def post(self, request):
+        try:
+
+            client = CoinapultClient(
+                credentials={'key': settings.COINAPULT_API_KEY, 'secret': settings.COINAPULT_API_SECRET},
+                authmethod='cred'
+            )
+
+            client.authenticateCallback(
+                recvKey=request.META.get('cpt-key'),
+                recvSign=request.META.get('cpt-hmac'),
+                recvData=request.DATA
+            )
+            print request.DATA
+            print request.META.get('cpt-key')
+            print request.META.get('cpt-hmac')
+
+        except CoinapultError:
+            print 'Failure'
+
+        return Response()
 
 
 class CoinapultPricing(APIView):
