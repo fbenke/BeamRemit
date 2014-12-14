@@ -16,6 +16,7 @@ from beam.utils.security import generate_signature
 from transaction.models import Transaction
 
 from btc_payment.api_calls import blockchain
+from btc_payment.api_calls.coinapult import CoinapultClient, CoinapultError
 from btc_payment.models import GoCoinInvoice, BlockchainPayment, BlockchainInvoice
 
 
@@ -120,6 +121,12 @@ class ConfirmBlockchainPayment(APIView):
 
         try:
 
+            if request.QUERY_PARAMS['destination_address'] != settings.BLOCKCHAIN_DESTINATION_ADDRESS:
+
+                message = 'ERROR - Blockchain Callback: destination addres does not match, {}'
+                log_error(message.format(json.dumps(request.QUERY_PARAMS)))
+                raise APIException
+
             message = request.QUERY_PARAMS['destination_address'] + request.QUERY_PARAMS['invoice_id'] +\
                 request.QUERY_PARAMS['txn_id']
 
@@ -207,3 +214,38 @@ class BlockchainPricing(APIView):
         sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
         btc_currency = blockchain.get_btc_exchange_rate(currency=sending_currency)
         return Response(data={'btc_currency': btc_currency, 'currency': sending_currency})
+
+
+class ConfirmCoinapultPayment(APIView):
+
+    pass
+
+
+class CoinapultPricing(APIView):
+
+    def get(self, request):
+
+        try:
+            site = get_site_by_request(self.request)
+            sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
+            market = '{}_BTC'.format(sending_currency)
+            client = CoinapultClient()
+            response = client.getTicker(filter="small,medium,large", market=market)
+            data = {}
+            data['small'] = response['small']['bid']
+            data['medium'] = response['medium']['bid']
+            data['large'] = response['large']['bid']
+            data['market'] = response['market']
+            return Response(data=data)
+
+        except CoinapultError as e:
+
+            message = 'ERROR - Coinapult Live Ticker: {}'
+            log_error(message.format(e))
+ 
+        except KeyError as e:
+
+            message = 'ERROR - Coinapult Live Ticker: received invalid response, {}, {}'
+            log_error(message.format(e, response))
+ 
+        return Response(status=status.HTTP_500_INTERNAL_SERVER)

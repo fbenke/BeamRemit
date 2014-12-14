@@ -42,7 +42,6 @@ def generate_receiving_address(transaction_id, invoice_id):
 
     except requests.RequestException as e:
         log_error('ERROR - Blockchain Generate Receive Address: Failed to send request {}'.format(repr(e)))
-
         raise APIException
 
 

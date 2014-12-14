@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 
-from btc_payment.models import GoCoinInvoice, BlockchainInvoice, BlockchainPayment
+from btc_payment.models import GoCoinInvoice, BlockchainInvoice, BlockchainPayment, CoinapultInvoice
 
 
 class InvoiceAdmin(admin.ModelAdmin):
@@ -52,3 +52,17 @@ class BlockchainInvoiceAdmin(InvoiceAdmin):
     inlines = (BlockchainPaymentChangeInline, )
 
 admin.site.register(BlockchainInvoice, BlockchainInvoiceAdmin)
+
+
+class CoinapultInvoiceAdmin(InvoiceAdmin):
+
+    readonly_fields = (
+        'transaction_url', 'invoice_id', 'created_at', 'btc_address', 'btc_fiat',
+        'state', 'balance_due'
+    )
+    read_and_write_fields = ()
+    fields = readonly_fields + read_and_write_fields
+
+    list_display = ('id', 'invoice_id', 'transaction_url', 'state')
+
+admin.site.register(CoinapultInvoice, CoinapultInvoiceAdmin)

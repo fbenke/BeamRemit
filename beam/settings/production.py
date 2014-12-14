@@ -333,11 +333,13 @@ SITE_RECEIVING_COUNTRY = {
 # Payment Processors
 GOCOIN = 'GOCO'
 BLOCKCHAIN = 'BLOC'
-PAYMENT_PROCESSORS = (GOCOIN, BLOCKCHAIN)
+COINAPULT = 'COAP'
+PAYMENT_PROCESSORS = (GOCOIN, BLOCKCHAIN, COINAPULT)
 CURRENT_PAYMENT_PROCESSOR = os.environ.get('CURRENT_PAYMENT_PROCESSOR')
 PROCESSOR_INVOICE_CLASS = {
     GOCOIN: ('GoCoinInvoice', 'gocoin_invoice'),
-    BLOCKCHAIN: ('BlockchainInvoice', 'blockchain_invoice')
+    BLOCKCHAIN: ('BlockchainInvoice', 'blockchain_invoice'),
+    COINAPULT: ('CoinapultInvoice', 'coinapult_invoice')
 }
 
 # GoCoin Settings
@@ -390,3 +392,19 @@ BLOCKCHAIN_INVOICE_CALLBACK_URL = API_BASE_URL + '/api/v1/btc_payment/blockchain
 BLOCKCHAIN_DESTINATION_ADDRESS = '1ENNEzMRVdNoC1ZdbPrTdU4z72UNuus1Uj'
 BLOCKCHAIN_TIMEOUT = 10
 BLOCKCHAIN_MIN_CONFIRMATIONS = 1
+
+
+# Coinapult API
+if ENV in (ENV_LOCAL, ENV_DEV):
+    COINAPULT_BASE_URL = 'https://playground.coinapult.com/'
+    COINAPULT_API_KEY = '9b594e4eb8fff6698020bac2e4f256'
+    COINAPULT_API_SECRET = 'f7aba013e30f8a44207352b829e972d2ff0051084e056e3a67954fd6ce9b'
+else:
+    COINAPULT_BASE_URL = 'https://api.coinapult.com/api/'
+    COINAPULT_API_KEY = os.environ.get('BLOCKCHAIN_API_KEY')
+    COINAPULT_API_SECRET = os.environ.get('COINAPULT_API_SECRET')
+
+COINAPULT_INVOICE_CALLBACK_URL = API_BASE_URL + '/api/v1/btc_payment/coinapult/'
+COINAPULT_TIMEOUT = 7
+COINAPULT_INVOICE_URL = COINAPULT_BASE_URL + 'invoice/{}'
+COINAPULT_API_BASE_URL = COINAPULT_BASE_URL + 'api/'

@@ -22,4 +22,15 @@ urlpatterns = patterns(
         views.BlockchainPricing.as_view(),
         name='blockchain-pricing'
     ),
+    url(
+        r'^coinapult/$',
+        views.ConfirmCoinapultPayment.as_view(),
+        name='coinapult'
+    ),
+    url(
+        r'^coinapult/pricing/$',
+        views.CoinapultPricing.as_view(),
+        name='coinapult-pricing'
+    )
+
 )

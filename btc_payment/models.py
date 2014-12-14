@@ -3,15 +3,18 @@ from uuid import uuid4
 from django.conf import settings
 from django.db import models
 from django.db import transaction as dbtransaction
+from django.utils.timezone import utc
 
 from transaction.models import Transaction
 
 from beam.utils.log import log_error
 from beam.utils.security import generate_signature
+from beam.utils.exceptions import APIException
 
 from btc_payment.api_calls import gocoin, blockchain
+from btc_payment.api_calls.coinapult import CoinapultClient, CoinapultError
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 
 class GoCoinInvoice(models.Model):
@@ -115,6 +118,7 @@ class GoCoinInvoice(models.Model):
         except KeyError as e:
             message = 'ERROR - GoCoin Create Invoice: received invalid response, {}, {}'
             log_error(message.format(e, result))
+            raise APIException
 
 
 class BlockchainInvoice(models.Model):
@@ -123,7 +127,6 @@ class BlockchainInvoice(models.Model):
     PAID = 'PAID'
     UNDERPAID = 'UNDP'
     READY_TO_SHIP = 'SHIP'
-    INVALID = 'INVD'
     MERCHANT_REVIEW = 'MRCH'
 
     INVOICE_STATES = (
@@ -131,7 +134,6 @@ class BlockchainInvoice(models.Model):
         (PAID, 'paid'),
         (UNDERPAID, 'underpaid'),
         (READY_TO_SHIP, 'ready to ship'),
-        (INVALID, 'invalid'),
         (MERCHANT_REVIEW, 'manual handling required')
     )
 
@@ -302,3 +304,120 @@ class BlockchainPayment(models.Model):
         default=PENDING,
         help_text='State of the Invoice'
     )
+
+
+class CoinapultInvoice(models.Model):
+
+    UNPAID = 'UNPD'
+    PAID = 'PAID'
+    UNDERPAID = 'UNDP'
+    READY_TO_SHIP = 'SHIP'
+    MERCHANT_REVIEW = 'MRCH'
+
+    INVOICE_STATES = (
+        (UNPAID, 'unpaid'),
+        (PAID, 'paid'),
+        (UNDERPAID, 'underpaid'),
+        (READY_TO_SHIP, 'ready to ship'),
+        (MERCHANT_REVIEW, 'manual handling required')
+    )
+
+    transaction = models.OneToOneField(
+        Transaction,
+        related_name='coinapult_invoice',
+        help_text='Transaction associated with this invoice'
+    )
+
+    created_at = models.DateTimeField(
+        'Created at',
+        help_text='Time at which this invoice was created'
+    )
+
+    btc_address = models.CharField(
+        'BTC Address',
+        max_length=34,
+        help_text='BTC Address generated to receive this payment'
+    )
+
+    invoice_id = models.CharField(
+        'Invoice ID',
+        max_length=36,
+        help_text='UUID identifying generated invoice'
+    )
+
+    btc_fiat = models.FloatField(
+        'BTC to Sending Currency',
+        null=True,
+        help_text='exchange rate from BTC to sending currency applied for this payment'
+    )
+
+    balance_due = models.FloatField(
+        'Balance Due',
+        null=True,
+        help_text='Several BTC payments for one item are possible. Negative balance means "overpaid"'
+    )
+
+    state = models.CharField(
+        'State',
+        max_length=4,
+        choices=INVOICE_STATES,
+        default=UNPAID,
+        help_text='State of the Invoice'
+    )
+
+    @property
+    def expires_at(self):
+        return self.created_at + timedelta(minutes=settings.COINAPULT_TIMEOUT)
+
+    @staticmethod
+    def initiate(transaction):
+        try:
+
+            client = CoinapultClient(
+                baseURL=settings.COINAPULT_API_BASE_URL,
+                credentials={'key': settings.COINAPULT_API_KEY, 'secret': settings.COINAPULT_API_SECRET},
+                authmethod='cred'
+            )
+
+            transaction_value = transaction.sent_amount + transaction.fee
+
+            # TODO: solve issues with conversion
+            # TODO: change calculation of conversion rate, maybe also store expiration
+            resp = client.receive(
+                amount=0.002,
+                # outAmount=transaction_value,
+                # outCurrency=transaction.sent_currency,
+                # extOID=transaction.id,
+                # callback=settings.COINAPULT_INVOICE_CALLBACK_URL
+            )
+
+            coinapult_invoice = CoinapultInvoice(
+                transaction=transaction,
+                created_at=datetime.fromtimestamp((resp['timestamp'])).replace(tzinfo=utc),
+                btc_address=resp['address'],
+                invoice_id=resp['transaction_id'],
+                btc_fiat=float(resp['out']['expected']) / float(resp['in']['expected']),
+                balance_due=float(resp['in']['expected'])
+            )
+
+            transaction.amount_btc = float(resp['in']['expected'])
+
+            with dbtransaction.atomic():
+                coinapult_invoice.save()
+                transaction.coinapult_invoice = CoinapultInvoice.objects.get(id=coinapult_invoice.id)
+                transaction.save()
+
+            return {
+                'invoice_id': coinapult_invoice.invoice_id,
+                'invoice_url': settings.COINAPULT_INVOICE_URL.format(coinapult_invoice.invoice_id)
+            }
+
+        except CoinapultError as e:
+            message = 'ERROR - Coinapult Create Invoice: {}, Txn id: {}'
+            log_error(message.format(e, transaction.id))
+            raise APIException
+
+        except KeyError as e:
+            message = 'ERROR - Coinapult Create Invoice: received invalid response, {}, {}'
+            log_error(message.format(e, resp))
+            raise APIException
