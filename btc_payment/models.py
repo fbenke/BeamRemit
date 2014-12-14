@@ -387,8 +387,8 @@ class CoinapultInvoice(models.Model):
                 amount=0.002,
                 # outAmount=transaction_value,
                 # outCurrency=transaction.sent_currency,
-                # extOID=transaction.id,
-                # callback=settings.COINAPULT_INVOICE_CALLBACK_URL
+                extOID=transaction.id,
+                callback=settings.COINAPULT_INVOICE_CALLBACK_URL
             )
 
             coinapult_invoice = CoinapultInvoice(
