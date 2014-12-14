@@ -1,3 +1,4 @@
+import base64
 import json
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -220,10 +221,9 @@ class ConfirmCoinapultPayment(APIView):
 
     def post(self, request):
         try:
-            print request.DATA
-            print request.META
-            print request.META.get('cpt-key')
-            print request.META.get('cpt-hmac')
+            print request.DATA.get['data']
+            print request.META.get('HTTP_CPT_KEY')
+            print request.META.get('HTTP_CPT_HMAC')
 
             client = CoinapultClient(
                 credentials={'key': settings.COINAPULT_API_KEY, 'secret': settings.COINAPULT_API_SECRET},
@@ -239,8 +239,11 @@ class ConfirmCoinapultPayment(APIView):
         except CoinapultError:
             print 'Failure'
 
+        # remove later
         except AttributeError:
             pass
+
+        print base64.b64decode(request.DATA['data'])
 
         return Response()
 
@@ -266,10 +269,10 @@ class CoinapultPricing(APIView):
 
             message = 'ERROR - Coinapult Live Ticker: {}'
             log_error(message.format(e))
- 
+
         except KeyError as e:
 
             message = 'ERROR - Coinapult Live Ticker: received invalid response, {}, {}'
             log_error(message.format(e, response))
- 
+
         return Response(status=status.HTTP_500_INTERNAL_SERVER)
