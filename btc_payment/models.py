@@ -189,7 +189,7 @@ class BlockchainInvoice(models.Model):
 
     @property
     def expires_at(self):
-        return self.created_at + timedelta(minutes=settings.BLOCKCHAIN_TIMEOUT)
+        return self.created_at + timedelta(minutes=settings.BLOCKCHAIN_INVOICE_TIMEOUT)
 
     @staticmethod
     def initiate(transaction):
@@ -316,10 +316,11 @@ class CoinapultInvoice(models.Model):
 
     INVOICE_STATES = (
         (UNPAID, 'unpaid'),
-        (PAID, 'paid'),
+        (PAID, 'paid'),  # this equals coinapult status "confirming"
+        # TODO: no longer needed?
         (UNDERPAID, 'underpaid'),
-        (READY_TO_SHIP, 'ready to ship'),
-        (MERCHANT_REVIEW, 'manual handling required')
+        (READY_TO_SHIP, 'ready to ship'),  # this equals coinapult status "complete"
+        (MERCHANT_REVIEW, 'manual handling required')  # this equals coinapult status "cancelled"
     )
 
     transaction = models.OneToOneField(
@@ -328,9 +329,15 @@ class CoinapultInvoice(models.Model):
         help_text='Transaction associated with this invoice'
     )
 
-    created_at = models.DateTimeField(
-        'Created at',
-        help_text='Time at which this invoice was created'
+    expires_at = models.DateTimeField(
+        'Expires at',
+        help_text='Time at which this invoice expires'
+    )
+
+    completed_at = models.DateTimeField(
+        'Completed at',
+        null=True,
+        help_text='Time at which this invoice was completed'
     )
 
     btc_address = models.CharField(
@@ -366,8 +373,8 @@ class CoinapultInvoice(models.Model):
     )
 
     @property
-    def expires_at(self):
-        return self.created_at + timedelta(minutes=settings.COINAPULT_TIMEOUT)
+    def created_at(self):
+        return self.expires_at - timedelta(minutes=settings.COINAPULT_INVOICE_TIMEOUT)
 
     @staticmethod
     def initiate(transaction):
@@ -381,22 +388,19 @@ class CoinapultInvoice(models.Model):
 
             transaction_value = transaction.sent_amount + transaction.fee
 
-            # TODO: solve issues with conversion
-            # TODO: change calculation of conversion rate, maybe also store expiration
             resp = client.receive(
-                amount=0.002,
-                # outAmount=transaction_value,
-                # outCurrency=transaction.sent_currency,
+                outAmount=transaction_value,
+                outCurrency=transaction.sent_currency,
                 extOID=transaction.id,
                 callback=settings.COINAPULT_INVOICE_CALLBACK_URL
             )
 
             coinapult_invoice = CoinapultInvoice(
                 transaction=transaction,
-                created_at=datetime.fromtimestamp((resp['timestamp'])).replace(tzinfo=utc),
+                expires_at=datetime.fromtimestamp((resp['expiration'])).replace(tzinfo=utc),
                 btc_address=resp['address'],
                 invoice_id=resp['transaction_id'],
-                btc_fiat=float(resp['out']['expected']) / float(resp['in']['expected']),
+                btc_fiat=float(resp['quote']['bid']),
                 balance_due=float(resp['in']['expected'])
             )
 
@@ -415,9 +419,13 @@ class CoinapultInvoice(models.Model):
         except CoinapultError as e:
             message = 'ERROR - Coinapult Create Invoice: {}, Txn id: {}'
             log_error(message.format(e, transaction.id))
-            raise APIException
 
         except KeyError as e:
             message = 'ERROR - Coinapult Create Invoice: received invalid response, {}, {}'
             log_error(message.format(e, resp))
-            raise APIException
+
+        except APIException as e:
+            message = 'ERROR - Coinapult Create Invoice: failed to send request, {}'
+            log_error(message.format(e))
+
+        raise APIException

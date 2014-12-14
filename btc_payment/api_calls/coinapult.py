@@ -12,6 +12,10 @@ import base64
 from urlparse import urljoin
 from hashlib import sha256, sha512
 
+from django.conf import settings
+from beam.utils.exceptions import APIException
+from beam.utils.log import log_error
+
 import requests
 
 ecdsa = None
@@ -106,11 +110,16 @@ class CoinapultClient():
             data = values
 
         finalURL = urljoin(self.baseURL, url)
-        if post:
-            res = requests.post(finalURL, data=data, headers=headers)
-        else:
-            res = requests.get(finalURL, params=data)
-        return self._format_response(res.text)
+
+        try:
+            if post:
+                res = requests.post(finalURL, data=data, headers=headers, timeout=settings.COINAPULT_REQUEST_TIMEOUT)
+            else:
+                res = requests.get(finalURL, params=data, timeout=settings.COINAPULT_REQUEST_TIMEOUT)
+            return self._format_response(res.text)
+
+        except requests.RequestException as e:
+            raise APIException(e)
 
     def _format_response(self, result):
         resp = json.loads(result)

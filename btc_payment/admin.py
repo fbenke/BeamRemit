@@ -57,8 +57,8 @@ admin.site.register(BlockchainInvoice, BlockchainInvoiceAdmin)
 class CoinapultInvoiceAdmin(InvoiceAdmin):
 
     readonly_fields = (
-        'transaction_url', 'invoice_id', 'created_at', 'btc_address', 'btc_fiat',
-        'state', 'balance_due'
+        'transaction_url', 'invoice_id', 'btc_address', 'btc_fiat',
+        'state', 'balance_due', 'created_at', 'expires_at', 'completed_at'
     )
     read_and_write_fields = ()
     fields = readonly_fields + read_and_write_fields

@@ -1,9 +1,11 @@
 import base64
 import json
+from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import transaction as db_transaction
 from django.conf import settings
+from django.db import transaction as db_transaction
+from django.utils.timezone import utc
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -18,7 +20,7 @@ from transaction.models import Transaction
 
 from btc_payment.api_calls import blockchain
 from btc_payment.api_calls.coinapult import CoinapultClient, CoinapultError
-from btc_payment.models import GoCoinInvoice, BlockchainPayment, BlockchainInvoice
+from btc_payment.models import GoCoinInvoice, BlockchainPayment, BlockchainInvoice, CoinapultInvoice
 
 
 class ConfirmGoCoinPayment(APIView):
@@ -220,30 +222,69 @@ class BlockchainPricing(APIView):
 class ConfirmCoinapultPayment(APIView):
 
     def post(self, request):
+
         try:
-            print request.DATA.get('data')
-            print request.META.get('HTTP_CPT_KEY')
-            print request.META.get('HTTP_CPT_HMAC')
 
-            client = CoinapultClient(
-                credentials={'key': settings.COINAPULT_API_KEY, 'secret': settings.COINAPULT_API_SECRET},
-                authmethod='cred'
+            # client = CoinapultClient(
+            #     credentials={'key': settings.COINAPULT_API_KEY, 'secret': settings.COINAPULT_API_SECRET},
+            #     authmethod='cred'
+            # )
+
+            # client.authenticateCallback(
+            #     recvKey=request.META.get('HTTP_CPT_KEY'),
+            #     recvSign=request.META.get('HTTP_CPT_HMAC'),
+            #     recvData=request.DATA['data']
+            # )
+
+            # data = base64.b64decode(request.DATA['data'])
+
+            data = request.DATA['data']
+            invoice = CoinapultInvoice.objects.get(
+                invoice_id=data['transaction_id'],
+                transaction__id=data['ext_oid'],
+                btc_address=data['address']
             )
 
-            client.authenticateCallback(
-                recvKey=request.META.get('cpt-key'),
-                recvSign=request.META.get('cpt-hmac'),
-                recvData=request.DATA
-            )
+            # sanity check
+            if data['type'] != 'invoice':
+                raise APIException('Transaction is not of type \"invoice\"')
+
+            print data
+
+            if data['state'] == 'confirming':
+
+                invoice.state = CoinapultInvoice.PAID
+
+                with db_transaction.atomic():
+                    invoice.save()
+                    invoice.transaction.set_paid()
+                    invoice.transaction.post_paid()
+
+            elif data['state'] == 'complete':
+                invoice.state = CoinapultInvoice.READY_TO_SHIP
+                invoice.completed_at = datetime.fromtimestamp((data['complete_time'])).replace(tzinfo=utc)
+                invoice.save()
+
+            elif data['state'] == 'cancelled':
+                invoice.state = CoinapultInvoice.MERCHANT_REVIEW
+
+                with db_transaction.atomic():
+                    invoice.save()
+                    invoice.transaction.comments = invoice.transaction.comments + '\n' + data['errors']
+                    invoice.transaction.set_invalid()
+                    invoice.transaction.post_paid_problem()
 
         except CoinapultError:
-            print 'Failure'
+            message = 'ERROR - Coinapult Callback: Callback could not be authenticated, {}, {}, {}'
+            log_error(request.META.get('cpt-key'), message.format(request.META.get('cpt-hmac'), request.DATA['data']))
 
-        # remove later
-        except AttributeError:
-            pass
+        except ObjectDoesNotExist:
+            message = 'ERROR - Coinapult Callback: invoice not found, {}'
+            log_error(message.format(data))
 
-        print base64.b64decode(request.DATA['data'])
+        except (KeyError, APIException) as e:
+            message = 'ERROR - Coinapult Callback: received invalid payment notification, {}, {}'
+            log_error(message.format(e, request.DATA))
 
         return Response()
 
@@ -275,4 +316,9 @@ class CoinapultPricing(APIView):
             message = 'ERROR - Coinapult Live Ticker: received invalid response, {}, {}'
             log_error(message.format(e, response))
 
-        return Response(status=status.HTTP_500_INTERNAL_SERVER)
+        except APIException as e:
+
+            message = 'ERROR - Coinapult Pricing failed to send request, {}'
+            log_error(message.format(e))
+
+        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)

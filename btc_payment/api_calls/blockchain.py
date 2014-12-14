@@ -27,7 +27,7 @@ def generate_receiving_address(transaction_id, invoice_id):
         response = requests.get(
             settings.BLOCKCHAIN_CREATE_BTC_ADDRESS_URL,
             params=payload,
-            timeout=settings.BLOCKCHAIN_TIMEOUT
+            timeout=settings.BLOCKCHAIN_REQUEST_TIMEOUT
         )
         response = response.json()
 
@@ -56,7 +56,7 @@ def live_ticker():
         response = requests.get(
             settings.BLOCKCHAIN_CONVERT_TO_BTC_URL,
             params=payload,
-            timeout=settings.BLOCKCHAIN_TIMEOUT
+            timeout=settings.BLOCKCHAIN_REQUEST_TIMEOUT
         )
 
         return response.json()
