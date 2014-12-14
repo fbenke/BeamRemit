@@ -220,6 +220,10 @@ class ConfirmCoinapultPayment(APIView):
 
     def post(self, request):
         try:
+            print request.DATA
+            print request.META
+            print request.META.get('cpt-key')
+            print request.META.get('cpt-hmac')
 
             client = CoinapultClient(
                 credentials={'key': settings.COINAPULT_API_KEY, 'secret': settings.COINAPULT_API_SECRET},
@@ -231,9 +235,6 @@ class ConfirmCoinapultPayment(APIView):
                 recvSign=request.META.get('cpt-hmac'),
                 recvData=request.DATA
             )
-            print request.DATA
-            print request.META.get('cpt-key')
-            print request.META.get('cpt-hmac')
 
         except CoinapultError:
             print 'Failure'
