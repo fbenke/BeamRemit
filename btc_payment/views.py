@@ -252,6 +252,7 @@ class ConfirmCoinapultPayment(APIView):
             if data['state'] == 'confirming':
 
                 invoice.state = CoinapultInvoice.PAID
+                invoice.balance_due = float(data['in']['expected']) - float(data['in']['amount'])
 
                 with db_transaction.atomic():
                     invoice.save()
@@ -259,18 +260,29 @@ class ConfirmCoinapultPayment(APIView):
                     invoice.transaction.post_paid()
 
             elif data['state'] == 'complete':
+
                 invoice.state = CoinapultInvoice.READY_TO_SHIP
                 invoice.completed_at = datetime.fromtimestamp((data['complete_time'])).replace(tzinfo=utc)
                 invoice.save()
 
-            elif data['state'] == 'cancelled':
-                invoice.state = CoinapultInvoice.MERCHANT_REVIEW
+            elif data['state'] == 'canceled':
 
-                with db_transaction.atomic():
+                invoice.balance_due = float(data['in']['expected']) - float(data['in']['amount'])
+
+                # handle payment errors
+                try:
+                    errors = data['errors']
+                    invoice.transaction.comments = invoice.transaction.comments + '\n' + errors
+                    invoice.state = CoinapultInvoice.MERCHANT_REVIEW
+                    with db_transaction.atomic():
+                        invoice.save()
+                        invoice.transaction.set_invalid()
+                        invoice.transaction.post_paid_problem()
+
+                # handle expired invoices
+                except KeyError:
+                    invoice.state = CoinapultInvoice.EXPIRED
                     invoice.save()
-                    invoice.transaction.comments = invoice.transaction.comments + '\n' + data['errors']
-                    invoice.transaction.set_invalid()
-                    invoice.transaction.post_paid_problem()
 
         except CoinapultError:
             message = 'ERROR - Coinapult Callback: Callback could not be authenticated, {}, {}, {}'

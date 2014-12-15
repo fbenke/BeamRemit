@@ -310,17 +310,16 @@ class CoinapultInvoice(models.Model):
 
     UNPAID = 'UNPD'
     PAID = 'PAID'
-    UNDERPAID = 'UNDP'
     READY_TO_SHIP = 'SHIP'
     MERCHANT_REVIEW = 'MRCH'
+    EXPIRED = 'EXPD'
 
     INVOICE_STATES = (
         (UNPAID, 'unpaid'),  # this equals coinapult status "pending"
         (PAID, 'paid'),  # this equals coinapult status "confirming"
-        # TODO: no longer needed?
-        (UNDERPAID, 'underpaid'),
         (READY_TO_SHIP, 'ready to ship'),  # this equals coinapult status "complete"
-        (MERCHANT_REVIEW, 'manual handling required')  # this equals coinapult status "cancelled"
+        (EXPIRED, 'expired'),  # this equals coinapult status "cancelled"
+        (MERCHANT_REVIEW, 'manual handling required'),  # this equals coinapult status "cancelled" with errors
     )
 
     transaction = models.OneToOneField(
