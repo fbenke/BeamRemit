@@ -236,7 +236,7 @@ class ConfirmCoinapultPayment(APIView):
                 recvData=request.DATA['data']
             )
 
-            data = base64.b64decode(request.DATA['data'])
+            data = json.dumps(base64.b64decode(request.DATA['data']))
 
             print data
 
