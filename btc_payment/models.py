@@ -388,12 +388,14 @@ class CoinapultInvoice(models.Model):
 
             transaction_value = transaction.sent_amount + transaction.fee
 
-            resp = client.receive(
+            resp = client.lock(
+                amount=0,
                 outAmount=transaction_value,
-                outCurrency=transaction.sent_currency,
-                extOID=transaction.id,
+                currency='GBP',
                 callback=settings.COINAPULT_INVOICE_CALLBACK_URL
             )
+
+            print resp
 
             coinapult_invoice = CoinapultInvoice(
                 transaction=transaction,

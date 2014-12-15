@@ -242,7 +242,6 @@ class ConfirmCoinapultPayment(APIView):
 
             invoice = CoinapultInvoice.objects.get(
                 invoice_id=data['transaction_id'],
-                transaction__id=data['ext_oid'],
                 btc_address=data['address']
             )
 
