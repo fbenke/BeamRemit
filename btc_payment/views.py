@@ -294,7 +294,7 @@ class ConfirmCoinapultPayment(APIView):
 
         except (KeyError, APIException) as e:
             message = 'ERROR - Coinapult Callback: received invalid payment notification, {}, {}'
-            log_error(message.format(e, request.DATA))
+            log_error(message.format(e, data))
 
         return Response()
 
