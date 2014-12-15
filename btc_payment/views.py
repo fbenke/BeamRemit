@@ -262,7 +262,7 @@ class ConfirmCoinapultPayment(APIView):
             elif data['state'] == 'complete':
 
                 invoice.state = CoinapultInvoice.READY_TO_SHIP
-                invoice.completed_at = datetime.fromtimestamp((data['complete_time'])).replace(tzinfo=utc)
+                invoice.completed_at = datetime.fromtimestamp((data['completeTime'])).replace(tzinfo=utc)
                 invoice.save()
 
             elif data['state'] == 'canceled':
