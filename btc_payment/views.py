@@ -225,20 +225,21 @@ class ConfirmCoinapultPayment(APIView):
 
         try:
 
-            # client = CoinapultClient(
-            #     credentials={'key': settings.COINAPULT_API_KEY, 'secret': settings.COINAPULT_API_SECRET},
-            #     authmethod='cred'
-            # )
+            client = CoinapultClient(
+                credentials={'key': settings.COINAPULT_API_KEY, 'secret': settings.COINAPULT_API_SECRET},
+                authmethod='cred'
+            )
 
-            # client.authenticateCallback(
-            #     recvKey=request.META.get('HTTP_CPT_KEY'),
-            #     recvSign=request.META.get('HTTP_CPT_HMAC'),
-            #     recvData=request.DATA['data']
-            # )
+            client.authenticateCallback(
+                recvKey=request.META.get('HTTP_CPT_KEY'),
+                recvSign=request.META.get('HTTP_CPT_HMAC'),
+                recvData=request.DATA['data']
+            )
 
-            # data = base64.b64decode(request.DATA['data'])
+            data = base64.b64decode(request.DATA['data'])
 
-            data = request.DATA['data']
+            print data
+
             invoice = CoinapultInvoice.objects.get(
                 invoice_id=data['transaction_id'],
                 transaction__id=data['ext_oid'],
@@ -248,8 +249,6 @@ class ConfirmCoinapultPayment(APIView):
             # sanity check
             if data['type'] != 'invoice':
                 raise APIException('Transaction is not of type \"invoice\"')
-
-            print data
 
             if data['state'] == 'confirming':
 
