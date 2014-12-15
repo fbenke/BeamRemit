@@ -236,7 +236,7 @@ class ConfirmCoinapultPayment(APIView):
                 recvData=request.DATA['data']
             )
 
-            data = json.dumps(base64.b64decode(request.DATA['data']))
+            data = json.loads(base64.b64decode(request.DATA['data']))
 
             print data
 
@@ -246,8 +246,8 @@ class ConfirmCoinapultPayment(APIView):
             )
 
             # sanity check
-            if data['type'] != 'invoice':
-                raise APIException('Transaction is not of type \"invoice\"')
+            if data['type'] != 'lock':
+                raise APIException('Transaction is not of type \"lock\"')
 
             if data['state'] == 'confirming':
 
@@ -274,7 +274,7 @@ class ConfirmCoinapultPayment(APIView):
 
         except CoinapultError:
             message = 'ERROR - Coinapult Callback: Callback could not be authenticated, {}, {}, {}'
-            log_error(request.META.get('cpt-key'), message.format(request.META.get('cpt-hmac'), request.DATA['data']))
+            log_error(message.format(request.META.get('HTTP_CPT_HMAC'), request.META.get('HTTP_CPT_KEY'), request.DATA['data']))
 
         except ObjectDoesNotExist:
             message = 'ERROR - Coinapult Callback: invoice not found, {}'

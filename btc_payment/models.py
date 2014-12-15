@@ -315,7 +315,7 @@ class CoinapultInvoice(models.Model):
     MERCHANT_REVIEW = 'MRCH'
 
     INVOICE_STATES = (
-        (UNPAID, 'unpaid'),
+        (UNPAID, 'unpaid'),  # this equals coinapult status "pending"
         (PAID, 'paid'),  # this equals coinapult status "confirming"
         # TODO: no longer needed?
         (UNDERPAID, 'underpaid'),
@@ -378,6 +378,7 @@ class CoinapultInvoice(models.Model):
 
     @staticmethod
     def initiate(transaction):
+
         try:
 
             client = CoinapultClient(
@@ -394,8 +395,6 @@ class CoinapultInvoice(models.Model):
                 currency='GBP',
                 callback=settings.COINAPULT_INVOICE_CALLBACK_URL
             )
-
-            print resp
 
             coinapult_invoice = CoinapultInvoice(
                 transaction=transaction,
