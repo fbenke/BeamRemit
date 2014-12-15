@@ -284,9 +284,9 @@ class ConfirmCoinapultPayment(APIView):
                     invoice.state = CoinapultInvoice.EXPIRED
                     invoice.save()
 
-        except CoinapultError:
-            message = 'ERROR - Coinapult Callback: Callback could not be authenticated, {}, {}, {}'
-            log_error(message.format(request.META.get('HTTP_CPT_HMAC'), request.META.get('HTTP_CPT_KEY'), request.DATA['data']))
+        except CoinapultError as e:
+            message = 'ERROR - Coinapult Callback: Callback could not be authenticated, {}, {}, {}, {}'
+            log_error(message.format(e, request.META.get('HTTP_CPT_HMAC'), request.META.get('HTTP_CPT_KEY'), request.DATA['data']))
 
         except ObjectDoesNotExist:
             message = 'ERROR - Coinapult Callback: invoice not found, {}'
