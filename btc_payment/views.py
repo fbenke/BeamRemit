@@ -251,7 +251,9 @@ class ConfirmCoinapultPayment(APIView):
 
             if data['state'] == 'confirming':
 
-                invoice.state = CoinapultInvoice.PAID
+                if invoice.state == CoinapultInvoice.UNPAID:
+                    invoice.state = CoinapultInvoice.PAID
+
                 invoice.balance_due = float(data['in']['expected']) - float(data['in']['amount'])
 
                 with db_transaction.atomic():
