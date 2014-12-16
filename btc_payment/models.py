@@ -391,7 +391,7 @@ class CoinapultInvoice(models.Model):
             resp = client.lock(
                 amount=0,
                 outAmount=transaction_value,
-                currency='GBP',
+                currency=transaction.sent_currency,
                 callback=settings.COINAPULT_INVOICE_CALLBACK_URL
             )
 
