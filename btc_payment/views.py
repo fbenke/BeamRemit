@@ -256,10 +256,10 @@ class ConfirmCoinapultPayment(APIView):
                         invoice.state = CoinapultInvoice.PAID
 
                     invoice.balance_due = float(data['in']['expected']) - float(data['in']['amount'])
-                    print invoice.balance_due
                     invoice.save()
                     invoice.transaction.set_paid()
-                    invoice.transaction.post_paid()
+                
+                invoice.transaction.post_paid()
 
             elif data['state'] == 'complete':
 
@@ -269,23 +269,25 @@ class ConfirmCoinapultPayment(APIView):
 
             elif data['state'] == 'canceled':
 
-                with db_transaction.atomic():
-                    invoice.balance_due = float(data['in']['expected']) - float(data['in']['amount'])
+               # handle payment errors
+                try:
+                    errors = data['errors']
 
-                    # handle payment errors
-                    try:
-                        errors = data['errors']
-                        invoice.transaction.comments = invoice.transaction.comments + '\n' + errors
+                    with db_transaction.atomic():
                         invoice.state = CoinapultInvoice.MERCHANT_REVIEW
-
+                        invoice.balance_due = float(data['in']['expected']) - float(data['in']['amount'])
                         invoice.save()
                         invoice.transaction.set_invalid()
-                        invoice.transaction.post_paid_problem()
+                        invoice.transaction.comments = invoice.transaction.comments + '\n' + errors
 
-                    # handle expired invoices
-                    except KeyError:
-                        invoice.state = CoinapultInvoice.EXPIRED
-                        invoice.save()
+                    invoice.transaction.post_paid_problem()
+
+                # handle expired invoices
+                except KeyError:
+
+                    invoice.balance_due = float(data['in']['expected']) - float(data['in']['amount'])
+                    invoice.state = CoinapultInvoice.EXPIRED
+                    invoice.save()
 
         except CoinapultError as e:
             message = 'ERROR - Coinapult Callback: Callback could not be authenticated, {}, {}, {}, {}'
