@@ -256,7 +256,7 @@ class ConfirmCoinapultPayment(APIView):
                         invoice.state = CoinapultInvoice.PAID
 
                     invoice.balance_due = float(data['in']['expected']) - float(data['in']['amount'])
-
+                    print invoice.balance_due
                     invoice.save()
                     invoice.transaction.set_paid()
                     invoice.transaction.post_paid()
