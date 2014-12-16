@@ -223,6 +223,8 @@ class ConfirmCoinapultPayment(APIView):
 
     def post(self, request):
 
+        # payments to expired BTC addresses result in a new invoice
+
         try:
 
             client = CoinapultClient(
@@ -240,10 +242,7 @@ class ConfirmCoinapultPayment(APIView):
 
             print data
 
-            invoice = CoinapultInvoice.objects.get(
-                invoice_id=data['transaction_id'],
-                btc_address=data['address']
-            )
+            invoice = CoinapultInvoice.objects.get(invoice_id=data['transaction_id'])
 
             # sanity check
             if data['type'] != 'lock':
