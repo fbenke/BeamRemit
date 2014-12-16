@@ -254,7 +254,7 @@ class ConfirmCoinapultPayment(APIView):
                     invoice.state = CoinapultInvoice.PAID
 
                 invoice.balance_due = float(data['in']['expected']) - float(data['in']['amount'])
-
+                print invoice.balance_due
                 with db_transaction.atomic():
                     invoice.save()
                     invoice.transaction.set_paid()
@@ -269,7 +269,7 @@ class ConfirmCoinapultPayment(APIView):
             elif data['state'] == 'canceled':
 
                 invoice.balance_due = float(data['in']['expected']) - float(data['in']['amount'])
-
+                print invoice.balance_due
                 # handle payment errors
                 try:
                     errors = data['errors']
