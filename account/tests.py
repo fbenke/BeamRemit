@@ -194,12 +194,12 @@ class ActivationTests(AccountTests):
         user = self._create_inactive_user(email=email)
 
         # manipulate db so that activation key is expired
-        user.date_joined = timezone.now() - timedelta(minutes=settings.USERENA_ACTIVATION_DAYS)
+        user.date_joined = timezone.now() - timedelta(settings.USERENA_ACTIVATION_DAYS)
         user.save()
-
         # get activation key and send activate get request
         activation_key = user.userena_signup.activation_key
         url_activate = reverse(self.plain_url_activate, args=(activation_key,))
+
         response = self.client.get(url_activate)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(response.data['activation_key'] is not None)
