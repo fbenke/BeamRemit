@@ -84,7 +84,8 @@ class CreateTransaction(GenericAPIView):
                 self.response_params['received_amount'] = self.object.received_amount
                 self.response_params['received_currency'] = self.object.received_currency
                 self.response_params['operation_mode'] = get_current_state(site).state
-
+                self.response_params['payment_processor'] = settings.CURRENT_PAYMENT_PROCESSOR
+ 
                 return Response(self.response_params, status=status.HTTP_201_CREATED)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
