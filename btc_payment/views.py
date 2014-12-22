@@ -240,8 +240,6 @@ class ConfirmCoinapultPayment(APIView):
 
             data = json.loads(base64.b64decode(request.DATA['data']))
 
-            print data
-
             invoice = CoinapultInvoice.objects.get(invoice_id=data['transaction_id'])
 
             # sanity check
