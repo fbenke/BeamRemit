@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from pricing.models import Pricing, ExchangeRate, Comparison, Limit,\
-    end_previous_object, end_previous_object_by_site
+from pricing.models import Pricing, ExchangeRate, Comparison, Limit, Fee,\
+    end_previous_object
 
 from pricing import forms
 
@@ -23,20 +23,42 @@ class PricingAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'markup', 'fee', 'fee_currency', 'site')
+            return ('id', 'start', 'end', 'markup', 'fee', 'site')
         else:
-            return ('id', 'start', 'end', 'fee_currency')
+            return ('id', 'start', 'end')
 
     list_display = ('id', 'start', 'end', 'markup', 'fee', 'site')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
-            end_previous_object_by_site(Pricing, obj.site)
+            end_previous_object(Pricing, site=obj.site)
             obj.save()
 
     list_filter = ('site',)
 
 admin.site.register(Pricing, PricingAdmin)
+
+
+class FeeAdmin(admin.ModelAdmin):
+
+    form = forms.FeeForm
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('id', 'start', 'end', 'fee', 'currency', 'site')
+        else:
+            return ('id', 'start', 'end')
+
+    list_display = ('id', 'end', 'fee', 'currency', 'site')
+
+    def save_model(self, request, obj, form, change):
+        if not obj.id:
+            end_previous_object(Fee, site=obj.site, currency=obj.currency)
+            obj.save()
+
+    list_filter = ('site', 'currency')
+
+admin.site.register(Fee, FeeAdmin)
 
 
 class ExchangeRateAdmin(DoNotDeleteModelAdmin):
@@ -45,11 +67,11 @@ class ExchangeRateAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll')
+            return ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll', 'gbp_eur')
         else:
             return ('id', 'start', 'end')
 
-    list_display = ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll')
+    list_display = ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll', 'gbp_eur')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
@@ -94,13 +116,13 @@ class LimitAdmin(DoNotDeleteModelAdmin):
         else:
             return ('id', 'start', 'end') + calculated_fields
 
-    list_display = ('id', 'start', 'end', 'site', 'user_limit_basic',
+    list_display = ('id', 'end', 'site', 'user_limit_basic',
                     'user_limit_complete', 'transaction_min',
                     'transaction_max')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
-            end_previous_object_by_site(Limit, obj.site)
+            end_previous_object(Limit, site=obj.site)
             obj.save()
 
     list_filter = ('site',)

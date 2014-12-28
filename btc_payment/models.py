@@ -395,6 +395,8 @@ class CoinapultInvoice(models.Model):
                 callback=settings.COINAPULT_INVOICE_CALLBACK_URL
             )
 
+            # resp = client.receive(outAmount=transaction_value, outCurrency='USD')
+
             coinapult_invoice = CoinapultInvoice(
                 transaction=transaction,
                 expires_at=datetime.fromtimestamp((resp['expiration'])).replace(tzinfo=utc),

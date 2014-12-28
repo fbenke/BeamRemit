@@ -16,5 +16,5 @@ urlpatterns = patterns(
         r'^limit/$',
         views.LimitCurrent.as_view(),
         name='limit'
-    ),
+    )
 )

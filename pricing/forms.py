@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
 
 from pricing.models import ExchangeRate, get_current_object
 
@@ -17,6 +18,7 @@ class ExchangeRateForm(forms.ModelForm):
         super(ExchangeRateForm, self).__init__(*args, **kwargs)
         try:
             exchange_rate = get_current_object(ExchangeRate)
+            self.fields['gbp_eur'].initial = exchange_rate.gbp_eur
             self.fields['gbp_ghs'].initial = exchange_rate.gbp_ghs
             self.fields['gbp_usd'].initial = exchange_rate.gbp_usd
             self.fields['gbp_sll'].initial = exchange_rate.gbp_sll
@@ -28,4 +30,12 @@ class LimitForm(forms.ModelForm):
     def clean(self):
         if not self.cleaned_data['transaction_min'] < self.cleaned_data['transaction_max']:
             raise forms.ValidationError('Minimum amount must be smaller than maximum amount.')
+        return self.cleaned_data
+
+
+class FeeForm(forms.ModelForm):
+
+    def clean(self):
+        if self.cleaned_data['currency'] not in settings.SITE_SENDING_CURRENCY[self.cleaned_data['site'].id]:
+            raise forms.ValidationError('Sending currency not supported for that Site.')
         return self.cleaned_data

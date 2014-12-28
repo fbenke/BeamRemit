@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from south.v2 import DataMigration
-from pricing.models import end_previous_object_by_site
+from pricing.models import end_previous_object
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -13,7 +13,7 @@ class Migration(DataMigration):
         # and orm['appname.ModelName'] for models in other applications.
         try:
             site = orm['sites.Site'].objects.get(id=0)
-            end_previous_object_by_site(orm.State, site)
+            end_previous_object(orm.State, site=site)
 
             state_beam = orm.State(
                 state='UP',

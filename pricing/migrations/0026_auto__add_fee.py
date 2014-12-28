@@ -1,42 +1,29 @@
 # -*- coding: utf-8 -*-
-from south.v2 import DataMigration
-from pricing.models import end_previous_object
+from south.utils import datetime_utils as datetime
+from south.db import db
+from south.v2 import SchemaMigration
+from django.db import models
 
 
-class Migration(DataMigration):
+class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        "Write your forwards methods here."
-        # Note: Don't use "from appname.models import ModelName".
-        # Use orm.ModelName to refer to models in this application,
-        # and orm['appname.ModelName'] for models in other applications.
+        # Adding model 'Fee'
+        db.create_table(u'pricing_fee', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('start', self.gf('django.db.models.fields.DateTimeField')()),
+            ('end', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
+            ('site', self.gf('django.db.models.fields.related.ForeignKey')(related_name='fee', to=orm['sites.Site'])),
+            ('fee', self.gf('django.db.models.fields.FloatField')()),
+            ('currency', self.gf('django.db.models.fields.CharField')(max_length=4)),
+        ))
+        db.send_create_signal(u'pricing', ['Fee'])
 
-        site = orm['sites.Site'].objects.get(id=0)
-        end_previous_object(orm.Limit, site=site)
-
-        limit_beam = orm.Limit(
-            transaction_min=0.5,
-            transaction_max=500,
-            user_limit_basic=100,
-            user_limit_complete=500,
-            currency='GBP',
-            site=orm['sites.Site'].objects.get(id=0)
-        )
-        limit_beam.save()
-
-        limit_bae = orm.Limit(
-            transaction_min=0.5,
-            transaction_max=1000,
-            user_limit_basic=150,
-            user_limit_complete=1000,
-            currency='USD',
-            site=orm['sites.Site'].objects.get(id=1)
-        )
-        limit_bae.save()
 
     def backwards(self, orm):
-        "Write your backwards methods here."
-        pass
+        # Deleting model 'Fee'
+        db.delete_table(u'pricing_fee')
+
 
     models = {
         u'pricing.comparison': {
@@ -49,15 +36,24 @@ class Migration(DataMigration):
         u'pricing.exchangerate': {
             'Meta': {'object_name': 'ExchangeRate'},
             'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'gbp_eur': ('django.db.models.fields.FloatField', [], {}),
             'gbp_ghs': ('django.db.models.fields.FloatField', [], {}),
             'gbp_sll': ('django.db.models.fields.FloatField', [], {}),
             'gbp_usd': ('django.db.models.fields.FloatField', [], {}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'start': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'})
         },
+        u'pricing.fee': {
+            'Meta': {'object_name': 'Fee'},
+            'currency': ('django.db.models.fields.CharField', [], {'max_length': '4'}),
+            'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'fee': ('django.db.models.fields.FloatField', [], {}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'site': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'fee'", 'to': u"orm['sites.Site']"}),
+            'start': ('django.db.models.fields.DateTimeField', [], {})
+        },
         u'pricing.limit': {
             'Meta': {'object_name': 'Limit'},
-            'currency': ('django.db.models.fields.CharField', [], {'max_length': '4'}),
             'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'site': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'limit'", 'to': u"orm['sites.Site']"}),
@@ -71,7 +67,6 @@ class Migration(DataMigration):
             'Meta': {'object_name': 'Pricing'},
             'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'fee': ('django.db.models.fields.FloatField', [], {}),
-            'fee_currency': ('django.db.models.fields.CharField', [], {'max_length': '4'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'markup': ('django.db.models.fields.FloatField', [], {}),
             'site': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'pricing'", 'to': u"orm['sites.Site']"}),
@@ -85,5 +80,4 @@ class Migration(DataMigration):
         }
     }
 
-    complete_apps = ['sites', 'pricing']
-    symmetrical = True
+    complete_apps = ['pricing']

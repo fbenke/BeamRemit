@@ -56,11 +56,6 @@ class Transaction(models.Model):
         (INVALID, 'invalid')
     )
 
-    SENT_CURRENCIES = (
-        (settings.GBP, 'British Pound'),
-        (settings.USD, 'US Dollar')
-    )
-
     recipient = models.ForeignKey(
         Recipient,
         related_name='transactions',
@@ -93,7 +88,7 @@ class Transaction(models.Model):
     sent_currency = models.CharField(
         'Sent currency',
         max_length=4,
-        choices=SENT_CURRENCIES,
+        choices=settings.SENT_CURRENCIES,
         help_text='Currency the sent amount is denominated in'
     )
 

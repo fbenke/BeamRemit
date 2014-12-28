@@ -307,6 +307,7 @@ SIERRA_LEONE = 'SL'
 # Currencies
 USD = 'USD'
 GBP = 'GBP'
+EUR = 'EUR'
 LEONE = 'SLL'
 CEDI = 'GHS'
 
@@ -316,8 +317,8 @@ COUNTRY_CURRENCY = {
 }
 
 SITE_SENDING_CURRENCY = {
-    0: GBP,
-    1: USD
+    0: (GBP, EUR),
+    1: (USD, )
 }
 
 SITE_RECEIVING_CURRENCY = {
@@ -329,6 +330,12 @@ SITE_RECEIVING_COUNTRY = {
     0: (GHANA,),
     1: (SIERRA_LEONE,)
 }
+
+SENT_CURRENCIES = (
+    (GBP, 'British Pound'),
+    (USD, 'US Dollar'),
+    (EUR, 'Euro')
+)
 
 # Payment Processors
 GOCOIN = 'GOCO'

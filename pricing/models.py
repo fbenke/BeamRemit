@@ -12,50 +12,21 @@ from jsonfield import JSONField
 from beam.utils.log import log_error
 
 
-def get_current_object(cls):
+def get_current_object(cls, **kwargs):
     try:
-        return cls.objects.get(end__isnull=True)
+        return cls.objects.get(end__isnull=True, **kwargs)
     except ObjectDoesNotExist:
-        log_error('ERROR {} - No pricing object found.'.format(cls))
+        log_error('ERROR {} - No object found.'.format(cls))
         raise ObjectDoesNotExist
 
 
-def end_previous_object(cls):
+def end_previous_object(cls, **kwargs):
     try:
-        previous_object = cls.objects.get(end__isnull=True)
+        previous_object = cls.objects.get(end__isnull=True, **kwargs)
         previous_object.end = timezone.now()
         previous_object.save()
     except ObjectDoesNotExist:
-        if cls.objects.all().exists():
-            log_error('ERROR {} - Failed to end previous pricing.'.format(cls))
-            raise ObjectDoesNotExist
-
-
-def get_current_object_by_site(cls, site):
-    try:
-        return cls.objects.get(end__isnull=True, site=site)
-    except ObjectDoesNotExist:
-        log_error('ERROR {} - No pricing object found.'.format(cls))
-        raise ObjectDoesNotExist
-
-
-def end_previous_object_by_site(cls, site):
-    try:
-        previous_object = cls.objects.get(end__isnull=True, site=site)
-        previous_object.end = timezone.now()
-        previous_object.save()
-    except ObjectDoesNotExist:
-        if cls.objects.filter(site=site).exists():
-            log_error('ERROR {} - Failed to end previous pricing.'.format(cls))
-            raise ObjectDoesNotExist
-
-
-def get_current_pricing(site):
-    return get_current_object_by_site(Pricing, site)
-
-
-def get_current_limit(site):
-    return get_current_object_by_site(Limit, site)
+        pass
 
 
 def get_current_exchange_rate():
@@ -64,6 +35,53 @@ def get_current_exchange_rate():
 
 def get_current_comparison():
     return get_current_object(Comparison)
+
+
+def get_current_pricing(site):
+    return get_current_object(Pricing, site=site)
+
+
+def get_current_limit(site):
+    return get_current_object(Limit, site=site, currency=currency)
+
+
+def get_current_fee(site, currency):
+    return get_current_object(Fee, site=site, currency=currency)
+
+
+class Fee(models.Model):
+
+    start = models.DateTimeField(
+        'Start Time',
+        auto_now_add=True,
+        help_text='Time at which pricing structure came into effect'
+    )
+
+    end = models.DateTimeField(
+        'End Time',
+        blank=True,
+        null=True,
+        help_text='Time at which pricing ended. If null, it represents the current pricing structure. ' +
+                  'Only one row in this table can have a null value for this column.'
+    )
+
+    site = models.ForeignKey(
+        Site,
+        related_name='fee',
+        help_text='Site associated with this fee'
+    )
+
+    fee = models.FloatField(
+        'Fixed Fee',
+        help_text='Fixed Fee charged for the money transfer.'
+    )
+
+    currency = models.CharField(
+        'Currency',
+        max_length=4,
+        choices=settings.SENT_CURRENCIES,
+        help_text='Currency the fee is denominated in'
+    )
 
 
 class Pricing(models.Model):
@@ -102,12 +120,10 @@ class Pricing(models.Model):
         return '{}'.format(self.id)
 
     @property
-    def exchange_rate(self):
-        return get_current_exchange_rate().exchange_rate(self.site) * (1 - self.markup)
-
-    @property
-    def fee_currency(self):
-        return settings.SITE_SENDING_CURRENCY[self.site.id]
+    def exchange_rates(self):
+        rates = get_current_exchange_rate().exchange_rates(self.site)
+        rates = {k: v * (1 - self.markup) for k, v in rates.iteritems()}
+        return rates
 
     def calculate_received_amount(self, sent_amount, country):
 
@@ -124,6 +140,7 @@ class ExchangeRate(models.Model):
 
     CURRENCY_FXR = {
         settings.USD: 'gbp_usd',
+        settings.EUR: 'gbp_eur',
         settings.CEDI: 'gbp_ghs',
         settings.LEONE: 'gbp_sll',
     }
@@ -157,6 +174,11 @@ class ExchangeRate(models.Model):
         help_text='Exchange Rate from GBP to SSL without markup'
     )
 
+    gbp_eur = models.FloatField(
+        'GBP to EUR Exchange Rate',
+        help_text='Exchange Rate from GBP to EUR without markup'
+    )
+
     def _get_gbp_to_currency(self, currency):
         if currency == settings.GBP:
             return 1
@@ -170,10 +192,12 @@ class ExchangeRate(models.Model):
     def exchange_amount(self, amount, sending_currency, receiving_currency):
         return amount * self._get_exchange_rate(sending_currency, receiving_currency)
 
-    def exchange_rate(self, site):
-        sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
+    def exchange_rates(self, site):
+        rates = {}
         receiving_currency = settings.SITE_RECEIVING_CURRENCY[site.id]
-        return self._get_exchange_rate(sending_currency, receiving_currency)
+        for sending_currency in settings.SITE_SENDING_CURRENCY[site.id]:
+            rates[sending_currency] = self._get_exchange_rate(sending_currency, receiving_currency)
+        return rates
 
 
 class Limit(models.Model):
@@ -218,9 +242,12 @@ class Limit(models.Model):
         help_text='Site associated with this limit'
     )
 
-    @property
-    def sending_currency(self):
-        return settings.SITE_SENDING_CURRENCY[self.site.id]
+    sending_currency = models.CharField(
+        'Currency',
+        max_length=4,
+        choices=settings.SENT_CURRENCIES,
+        help_text='Sending currency the limits are denominated in'
+    )
 
     @property
     def receiving_currency(self):
