@@ -41,12 +41,16 @@ def get_current_pricing(site):
     return get_current_object(Pricing, site=site)
 
 
-def get_current_limit(site):
+def get_current_limit(site, currency):
     return get_current_object(Limit, site=site, currency=currency)
 
 
-def get_current_fee(site, currency):
-    return get_current_object(Fee, site=site, currency=currency)
+def get_current_limits(site):
+    return Limit.objects.filter(site=site, end__isnull=True)
+
+
+def get_current_fees(site):
+    return Fee.objects.filter(site=site, end__isnull=True)
 
 
 class Fee(models.Model):
@@ -125,6 +129,10 @@ class Pricing(models.Model):
         rates = {k: v * (1 - self.markup) for k, v in rates.iteritems()}
         return rates
 
+    def exchange_rate(self, sending_currency):
+        receiving_currency = settings.SITE_RECEIVING_CURRENCY[self.site.id]
+        return get_current_exchange_rate().get_exchange_rate(sending_currency, receiving_currency) * (1 - self.markup)
+
     def calculate_received_amount(self, sent_amount, country):
 
         unrounded_amount = sent_amount * self.exchange_rate
@@ -184,7 +192,7 @@ class ExchangeRate(models.Model):
             return 1
         return getattr(self, self.CURRENCY_FXR[currency])
 
-    def _get_exchange_rate(self, sending_currency, receiving_currency):
+    def get_exchange_rate(self, sending_currency, receiving_currency):
         gbp_to_sending_currency = self._get_gbp_to_currency(sending_currency)
         gbp_to_receiving_currency = self._get_gbp_to_currency(receiving_currency)
         return gbp_to_receiving_currency / gbp_to_sending_currency
@@ -196,7 +204,7 @@ class ExchangeRate(models.Model):
         rates = {}
         receiving_currency = settings.SITE_RECEIVING_CURRENCY[site.id]
         for sending_currency in settings.SITE_SENDING_CURRENCY[site.id]:
-            rates[sending_currency] = self._get_exchange_rate(sending_currency, receiving_currency)
+            rates[sending_currency] = self.get_exchange_rate(sending_currency, receiving_currency)
         return rates
 
 
@@ -255,11 +263,11 @@ class Limit(models.Model):
 
     @property
     def transaction_min_receiving(self):
-        return get_current_pricing(self.site).exchange_rate * self.transaction_min
+        return get_current_pricing(self.site).exchange_rate(self.sending_currency) * self.transaction_min
 
     @property
     def transaction_max_receiving(self):
-        return get_current_pricing(self.site).exchange_rate * self.transaction_max
+        return get_current_pricing(self.site).exchange_rate(self.sending_currency) * self.transaction_max
 
 
 class Comparison(models.Model):

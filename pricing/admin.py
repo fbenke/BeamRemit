@@ -39,7 +39,7 @@ class PricingAdmin(DoNotDeleteModelAdmin):
 admin.site.register(Pricing, PricingAdmin)
 
 
-class FeeAdmin(admin.ModelAdmin):
+class FeeAdmin(DoNotDeleteModelAdmin):
 
     form = forms.FeeForm
 
@@ -106,25 +106,22 @@ class LimitAdmin(DoNotDeleteModelAdmin):
     def get_readonly_fields(self, request, obj=None):
 
         calculated_fields = (
-            'transaction_min_receiving', 'transaction_max_receiving',
-            'sending_currency', 'receiving_currency')
+            'transaction_min_receiving', 'transaction_max_receiving', 'receiving_currency')
 
         if obj:
-            return ('id', 'start', 'end', 'site', 'user_limit_basic',
-                    'user_limit_complete', 'transaction_min',
-                    'transaction_max') + calculated_fields
+            return ('id', 'start', 'end', 'site', 'sending_currency', 'user_limit_basic',
+                    'user_limit_complete', 'transaction_min', 'transaction_max') + calculated_fields
         else:
             return ('id', 'start', 'end') + calculated_fields
 
-    list_display = ('id', 'end', 'site', 'user_limit_basic',
-                    'user_limit_complete', 'transaction_min',
-                    'transaction_max')
+    list_display = ('id', 'end', 'site', 'sending_currency', 'user_limit_basic',
+                    'user_limit_complete', 'transaction_min', 'transaction_max')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
-            end_previous_object(Limit, site=obj.site)
+            end_previous_object(Limit, site=obj.site, sending_currency=obj.sending_currency)
             obj.save()
 
-    list_filter = ('site',)
+    list_filter = ('site', 'sending_currency')
 
 admin.site.register(Limit, LimitAdmin)

@@ -30,6 +30,8 @@ class LimitForm(forms.ModelForm):
     def clean(self):
         if not self.cleaned_data['transaction_min'] < self.cleaned_data['transaction_max']:
             raise forms.ValidationError('Minimum amount must be smaller than maximum amount.')
+        if self.cleaned_data['sending_currency'] not in settings.SITE_SENDING_CURRENCY[self.cleaned_data['site'].id]:
+            raise forms.ValidationError('Sending currency not supported for that Site.')
         return self.cleaned_data
 
 

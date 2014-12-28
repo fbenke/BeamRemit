@@ -63,10 +63,12 @@ class CreateTransaction(GenericAPIView):
                     site, request.DATA.get('sent_amount'))
 
                 # sender has exceeded basic transaction limit
-                if todays_vol > get_current_limit(site).user_limit_basic:
+                sent_currency = request.DATA.get('sent_currency')
+
+                if todays_vol > get_current_limit(site, sent_currency).user_limit_basic:
 
                     # sender has exceeded maximum daily transaction limit
-                    if todays_vol > get_current_limit(site).user_limit_complete:
+                    if todays_vol > get_current_limit(site, sent_currency).user_limit_complete:
                         return Response({'detail': constants.TRANSACTION_LIMIT_EXCEEDED}, status=status.HTTP_400_BAD_REQUEST)
 
                     #  sender has not provided additional document

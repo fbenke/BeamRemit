@@ -26,7 +26,7 @@ from account import serializers
 from account.models import BeamProfile as Profile
 from account.utils import AccountException, generate_aws_upload
 
-from pricing.models import get_current_limit
+from pricing.models import get_current_limits
 
 from beam.utils.ip_blocking import country_blocked, is_tor_node,\
     get_client_ip, HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
@@ -629,19 +629,22 @@ class AccountLimits(APIView):
 
         todays_vol = request.user.profile.todays_transaction_volume(site)
 
-        limit = get_current_limit(site)
+        limits = get_current_limits(site)
+        account_limits = {}
 
         if request.user.profile.documents_verified:
-            account_limit = limit.user_limit_complete
+            limit_field = 'user_limit_complete'
             can_extend = False
         else:
-            account_limit = limit.user_limit_basic
+            limit_field = 'user_limit_basic'
             can_extend = True
+
+        for limit in limits:
+            account_limits[limit.sending_currency] = getattr(limit, limit_field)
 
         data = {
             'today': todays_vol,
-            'limit': account_limit,
-            'currency': settings.SITE_SENDING_CURRENCY[site.id],
+            'limits': account_limits,
             'can_extend': can_extend
         }
         return Response(data)
