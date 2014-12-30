@@ -245,7 +245,7 @@ class BeamProfile(UserenaBaseProfile):
 
             transactions = self._get_todays_transactions()
             volumes = {}
-            print len(transactions)
+
             for c in settings.SITE_SENDING_CURRENCY[site.id]:
 
                 amount = 0

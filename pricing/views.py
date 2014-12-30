@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
 
 from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
@@ -6,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from beam.utils.angular_requests import get_site_by_request
-from beam.utils.ip_blocking import get_default_currency
+from beam.utils.ip_analysis import get_default_currency
 
 from pricing import serializers
 
@@ -25,6 +26,9 @@ class PricingCurrent(APIView):
             site = get_site_by_request(request)
             pricing = get_current_pricing(site)
             comparison = get_current_comparison()
+            default_currency = get_default_currency(request)
+            currencies = settings.SITE_SENDING_CURRENCY[site.id]
+
             response_dict['pricing_id'] = pricing.id
             response_dict['exchange_rate_id'] = get_current_exchange_rate().id
             response_dict['fees'] = {str(f.id): {f.currency: f.amount} for f in get_current_fees(site)}
@@ -32,7 +36,7 @@ class PricingCurrent(APIView):
             response_dict['comparison'] = comparison.price_comparison
             response_dict['comparison_retrieved'] = comparison.start
             response_dict['operation_mode'] = get_current_state(site).state
-            response_dict['default_currency'] = get_default_currency(request)
+            response_dict['default_currency'] = default_currency if default_currency in currencies else currencies[0]
 
         except ObjectDoesNotExist:
 

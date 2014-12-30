@@ -14,7 +14,7 @@ class Migration(SchemaMigration):
             ('start', self.gf('django.db.models.fields.DateTimeField')()),
             ('end', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
             ('site', self.gf('django.db.models.fields.related.ForeignKey')(related_name='fee', to=orm['sites.Site'])),
-            ('fee', self.gf('django.db.models.fields.FloatField')()),
+            ('amount', self.gf('django.db.models.fields.FloatField')()),
             ('currency', self.gf('django.db.models.fields.CharField')(max_length=4)),
         ))
         db.send_create_signal(u'pricing', ['Fee'])
@@ -47,7 +47,7 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'Fee'},
             'currency': ('django.db.models.fields.CharField', [], {'max_length': '4'}),
             'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'fee': ('django.db.models.fields.FloatField', [], {}),
+            'amount': ('django.db.models.fields.FloatField', [], {}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'site': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'fee'", 'to': u"orm['sites.Site']"}),
             'start': ('django.db.models.fields.DateTimeField', [], {})

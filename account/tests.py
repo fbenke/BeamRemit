@@ -1,3 +1,5 @@
+import math
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator as token_generator
@@ -74,7 +76,7 @@ class SignupTests(AccountTests):
             'password2': self.default_password,
             'acceptedPrivacyPolicy': True,
         }
-        response = self.client.post(self.url_signup, data)
+        response = self.client.post(self.url_signup, data, HTTP_REFERER='http://dev.beamremit.com')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -813,9 +815,57 @@ class VerificationStatusTests(AccountTests):
 class AccountLimitTests(AccountTests):
 
     def setUp(self):
+
         self.exchange_rate = self._create_default_exchange_rate()
-        self.limit_bae = self._create_default_limit_bae()
-        self.limit_beam = self._create_default_limit_beam()
+
+        self.fee_beam_eur = self._create_fee(
+            amount=0.3,
+            currency='EUR',
+            site_id=0
+        )
+        self.fee_beam_gbp = self._create_fee(
+            amount=0.2,
+            currency='GBP',
+            site_id=0
+        )
+        self.fee_bae_usd = self._create_fee(
+            amount=0,
+            currency='USD',
+            site_id=1
+        )
+        self.pricing_beam = self._create_pricing(
+            markup=0.03,
+            site_id=1
+        )
+        self.pricing_bae = self._create_pricing(
+            markup=0.01,
+            site_id=1
+        )
+
+        self._create_limit(
+            transaction_min=3,
+            transaction_max=600,
+            user_limit_basic=50,
+            user_limit_complete=700,
+            site_id=1,
+            sending_currency='USD'
+        )
+        self._create_limit(
+            transaction_min=2,
+            transaction_max=1000,
+            user_limit_basic=40,
+            user_limit_complete=500,
+            site_id=0,
+            sending_currency='GBP'
+        )
+        self._create_limit(
+            transaction_min=1,
+            transaction_max=1200,
+            user_limit_basic=50,
+            user_limit_complete=600,
+            site_id=0,
+            sending_currency='EUR'
+        )
 
     def test_permissions(self):
         response = self.client.get(self.url_account_limits)
@@ -828,16 +878,17 @@ class AccountLimitTests(AccountTests):
 
         response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit'], 40)
-        self.assertEqual(response.data['currency'], 'GBP')
-        self.assertEqual(response.data['today'], 0)
+        self.assertEqual(response.data['limits']['GBP'], 40)
+        self.assertEqual(response.data['limits']['EUR'], 50)
+        self.assertEqual(response.data['today']['GBP'], 0)
+        self.assertEqual(response.data['today']['EUR'], 0)
+
         self.assertTrue(response.data['can_extend'])
 
         response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit'], 50)
-        self.assertEqual(response.data['currency'], 'USD')
-        self.assertEqual(response.data['today'], 0)
+        self.assertEqual(response.data['limits']['USD'], 50)
+        self.assertEqual(response.data['today']['USD'], 0)
         self.assertTrue(response.data['can_extend'])
 
     def test_account_limits_fully_verified_user(self):
@@ -847,16 +898,16 @@ class AccountLimitTests(AccountTests):
 
         response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit'], 500)
-        self.assertEqual(response.data['currency'], 'GBP')
-        self.assertEqual(response.data['today'], 0)
+        self.assertEqual(response.data['limits']['GBP'], 500)
+        self.assertEqual(response.data['limits']['EUR'], 600)
+        self.assertEqual(response.data['today']['GBP'], 0)
+        self.assertEqual(response.data['today']['EUR'], 0)
         self.assertFalse(response.data['can_extend'])
 
         response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit'], 600)
-        self.assertEqual(response.data['currency'], 'USD')
-        self.assertEqual(response.data['today'], 0)
+        self.assertEqual(response.data['limits']['USD'], 700)
+        self.assertEqual(response.data['today']['USD'], 0)
         self.assertFalse(response.data['can_extend'])
 
     def test_account_limits_with_archived_docs(self):
@@ -866,71 +917,97 @@ class AccountLimitTests(AccountTests):
 
         response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit'], 500)
-        self.assertEqual(response.data['currency'], 'GBP')
-        self.assertEqual(response.data['today'], 0)
+        self.assertEqual(response.data['limits']['GBP'], 500)
+        self.assertEqual(response.data['limits']['EUR'], 600)
+        self.assertEqual(response.data['today']['GBP'], 0)
+        self.assertEqual(response.data['today']['EUR'], 0)
         self.assertFalse(response.data['can_extend'])
 
         response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit'], 600)
-        self.assertEqual(response.data['currency'], 'USD')
-        self.assertEqual(response.data['today'], 0)
+        self.assertEqual(response.data['limits']['USD'], 700)
+        self.assertEqual(response.data['today']['USD'], 0)
         self.assertFalse(response.data['can_extend'])
 
     def test_account_spending_count(self):
 
         user = self._create_fully_verified_user()
         token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
 
         self._create_transaction(
             sender=user,
             exchange_rate=self.exchange_rate,
-            pricing=self._create_default_pricing_beam(),
+            pricing=self.pricing_beam,
+            fee=self.fee_beam_gbp,
             sent_amount=200,
             sent_currency='GBP',
-            received_amount=1028.2,
+            received_amount=0,
             receiving_country='GH'
         )
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-
         response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit'], 500)
-        self.assertEqual(response.data['currency'], 'GBP')
-        self.assertEqual(response.data['today'], 200)
+        self.assertEqual(response.data['limits']['GBP'], 500)
+        self.assertEqual(response.data['limits']['EUR'], 600)
+        self.assertEqual(response.data['today']['GBP'], 200)
+        self.assertEqual(response.data['today']['EUR'], 250)
         self.assertFalse(response.data['can_extend'])
 
         response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit'], 600)
-        self.assertEqual(response.data['currency'], 'USD')
-        self.assertEqual(response.data['today'], 320)
+        self.assertEqual(response.data['limits']['USD'], 700)
+        self.assertEqual(response.data['today']['USD'], 320)
         self.assertFalse(response.data['can_extend'])
 
         self._create_transaction(
             sender=user,
             exchange_rate=self.exchange_rate,
-            pricing=self._create_default_pricing_bae(),
+            pricing=self.pricing_beam,
+            fee=self.fee_beam_eur,
+            sent_amount=260,
+            sent_currency='EUR',
+            received_amount=0,
+            receiving_country='GH'
+        )
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limits']['GBP'], 500)
+        self.assertEqual(response.data['limits']['EUR'], 600)
+        self.assertEqual(response.data['today']['GBP'], 408)
+        self.assertEqual(response.data['today']['EUR'], 510)
+        self.assertFalse(response.data['can_extend'])
+
+        response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limits']['USD'], 700)
+        self.assertEqual(response.data['today']['USD'], 652.8)
+        self.assertFalse(response.data['can_extend'])
+
+        self._create_transaction(
+            sender=user,
+            exchange_rate=self.exchange_rate,
+            pricing=self.pricing_bae,
+            fee=self.fee_bae_usd,
             sent_amount=12,
             sent_currency='USD',
-            received_amount=39.75,
+            received_amount=0,
             receiving_country='SL'
         )
 
         response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.beamremit.com/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit'], 500)
-        self.assertEqual(response.data['currency'], 'GBP')
-        self.assertEqual(response.data['today'], 207.5)
+        self.assertEqual(response.data['limits']['GBP'], 500)
+        self.assertEqual(response.data['limits']['EUR'], 600)
+        self.assertEqual(response.data['today']['GBP'], 415.5)
+        self.assertEqual(response.data['today']['EUR'], 519.375)
         self.assertFalse(response.data['can_extend'])
 
         response = self.client.get(self.url_account_limits, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['limit'], 600)
-        self.assertEqual(response.data['currency'], 'USD')
-        self.assertEqual(response.data['today'], 332)
+        self.assertEqual(response.data['limits']['USD'], 700)
+        self.assertEqual(response.data['today']['USD'], 664.8)
         self.assertFalse(response.data['can_extend'])
 
 
@@ -1124,47 +1201,96 @@ class ProfileModelTests(TestCase, TestUtils):
 
     def test_transaction_volume(self):
         user = self._create_fully_verified_user()
-        pricing_beam = self._create_default_pricing_beam()
-        pricing_bae = self._create_default_pricing_bae()
+        fee_beam_eur = self._create_fee(
+            amount=0.3,
+            currency='EUR',
+            site_id=0
+        )
+        fee_beam_gbp = self._create_fee(
+            amount=0.2,
+            currency='GBP',
+            site_id=0
+        )
+        fee_bae_usd = self._create_fee(
+            amount=0,
+            currency='USD',
+            site_id=1
+        )
+        pricing_beam = self._create_pricing(
+            markup=0.03,
+            site_id=1
+        )
+        pricing_bae = self._create_pricing(
+            markup=0.01,
+            site_id=1
+        )
+
         exchange_rate = self._create_default_exchange_rate()
+
         site_beam = Site.objects.get(id=0)
         site_bae = Site.objects.get(id=1)
 
-        self.assertEqual(user.profile.todays_transaction_volume(site_beam), 0)
-        self.assertEqual(user.profile.todays_transaction_volume(site_bae), 0)
-        self.assertEqual(user.profile.todays_transaction_volume(site_beam, 1.23), 1.23)
-        self.assertEqual(user.profile.todays_transaction_volume(site_bae, 9.81), 9.81)
+        self.assertEqual(user.profile.todays_transaction_volumes(site_beam)['GBP'], 0)
+        self.assertEqual(user.profile.todays_transaction_volumes(site_beam)['EUR'], 0)
+        self.assertEqual(user.profile.todays_transaction_volumes(site_bae)['USD'], 0)
+        self.assertEqual(user.profile.todays_transaction_volume(site_beam, 1.23, 'EUR'), 1.23)
+        self.assertEqual(user.profile.todays_transaction_volume(site_beam, 2.23, 'GBP'), 2.23)
+        self.assertEqual(user.profile.todays_transaction_volume(site_bae, 9.81, 'USD'), 9.81)
 
         self._create_transaction(
             sender=user,
             pricing=pricing_beam,
             exchange_rate=exchange_rate,
-            sent_amount=93,
+            fee=fee_beam_gbp,
+            sent_amount=26,
             sent_currency='GBP',
-            received_amount=478.2,
+            received_amount=0,
             receiving_country='GH'
         )
 
-        self.assertEqual(user.profile.todays_transaction_volume(site_beam), 93)
-        self.assertEqual(user.profile.todays_transaction_volume(site_bae), 148.8)
-        self.assertEqual(user.profile.todays_transaction_volume(site_beam, 10), 103)
-        self.assertEqual(user.profile.todays_transaction_volume(site_bae, 10), 158.8)
+        self.assertEqual(user.profile.todays_transaction_volumes(site_beam)['GBP'], 26)
+        self.assertTrue(abs(user.profile.todays_transaction_volumes(site_beam)['EUR'] - 32.5) < self.SMALL_AMOUNT)
+        self.assertEqual(user.profile.todays_transaction_volumes(site_bae)['USD'], 41.6)
+        self.assertEqual(user.profile.todays_transaction_volume(site_beam, 2.23, 'GBP'), 28.23)
+        self.assertEqual(user.profile.todays_transaction_volume(site_beam, 1.23, 'EUR'), 33.73)
+        self.assertTrue(abs(user.profile.todays_transaction_volume(site_bae, 9.81, 'USD') - 51.41) < self.SMALL_AMOUNT)
 
         self._create_transaction(
             sender=user,
             pricing=pricing_bae,
-            sent_amount=18,
+            sent_amount=13,
             exchange_rate=exchange_rate,
+            fee=fee_bae_usd,
             sent_currency='USD',
-            received_amount=77050,
+            received_amount=0,
             receiving_country='SL'
         )
 
-        self.assertEqual(user.profile.todays_transaction_volume(site_beam), 104.25)
-        self.assertEqual(user.profile.todays_transaction_volume(site_bae), 166.8)
-        self.assertEqual(user.profile.todays_transaction_volume(site_beam, 15), 119.25)
-        self.assertEqual(user.profile.todays_transaction_volume(site_bae, 15), 181.8)
+        self.assertEqual(user.profile.todays_transaction_volumes(site_beam)['GBP'], 34.125)
+        self.assertTrue(abs(user.profile.todays_transaction_volumes(site_beam)['EUR'] - 42.65625) < self.SMALL_AMOUNT)
+        self.assertEqual(user.profile.todays_transaction_volumes(site_bae)['USD'], 54.6)
+        self.assertTrue(abs(user.profile.todays_transaction_volume(site_beam, 2.23, 'GBP') - 36.355) < self.SMALL_AMOUNT)
+        self.assertTrue(abs(user.profile.todays_transaction_volume(site_beam, 1.23, 'EUR') - 43.88625) < self.SMALL_AMOUNT)
+        self.assertTrue(abs(user.profile.todays_transaction_volume(site_bae, 9.81, 'USD') - 64.41) < self.SMALL_AMOUNT)
 
+        self._create_transaction(
+            sender=user,
+            pricing=pricing_beam,
+            sent_amount=18,
+            exchange_rate=exchange_rate,
+            fee=fee_beam_eur,
+            sent_currency='EUR',
+            received_amount=0,
+            receiving_country='GH'
+        )
+
+        self.assertTrue(abs(user.profile.todays_transaction_volumes(site_beam)['GBP'] - 48.525) < self.SMALL_AMOUNT)
+        self.assertTrue(abs(user.profile.todays_transaction_volumes(site_beam)['EUR'] - 60.65625) < self.SMALL_AMOUNT)
+        self.assertTrue(abs(user.profile.todays_transaction_volumes(site_bae)['USD'] - 77.64) < self.SMALL_AMOUNT)
+        self.assertTrue(abs(user.profile.todays_transaction_volume(site_beam, 2.23, 'GBP') - 50.755) < self.SMALL_AMOUNT)
+        self.assertTrue(abs(user.profile.todays_transaction_volume(site_beam, 1.23, 'EUR') - 61.88625) < self.SMALL_AMOUNT)
+        self.assertTrue(abs(user.profile.todays_transaction_volume(site_bae, 9.81, 'USD') - 87.45) < self.SMALL_AMOUNT)
+    
     def test_profile_information_complete(self):
         user = self._create_activated_user()
         self.assertFalse(user.profile.information_complete)

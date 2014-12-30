@@ -7,8 +7,8 @@ from rest_framework.response import Response
 
 from beam.utils.angular_requests import get_site_by_request
 from beam.utils.exceptions import APIException
-from beam.utils.ip_blocking import country_blocked, is_tor_node,\
-    get_client_ip, HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
+from beam.utils.ip_analysis import country_blocked, is_tor_node,\
+    HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
 
 from transaction import constants
 from transaction import serializers
@@ -38,9 +38,7 @@ class CreateTransaction(GenericAPIView):
     def post(self, request):
 
         # block countries we are not licensed to operate in and tor clients
-        client_ip = get_client_ip(request)
-
-        if country_blocked(request, client_ip) or is_tor_node(client_ip):
+        if country_blocked(request) or is_tor_node(request):
             return Response(status=HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
 
         try:
@@ -89,7 +87,7 @@ class CreateTransaction(GenericAPIView):
                 self.response_params['received_currency'] = self.object.received_currency
                 self.response_params['operation_mode'] = get_current_state(site).state
                 self.response_params['payment_processor'] = settings.CURRENT_PAYMENT_PROCESSOR
- 
+
                 return Response(self.response_params, status=status.HTTP_201_CREATED)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

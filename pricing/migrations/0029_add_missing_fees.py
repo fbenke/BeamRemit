@@ -17,7 +17,7 @@ class Migration(DataMigration):
                     get_current_object(Fee, site=site, currency=currency)
                 except ObjectDoesNotExist:
                     fee = orm.Fee(
-                        fee=0,
+                        amount=0,
                         currency=currency,
                         site=site
                     )
@@ -48,7 +48,7 @@ class Migration(DataMigration):
             'Meta': {'object_name': 'Fee'},
             'currency': ('django.db.models.fields.CharField', [], {'max_length': '4'}),
             'end': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'fee': ('django.db.models.fields.FloatField', [], {}),
+            'amount': ('django.db.models.fields.FloatField', [], {}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'site': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'fee'", 'to': u"orm['sites.Site']"}),
             'start': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'})

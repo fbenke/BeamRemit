@@ -14,7 +14,7 @@ from account.models import BeamProfile as Profile
 from beam.utils.angular_requests import get_site_by_request
 
 from pricing.models import Pricing, ExchangeRate, Comparison, Limit,\
-    end_previous_object, end_previous_object_by_site
+    Fee, end_previous_object
 
 from state.models import State
 
@@ -22,6 +22,8 @@ from transaction.models import Recipient, Transaction
 
 
 class TestUtils(object):
+
+    SMALL_AMOUNT = 0.0000000000001
 
     emails = iter(['test{}@mail.com'.format(k) for k in xrange(1, 200)])
     usernames = iter(['user{}'.format(k) for k in xrange(1, 200)])
@@ -49,22 +51,11 @@ class TestUtils(object):
         }
     }
 
-    default_beam_pricing = {
-        'markup': 0.03,
-        'fee': 1,
-        'site': 0
-    }
-
-    default_bae_pricing = {
-        'markup': 0.02,
-        'fee': 0,
-        'site': 1
-    }
-
     default_exchange_rate = {
         'gbp_ghs': 5.3,
         'gbp_usd': 1.6,
-        'gbp_sll': 7040
+        'gbp_sll': 7040,
+        'gbp_eur': 1.25
     }
 
     default_beam_limit = {
@@ -167,36 +158,33 @@ class TestUtils(object):
             email=email,
             password=self.default_password)
 
-    def _create_pricing(self, markup, fee, site_id):
+    def _create_fee(self, amount, currency, site_id):
+        site = Site.objects.get(id=site_id)
+        fee = Fee(
+            amount=amount,
+            currency=currency,
+            site=site
+        )
+        end_previous_object(Fee, site=site, currency=currency)
+        fee.save()
+        return fee
+
+    def _create_pricing(self, markup, site_id):
         site = Site.objects.get(id=site_id)
         pricing = Pricing(
             markup=markup,
-            fee=fee,
             site=site
         )
-        end_previous_object_by_site(Pricing, site)
+        end_previous_object(Pricing, site=site)
         pricing.save()
         return pricing
 
-    def _create_default_pricing_beam(self):
-        return self._create_pricing(
-            markup=0.03,
-            fee=2.9,
-            site_id=0
-        )
-
-    def _create_default_pricing_bae(self):
-        return self._create_pricing(
-            markup=0.01,
-            fee=1.2,
-            site_id=1
-        )
-
-    def _create_exchange_rate(self, gbp_ghs, gbp_usd, gbp_sll):
+    def _create_exchange_rate(self, gbp_ghs, gbp_usd, gbp_sll, gbp_eur):
         exchange_rate = ExchangeRate(
             gbp_ghs=gbp_ghs,
             gbp_usd=gbp_usd,
-            gbp_sll=gbp_sll
+            gbp_sll=gbp_sll,
+            gbp_eur=gbp_eur
         )
         end_previous_object(ExchangeRate)
         exchange_rate.save()
@@ -206,40 +194,24 @@ class TestUtils(object):
         return self._create_exchange_rate(
             gbp_ghs=5.3,
             gbp_usd=1.6,
-            gbp_sll=7040
+            gbp_sll=7040,
+            gbp_eur=1.25
         )
 
     def _create_limit(self, transaction_min, transaction_max, user_limit_basic,
-                      user_limit_complete, site_id):
+                      user_limit_complete, site_id, sending_currency):
         site = Site.objects.get(id=site_id)
         limit = Limit(
             transaction_min=transaction_min,
             transaction_max=transaction_max,
             user_limit_basic=user_limit_basic,
             user_limit_complete=user_limit_complete,
-            site=site
+            site=site,
+            sending_currency=sending_currency
         )
-        end_previous_object_by_site(Limit, site)
+        end_previous_object(Limit, site=site, sending_currency=sending_currency)
         limit.save()
         return limit
-
-    def _create_default_limit_beam(self):
-        return self._create_limit(
-            transaction_min=2,
-            transaction_max=1000,
-            user_limit_basic=40,
-            user_limit_complete=500,
-            site_id=0
-        )
-
-    def _create_default_limit_bae(self):
-        return self._create_limit(
-            transaction_min=3,
-            transaction_max=600,
-            user_limit_basic=50,
-            user_limit_complete=600,
-            site_id=1
-        )
 
     def _create_comparison(self):
         comparison = Comparison(price_comparison=self.default_comparison)
@@ -254,11 +226,11 @@ class TestUtils(object):
             site_id = 0
         site = Site.objects.get(id=site_id)
         app_state = State(state=state, site=site)
-        end_previous_object_by_site(State, site)
+        end_previous_object(State, site=site)
         app_state.save()
         return app_state
 
-    def _create_transaction(self, sender, pricing, exchange_rate, sent_amount,
+    def _create_transaction(self, sender, pricing, fee, exchange_rate, sent_amount,
                             sent_currency, received_amount, receiving_country):
 
         recipient = Recipient(
@@ -273,6 +245,7 @@ class TestUtils(object):
             recipient=recipient,
             pricing=pricing,
             exchange_rate=exchange_rate,
+            fee=fee,
             sent_amount=sent_amount,
             sent_currency=sent_currency,
             received_amount=received_amount,
