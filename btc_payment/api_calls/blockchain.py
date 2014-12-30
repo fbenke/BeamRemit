@@ -29,6 +29,7 @@ def generate_receiving_address(transaction_id, invoice_id):
             params=payload,
             timeout=settings.BLOCKCHAIN_REQUEST_TIMEOUT
         )
+
         response = response.json()
 
         # sanity checks

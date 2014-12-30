@@ -42,15 +42,25 @@ def get_current_pricing(site):
 
 
 def get_current_limit(site, currency):
-    return get_current_object(Limit, site=site, currency=currency)
+    return get_current_object(Limit, site=site, sending_currency=currency)
 
 
 def get_current_limits(site):
-    return Limit.objects.filter(site=site, end__isnull=True)
+    limits = Limit.objects.filter(site=site, end__isnull=True)
+    if len(limits) != len(settings.SITE_SENDING_CURRENCY[site.id]):
+        log_error('ERROR Limits - Missing limits for site {}.'.format(site.id))
+    return limits
+
+
+def get_current_fee(site, currency):
+    return get_current_object(Fee, site=site, currency=currency)
 
 
 def get_current_fees(site):
-    return Fee.objects.filter(site=site, end__isnull=True)
+    fees = Fee.objects.filter(site=site, end__isnull=True)
+    if len(fees) != len(settings.SITE_SENDING_CURRENCY[site.id]):
+        log_error('ERROR Fees - Missing fees for site {}.'.format(site.id))
+    return fees
 
 
 class Fee(models.Model):
@@ -75,7 +85,7 @@ class Fee(models.Model):
         help_text='Site associated with this fee'
     )
 
-    fee = models.FloatField(
+    amount = models.FloatField(
         'Fixed Fee',
         help_text='Fixed Fee charged for the money transfer.'
     )
@@ -109,11 +119,6 @@ class Pricing(models.Model):
         help_text='Percentage to be added over exchange rate. Value between 0 and 1.'
     )
 
-    fee = models.FloatField(
-        'Fixed Fee',
-        help_text='Fixed Fee charged for the money transfer.'
-    )
-
     site = models.ForeignKey(
         Site,
         related_name='pricing',
@@ -133,9 +138,9 @@ class Pricing(models.Model):
         receiving_currency = settings.SITE_RECEIVING_CURRENCY[self.site.id]
         return get_current_exchange_rate().get_exchange_rate(sending_currency, receiving_currency) * (1 - self.markup)
 
-    def calculate_received_amount(self, sent_amount, country):
+    def calculate_received_amount(self, sent_amount, sent_currency, country):
 
-        unrounded_amount = sent_amount * self.exchange_rate
+        unrounded_amount = sent_amount * self.exchange_rate(sent_currency)
 
         # do country-specific rounding
         if country == settings.SIERRA_LEONE:
@@ -198,7 +203,7 @@ class ExchangeRate(models.Model):
         return gbp_to_receiving_currency / gbp_to_sending_currency
 
     def exchange_amount(self, amount, sending_currency, receiving_currency):
-        return amount * self._get_exchange_rate(sending_currency, receiving_currency)
+        return amount * self.get_exchange_rate(sending_currency, receiving_currency)
 
     def exchange_rates(self, site):
         rates = {}

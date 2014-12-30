@@ -627,7 +627,7 @@ class AccountLimits(APIView):
 
         site = get_site_by_request(self.request)
 
-        todays_vol = request.user.profile.todays_transaction_volume(site)
+        todays_vol = request.user.profile.todays_transaction_volumes(site)
 
         limits = get_current_limits(site)
         account_limits = {}

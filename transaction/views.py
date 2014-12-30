@@ -15,7 +15,8 @@ from transaction import serializers
 from transaction.models import Transaction
 from transaction.permissions import IsNoAdmin
 
-from pricing.models import get_current_pricing, get_current_exchange_rate, get_current_limit
+from pricing.models import get_current_pricing, get_current_exchange_rate,\
+    get_current_limit, get_current_fee
 
 from state.models import get_current_state
 
@@ -49,9 +50,12 @@ class CreateTransaction(GenericAPIView):
 
             if serializer.is_valid():
 
+                sent_currency = request.DATA.get('sent_currency')
+
                 # check if Pricing or Exchange Rate has expired
-                if get_current_pricing(site).id != request.DATA.get('pricing_id') or\
-                        get_current_exchange_rate().id != request.DATA.get('exchange_rate_id'):
+                if (get_current_pricing(site).id != request.DATA.get('pricing_id') or
+                        get_current_exchange_rate().id != request.DATA.get('exchange_rate_id') or
+                        get_current_fee(site, sent_currency).id != request.DATA.get('fee_id')):
                     return Response({'detail': constants.PRICING_EXPIRED}, status=status.HTTP_400_BAD_REQUEST)
 
                 # basic profile information incomplete
@@ -60,11 +64,9 @@ class CreateTransaction(GenericAPIView):
 
                 # calculate today's transaction volume for the user
                 todays_vol = request.user.profile.todays_transaction_volume(
-                    site, request.DATA.get('sent_amount'))
+                    site, request.DATA.get('sent_amount'), sent_currency)
 
                 # sender has exceeded basic transaction limit
-                sent_currency = request.DATA.get('sent_currency')
-
                 if todays_vol > get_current_limit(site, sent_currency).user_limit_basic:
 
                     # sender has exceeded maximum daily transaction limit

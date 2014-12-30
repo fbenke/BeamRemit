@@ -6,7 +6,7 @@ from rest_framework import fields
 
 from transaction import models, constants
 
-from pricing.models import get_current_pricing, get_current_exchange_rate
+from pricing.models import get_current_pricing, get_current_exchange_rate, get_current_fee
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -65,12 +65,14 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
         return transaction
 
     def save(self, *args, **kwargs):
+
         with dbtransaction.atomic():
             self.object.pricing = get_current_pricing(self.site)
+            self.object.fee = get_current_fee(self.site, self.object.sent_currency)
             self.object.exchange_rate = get_current_exchange_rate()
             self.object.generate_reference_number()
             self.object.received_amount = self.object.pricing.calculate_received_amount(
-                self.object.sent_amount, self.object.receiving_country)
+                self.object.sent_amount, self.object.sent_currency, self.object.receiving_country)
             self.object.recipient.save()
             self.object.recipient = models.Recipient.objects.get(id=self.object.recipient.id)
             self.object.save()

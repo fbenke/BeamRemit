@@ -23,11 +23,11 @@ class PricingAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'markup', 'fee', 'site')
+            return ('id', 'start', 'end', 'markup', 'site')
         else:
             return ('id', 'start', 'end')
 
-    list_display = ('id', 'start', 'end', 'markup', 'fee', 'site')
+    list_display = ('id', 'start', 'end', 'markup', 'site')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:
@@ -45,11 +45,11 @@ class FeeAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'fee', 'currency', 'site')
+            return ('id', 'start', 'end', 'amount', 'currency', 'site')
         else:
             return ('id', 'start', 'end')
 
-    list_display = ('id', 'end', 'fee', 'currency', 'site')
+    list_display = ('id', 'end', 'amount', 'currency', 'site')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:

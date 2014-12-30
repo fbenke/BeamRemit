@@ -11,7 +11,7 @@ from django_countries.fields import CountryField
 
 from beam.utils import mails
 
-from pricing.models import Pricing, ExchangeRate
+from pricing.models import Pricing, ExchangeRate, Fee
 
 
 class Recipient(models.Model):
@@ -80,6 +80,12 @@ class Transaction(models.Model):
         help_text='Exchange Rates applied to this transaction'
     )
 
+    fee = models.ForeignKey(
+        Fee,
+        related_name='transaction',
+        help_text='Fee apploed to this transaction'
+    )
+
     sent_amount = models.FloatField(
         'Sent remittance amount',
         help_text='Amount sent via Beam (does not include fees)'
@@ -102,7 +108,7 @@ class Transaction(models.Model):
         'Bitcoins paid to Beam',
         null=True,
         blank=True,
-        help_text='BTC to be sent to Beam (before fees), determined by Payment Processor, exclusive BTC transaction fee'
+        help_text='BTC to be sent to Beam (before fees deducted by Payment Processor), exclusive BTC transaction fee'
     )
 
     received_amount = models.FloatField(
@@ -176,10 +182,6 @@ class Transaction(models.Model):
     @property
     def received_currency(self):
         return settings.COUNTRY_CURRENCY[self.receiving_country]
-
-    @property
-    def fee(self):
-        return self.pricing.fee
 
     def __unicode__(self):
         return '{}'.format(self.id)

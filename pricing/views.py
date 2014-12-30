@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from beam.utils.angular_requests import get_site_by_request
+from beam.utils.ip_blocking import get_default_currency
 
 from pricing import serializers
 
@@ -16,32 +17,28 @@ from pricing.models import get_current_pricing, get_current_exchange_rate,\
 
 class PricingCurrent(APIView):
 
-    def _serialize(self):
-
-        response_dict = {}
-
-        response_dict['pricing_id'] = self.pricing.id
-        response_dict['exchange_rate_id'] = self.exchange_rate.id
-        response_dict['rates'] = self.pricing.exchange_rates
-        response_dict['fees'] = {str(f.id): {f.currency: f.fee} for f in self.fees}
-        response_dict['comparison'] = self.comparison.price_comparison
-        response_dict['comparison_retrieved'] = self.comparison.start
-        response_dict['operation_mode'] = self.state
-        return response_dict
-
     def get(self, request, *args, **kwargs):
 
         try:
+
+            response_dict = {}
             site = get_site_by_request(request)
-            self.pricing = get_current_pricing(site)
-            self.fees = get_current_fees(site)
-            self.exchange_rate = get_current_exchange_rate()
-            self.comparison = get_current_comparison()
-            self.state = get_current_state(site).state
+            pricing = get_current_pricing(site)
+            comparison = get_current_comparison()
+            response_dict['pricing_id'] = pricing.id
+            response_dict['exchange_rate_id'] = get_current_exchange_rate().id
+            response_dict['fees'] = {str(f.id): {f.currency: f.amount} for f in get_current_fees(site)}
+            response_dict['rates'] = pricing.exchange_rates
+            response_dict['comparison'] = comparison.price_comparison
+            response_dict['comparison_retrieved'] = comparison.start
+            response_dict['operation_mode'] = get_current_state(site).state
+            response_dict['default_currency'] = get_default_currency(request)
+
         except ObjectDoesNotExist:
+
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response(self._serialize())
+        return Response(response_dict)
 
 
 class LimitCurrent(ListAPIView):

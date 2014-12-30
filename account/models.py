@@ -213,25 +213,49 @@ class BeamProfile(UserenaBaseProfile):
         return (self.user.userena_signup.activation_key == userena_settings.USERENA_ACTIVATED
                 and not self.user.is_active)
 
-    def todays_transaction_volume(self, site, new_amount=0):
+    def _get_todays_transactions(self):
+        now = timezone.now()
+        today = datetime.datetime(now.year, now.month, now.day).replace(tzinfo=utc)
+
+        return Transaction.objects.filter(
+            sender=self.user.id,
+            state__in=(Transaction.PAID, Transaction.PROCESSED),
+            paid_at__gte=today
+        )
+
+    def todays_transaction_volume(self, site, new_amount, currency):
         try:
-            now = timezone.now()
-            today = datetime.datetime(now.year, now.month, now.day).replace(tzinfo=utc)
 
-            transactions = Transaction.objects.filter(
-                sender=self.user.id,
-                state__in=(Transaction.PAID, Transaction.PROCESSED),
-                paid_at__gte=today
-            )
-
+            transactions = self._get_todays_transactions()
             amount = new_amount
 
-            sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
-
             for t in transactions:
-                amount = amount + t.exchange_rate.exchange_amount(t.sent_amount, t.sent_currency, sending_currency)
 
+                amount = amount + t.exchange_rate.exchange_amount(t.sent_amount, t.sent_currency, currency)
+            
             return amount
+
+        except TypeError:
+
+            log_error('ERROR - Adding up transaction amounts for user {}'.format(self.user.id))
+            raise AccountException
+
+    def todays_transaction_volumes(self, site):
+        try:
+
+            transactions = self._get_todays_transactions()
+            volumes = {}
+            print len(transactions)
+            for c in settings.SITE_SENDING_CURRENCY[site.id]:
+
+                amount = 0
+
+                for t in transactions:
+                    amount = amount + t.exchange_rate.exchange_amount(t.sent_amount, t.sent_currency, c)
+                
+                volumes[c] = amount
+
+            return volumes
 
         except TypeError:
 

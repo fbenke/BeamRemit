@@ -19,6 +19,17 @@ def get_client_ip(request):
     return ip
 
 
+def get_default_currency(request):
+
+    ip_address = get_client_ip(request)
+
+    g = GeoIP()
+
+    country = g.country(ip_address)['country_code']
+
+    return country
+
+
 def country_blocked(request, ip_address):
 
     if settings.ENV == settings.ENV_LOCAL:

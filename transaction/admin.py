@@ -59,6 +59,13 @@ class TransactionAdmin(admin.ModelAdmin):
     pricing_url.allow_tags = True
     pricing_url.short_description = 'pricing'
 
+    def fee_url(self, obj):
+        path = settings.API_BASE_URL + '/admin/pricing/fee'
+        return '<a href="{}/{}/">{}</a>'.format(path, obj.fee.id, obj.fee.id)
+
+    fee_url.allow_tags = True
+    fee_url.short_description = 'fee'
+
     def exchange_rate_url(self, obj):
         path = settings.API_BASE_URL + '/admin/pricing/exchangerate'
         return '<a href="{}/{}/">{}</a>'.format(path, obj.exchange_rate.id, obj.exchange_rate.id)
@@ -78,7 +85,7 @@ class TransactionAdmin(admin.ModelAdmin):
     recipient_url.short_description = 'recipient'
 
     def amount_paid_to_beam(self, obj):
-        return obj.sent_amount + obj.pricing.fee
+        return obj.sent_amount + obj.fee.amount
 
     def payment_processor_invoice(self, obj):
         invoice_class = settings.PROCESSOR_INVOICE_CLASS[obj.payment_processor][0]
@@ -91,7 +98,7 @@ class TransactionAdmin(admin.ModelAdmin):
     payment_processor_invoice.short_description = 'invoice'
 
     readonly_fields = (
-        'id', 'recipient_url', 'pricing_url', 'exchange_rate_url', 'sender_url', 'receiving_country',
+        'id', 'recipient_url', 'pricing_url', 'exchange_rate_url', 'fee_url', 'sender_url', 'receiving_country',
         'sent_amount', 'sent_currency', 'received_amount', 'amount_paid_to_beam', 'payment_processor',
         'amount_btc', 'reference_number', 'initialized_at', 'paid_at', 'processed_at',
         'cancelled_at', 'invalidated_at', 'received_currency', 'payment_processor_invoice'
@@ -100,7 +107,7 @@ class TransactionAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'id', 'pricing_url', 'exchange_rate_url',
+                'id', 'pricing_url', 'fee_url', 'exchange_rate_url',
                 ('payment_processor_invoice', 'payment_processor'),
                 'amount_btc', 'reference_number')
         }),

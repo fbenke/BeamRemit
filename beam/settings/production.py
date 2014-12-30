@@ -313,11 +313,11 @@ CEDI = 'GHS'
 
 COUNTRY_CURRENCY = {
     GHANA: CEDI,
-    SIERRA_LEONE: LEONE
+    SIERRA_LEONE: LEONE,
 }
 
 SITE_SENDING_CURRENCY = {
-    0: (GBP, EUR),
+    0: (EUR, GBP),
     1: (USD, )
 }
 
@@ -341,12 +341,16 @@ SENT_CURRENCIES = (
 GOCOIN = 'GOCO'
 BLOCKCHAIN = 'BLOC'
 COINAPULT = 'COAP'
-PAYMENT_PROCESSORS = (GOCOIN, BLOCKCHAIN, COINAPULT)
+DUMMY = 'DUMY'
+PAYMENT_PROCESSORS = (GOCOIN, BLOCKCHAIN, COINAPULT, DUMMY)
+
 CURRENT_PAYMENT_PROCESSOR = os.environ.get('CURRENT_PAYMENT_PROCESSOR')
+
 PROCESSOR_INVOICE_CLASS = {
     GOCOIN: ('GoCoinInvoice', 'gocoin_invoice'),
     BLOCKCHAIN: ('BlockchainInvoice', 'blockchain_invoice'),
-    COINAPULT: ('CoinapultInvoice', 'coinapult_invoice')
+    COINAPULT: ('CoinapultInvoice', 'coinapult_invoice'),
+    DUMMY: ('DummyInvoice', '')
 }
 
 # GoCoin Settings

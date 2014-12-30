@@ -213,8 +213,12 @@ class BlockchainPricing(APIView):
 
     def get(self, request):
 
+        sending_currency = request.QUERY_PARAMS.get('currency')
         site = get_site_by_request(self.request)
-        sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
+
+        if not sending_currency or sending_currency not in settings.SITE_SENDING_CURRENCY[site.id]:
+            return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
+
         btc_currency = blockchain.get_btc_exchange_rate(currency=sending_currency)
         return Response(data={'btc_currency': btc_currency, 'currency': sending_currency})
 
@@ -308,7 +312,11 @@ class CoinapultPricing(APIView):
 
         try:
             site = get_site_by_request(self.request)
-            sending_currency = settings.SITE_SENDING_CURRENCY[site.id]
+            sending_currency = request.QUERY_PARAMS.get('currency')
+
+            if not sending_currency or sending_currency not in settings.SITE_SENDING_CURRENCY[site.id]:
+                return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
+
             market = '{}_BTC'.format(sending_currency)
             client = CoinapultClient()
             response = client.getTicker(filter="small,medium,large", market=market)

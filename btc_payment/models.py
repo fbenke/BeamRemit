@@ -17,6 +17,13 @@ from btc_payment.api_calls.coinapult import CoinapultClient, CoinapultError
 from datetime import timedelta, datetime
 
 
+class DummyInvoice(object):
+
+    @staticmethod
+    def initiate(transaction):
+        return {}
+
+
 class GoCoinInvoice(models.Model):
 
     UNPAID = 'UNPD'
@@ -81,7 +88,7 @@ class GoCoinInvoice(models.Model):
 
     @staticmethod
     def initiate(transaction):
-        message = (str(transaction.id) + str(transaction.sent_amount + transaction.fee) +
+        message = (str(transaction.id) + str(transaction.sent_amount + transaction.fee.amount) +
                    settings.GOCOIN_INVOICE_CALLBACK_URL)
 
         signature = generate_signature(message, settings.GOCOIN_API_KEY)
@@ -89,7 +96,7 @@ class GoCoinInvoice(models.Model):
         redirect_url = settings.GOCOIN_PAYMENT_REDIRECT[transaction.receiving_country].format(transaction.id)
 
         result = gocoin.generate_invoice(
-            price=transaction.sent_amount + transaction.fee,
+            price=transaction.sent_amount + transaction.fee.amount,
             reference_number=transaction.reference_number,
             transaction_id=transaction.id,
             signature=signature,
@@ -200,7 +207,7 @@ class BlockchainInvoice(models.Model):
             invoice_id=invoice_id, transaction_id=transaction.id
         )
 
-        transaction_value = transaction.sent_amount + transaction.fee
+        transaction_value = transaction.sent_amount + transaction.fee.amount
 
         amount_btc, btc_usd, sender_usd = blockchain.convert_to_btc(
             amount=transaction_value,
@@ -386,7 +393,7 @@ class CoinapultInvoice(models.Model):
                 authmethod='cred'
             )
 
-            transaction_value = transaction.sent_amount + transaction.fee
+            transaction_value = transaction.sent_amount + transaction.fee.amount
 
             resp = client.lock(
                 amount=0,
