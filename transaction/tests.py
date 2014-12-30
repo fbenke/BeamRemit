@@ -133,14 +133,16 @@ class CreateTransaction(TransactionTests):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        pricing = self._create_default_pricing_beam()
+        pricing = self._create_pricing(markup=0.03, site_id=0)
+        fee = self._create_fee(amount=0.3, currency='EUR', site_id=0)
         exchange_rate = self._create_default_exchange_rate()
 
         data = {
             'pricing_id': pricing.id,
             'exchange_rate_id': exchange_rate.id,
+            'fee_id': fee.id,
             'sent_amount': 500,
-            'sent_currency': 'EUR',
+            'sent_currency': 'US',
             'receiving_country': 'USA',
             'recipient': {
                 'first_name': 'Nikunj',
@@ -148,22 +150,26 @@ class CreateTransaction(TransactionTests):
                 'phone_number': '0509392087'
             }
         }
+
         response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('Select a valid choice.' in response.data['sent_currency'][0])
         self.assertTrue('Select a valid choice.', response.data['receiving_country'][0])
 
     @patch('transaction.views.CreateTransaction.post_save')
-    def test_site_curency_mismatch(self, mock_transaction):
+    def test_site_currency_mismatch(self, mock_transaction):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        pricing = self._create_default_pricing_beam()
+        pricing = self._create_pricing(markup=0.03, site_id=0)
+        fee = self._create_fee(amount=0.3, currency='EUR', site_id=0)
         exchange_rate = self._create_default_exchange_rate()
 
         data = {
             'pricing_id': pricing.id,
             'exchange_rate_id': exchange_rate.id,
+            'fee_id': fee.id,
             'sent_amount': 500,
             'sent_currency': 'USD',
             'receiving_country': 'SLL',
@@ -183,14 +189,17 @@ class CreateTransaction(TransactionTests):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        self._create_default_pricing_beam()
-        pricing = self._create_default_pricing_beam()
+        self._create_pricing(markup=0.03, site_id=0)
+        pricing = self._create_pricing(markup=0.03, site_id=0)
+        fee_gbp = self._create_fee(amount=0.3, currency='GBP', site_id=0)
+
         self._create_default_exchange_rate()
         exchange_rate = self._create_default_exchange_rate()
 
         data = {
             'pricing_id': pricing.id - 1,
             'exchange_rate_id': exchange_rate.id,
+            'fee_id': fee_gbp.id,
             'sent_amount': 500,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -210,17 +219,26 @@ class CreateTransaction(TransactionTests):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], constants.PRICING_EXPIRED)
 
+        fee_eur = self._create_fee(amount=0.3, currency='EUR', site_id=0)
+        data['exchange_rate_id'] = exchange_rate.id
+        data['fee_id'] = fee_eur.id
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], constants.PRICING_EXPIRED)
+
     @patch('transaction.views.CreateTransaction.post_save')
     def test_profile_incomplete(self, mock_transaction):
         user = self._create_activated_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        pricing = self._create_default_pricing_beam()
+        pricing = self._create_pricing(markup=0.03, site_id=0)
         exchange_rate = self._create_default_exchange_rate()
+        fee_gbp = self._create_fee(amount=0.3, currency='GBP', site_id=0)
 
         data = {
             'pricing_id': pricing.id,
             'exchange_rate_id': exchange_rate.id,
+            'fee_id': fee_gbp.id,
             'sent_amount': 500,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -239,15 +257,24 @@ class CreateTransaction(TransactionTests):
         user = self._create_user_with_profile()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        self._create_default_limit_beam()
-        pricing = self._create_default_pricing_beam()
+        self._create_limit(
+            transaction_min=2,
+            transaction_max=1000,
+            user_limit_basic=40,
+            user_limit_complete=500,
+            site_id=0,
+            sending_currency='GBP'
+        )
+        pricing = self._create_pricing(markup=0.03, site_id=0)
         exchange_rate = self._create_default_exchange_rate()
+        fee_gbp = self._create_fee(amount=0.3, currency='GBP', site_id=0)
 
         self._create_transaction(
             sender=user,
             pricing=pricing,
+            fee=fee_gbp,
             exchange_rate=exchange_rate,
-            sent_amount=40,
+            sent_amount=41,
             sent_currency='GBP',
             received_amount=265,
             receiving_country='GH'
@@ -256,6 +283,7 @@ class CreateTransaction(TransactionTests):
         data = {
             'pricing_id': pricing.id,
             'exchange_rate_id': exchange_rate.id,
+            'fee_id': fee_gbp.id,
             'sent_amount': 10,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -275,14 +303,23 @@ class CreateTransaction(TransactionTests):
         user = self._create_user_with_uploaded_documents()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        self._create_default_limit_beam()
-        pricing = self._create_default_pricing_beam()
+        self._create_limit(
+            transaction_min=2,
+            transaction_max=1000,
+            user_limit_basic=40,
+            user_limit_complete=500,
+            site_id=0,
+            sending_currency='GBP'
+        )
+        pricing = self._create_pricing(markup=0.03, site_id=0)
         exchange_rate = self._create_default_exchange_rate()
+        fee_gbp = self._create_fee(amount=0.3, currency='GBP', site_id=0)
 
         self._create_transaction(
             sender=user,
             pricing=pricing,
             exchange_rate=exchange_rate,
+            fee=fee_gbp,
             sent_amount=40,
             sent_currency='GBP',
             received_amount=265,
@@ -292,6 +329,7 @@ class CreateTransaction(TransactionTests):
         data = {
             'pricing_id': pricing.id,
             'exchange_rate_id': exchange_rate.id,
+            'fee_id': fee_gbp.id,
             'sent_amount': 10,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -311,13 +349,22 @@ class CreateTransaction(TransactionTests):
         user = self._create_fully_verified_user()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        self._create_default_limit_beam()
-        pricing = self._create_default_pricing_beam()
+        self._create_limit(
+            transaction_min=2,
+            transaction_max=1000,
+            user_limit_basic=40,
+            user_limit_complete=500,
+            site_id=0,
+            sending_currency='GBP'
+        )
+        pricing = self._create_pricing(markup=0.03, site_id=0)
         exchange_rate = self._create_default_exchange_rate()
+        fee_gbp = self._create_fee(amount=0.3, currency='GBP', site_id=0)
 
         self._create_transaction(
             sender=user,
             pricing=pricing,
+            fee=fee_gbp,
             exchange_rate=exchange_rate,
             sent_amount=1000,
             sent_currency='GBP',
@@ -328,6 +375,7 @@ class CreateTransaction(TransactionTests):
         data = {
             'pricing_id': pricing.id,
             'exchange_rate_id': exchange_rate.id,
+            'fee_id': fee_gbp.id,
             'sent_amount': 10,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -343,21 +391,32 @@ class CreateTransaction(TransactionTests):
         self.assertEqual(response.data['detail'], constants.TRANSACTION_LIMIT_EXCEEDED)
 
     @patch('transaction.views.payment_class.initiate')
-    def test_transaction_create_success(self, mock_payment_initiation):
+    def test_transaction_create_success_beam_gbp_gocoin(self, mock_payment_initiation):
         user = self._create_user_with_profile()
         token = self._create_token(user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-        self._create_default_limit_beam()
+
         self._create_state(site_id=0)
-        self._create_state(site_id=1)
-        pricing_beam = self._create_default_pricing_beam()
-        pricing_bae = self._create_default_pricing_bae()
+
+        self._create_limit(
+            transaction_min=2,
+            transaction_max=1000,
+            user_limit_basic=40,
+            user_limit_complete=500,
+            site_id=0,
+            sending_currency='GBP'
+        )
+
+        pricing_beam = self._create_pricing(markup=0.03, site_id=0)
         exchange_rate = self._create_default_exchange_rate()
+        fee_gbp = self._create_fee(amount=0.3, currency='GBP', site_id=0)
+
         mock_payment_initiation.return_value = {'invoice_id': '12345'}
 
         data = {
             'pricing_id': pricing_beam.id,
             'exchange_rate_id': exchange_rate.id,
+            'fee_id': fee_gbp.id,
             'sent_amount': 10,
             'sent_currency': 'GBP',
             'receiving_country': 'GH',
@@ -375,11 +434,80 @@ class CreateTransaction(TransactionTests):
         self.assertEqual(response.data['received_currency'], 'GHS')
         self.assertEqual(response.data['operation_mode'], 'UP')
 
+    @patch('transaction.views.payment_class.initiate')
+    def test_transaction_create_success_beam_eur_gocoin(self, mock_payment_initiation):
+
+        user = self._create_user_with_profile()
+        token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
+        self._create_state(site_id=0)
+
+        self._create_limit(
+            transaction_min=2,
+            transaction_max=1000,
+            user_limit_basic=40,
+            user_limit_complete=500,
+            site_id=0,
+            sending_currency='EUR'
+        )
+
+        pricing_beam = self._create_pricing(markup=0.03, site_id=0)
+        exchange_rate = self._create_default_exchange_rate()
+        fee_eur = self._create_fee(amount=0.2, currency='EUR', site_id=0)
+
+        mock_payment_initiation.return_value = {'invoice_id': '14365'}
+
+        data = {
+            'pricing_id': pricing_beam.id,
+            'exchange_rate_id': exchange_rate.id,
+            'fee_id': fee_eur.id,
+            'sent_amount': 10,
+            'sent_currency': 'EUR',
+            'receiving_country': 'GH',
+            'recipient': {
+                'first_name': 'Nikunj',
+                'last_name': 'Handa',
+                'phone_number': '0509392087'
+            }
+        }
+
+        response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.beamremit.com/')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['invoice_id'], '14365')
+        self.assertEqual(response.data['received_amount'], 41.2)
+        self.assertEqual(response.data['received_currency'], 'GHS')
+        self.assertEqual(response.data['operation_mode'], 'UP')
+
+    @patch('transaction.views.payment_class.initiate')
+    def test_transaction_create_success_bae_usd_gocoin(self, mock_payment_initiation):
+
+        user = self._create_user_with_profile()
+        token = self._create_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
+        self._create_state(site_id=1)
+
+        fee_usd = self._create_fee(amount=0.1, currency='USD', site_id=1)
+        pricing_bae = self._create_pricing(markup=0.02, site_id=1)
+        exchange_rate = self._create_default_exchange_rate()
+
+        self._create_limit(
+            transaction_min=2,
+            transaction_max=1000,
+            user_limit_basic=40,
+            user_limit_complete=500,
+            site_id=1,
+            sending_currency='USD'
+        )
+
         mock_payment_initiation.return_value = {'invoice_id': '67890'}
 
         data = {
             'pricing_id': pricing_bae.id,
             'exchange_rate_id': exchange_rate.id,
+            'fee_id': fee_usd.id,
             'sent_amount': 17,
             'sent_currency': 'USD',
             'receiving_country': 'SL',
@@ -393,7 +521,7 @@ class CreateTransaction(TransactionTests):
         response = self.client.post(self.url_create_transaction, data, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['invoice_id'], '67890')
-        self.assertEqual(response.data['received_amount'], 74060)
+        self.assertEqual(response.data['received_amount'], 73310)
         self.assertEqual(response.data['received_currency'], 'SLL')
         self.assertEqual(response.data['operation_mode'], 'UP')
 
@@ -469,7 +597,7 @@ class AdminTests(TestCase, TestUtils):
     def test_process_transaction_bae(self):
         no_emails = len(mailbox.outbox)
         user = self._create_user_with_profile()
-        pricing = self._create_default_pricing_beam()
+        pricing = self._create_pricing(markup=0.02, site_id=1)
         exchange_rate = self._create_default_exchange_rate()
 
         transaction = self._create_transaction(
@@ -477,6 +605,7 @@ class AdminTests(TestCase, TestUtils):
             pricing=pricing,
             exchange_rate=exchange_rate,
             sent_amount=10,
+            fee=self._create_fee(amount=0, currency='USD', site_id=1),
             sent_currency='USD',
             received_amount=29880,
             receiving_country='SL'

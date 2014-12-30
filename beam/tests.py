@@ -245,7 +245,8 @@ class TestUtils(object):
 
         return self._create_transaction(
             sender=sender,
-            pricing=self._create_default_pricing_beam(),
+            pricing=self._create_pricing(markup=0.03, site_id=0),
+            fee=self._create_fee(amount=0.2, currency='GBP', site_id=0),
             exchange_rate=self._create_default_exchange_rate(),
             sent_amount=10,
             sent_currency='GBP',
