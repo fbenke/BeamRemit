@@ -58,22 +58,6 @@ class TestUtils(object):
         'gbp_eur': 1.25
     }
 
-    default_beam_limit = {
-        'transaction_min': 2,
-        'transaction_max': 1000,
-        'user_limit_basic': 40,
-        'user_limit_complete': 500,
-        'site': 0
-    }
-
-    default_bae_limit = {
-        'transaction_min': 1,
-        'transaction_max': 100,
-        'user_limit_basic': 37,
-        'user_limit_complete': 324,
-        'site': 1
-    }
-
     default_comparison = '{"gbpGhs": {"wu": 5.0932009, "mg": 5.158165}}'
 
     default_id_document = {

@@ -36,7 +36,6 @@ class LimitForm(forms.ModelForm):
 
 
 class FeeForm(forms.ModelForm):
-
     def clean(self):
         if self.cleaned_data['currency'] not in settings.SITE_SENDING_CURRENCY[self.cleaned_data['site'].id]:
             raise forms.ValidationError('Sending currency not supported for that Site.')
