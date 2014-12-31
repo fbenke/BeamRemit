@@ -198,9 +198,13 @@ class ExchangeRate(models.Model):
         return getattr(self, self.CURRENCY_FXR[currency])
 
     def get_exchange_rate(self, sending_currency, receiving_currency):
-        gbp_to_sending_currency = self._get_gbp_to_currency(sending_currency)
-        gbp_to_receiving_currency = self._get_gbp_to_currency(receiving_currency)
-        return gbp_to_receiving_currency / gbp_to_sending_currency
+        try:
+            gbp_to_sending_currency = self._get_gbp_to_currency(sending_currency)
+            gbp_to_receiving_currency = self._get_gbp_to_currency(receiving_currency)
+            return gbp_to_receiving_currency / gbp_to_sending_currency
+        except ZeroDivisionError:
+            log_error('ERROR Exchang Rate - Division By Zero.')
+            return 0
 
     def exchange_amount(self, amount, sending_currency, receiving_currency):
         return amount * self.get_exchange_rate(sending_currency, receiving_currency)
