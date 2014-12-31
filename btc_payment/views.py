@@ -11,7 +11,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from beam.utils.angular_requests import get_site_by_request
 from beam.utils.exceptions import APIException
 from beam.utils.log import log_error
 from beam.utils.security import generate_signature
@@ -214,9 +213,8 @@ class BlockchainPricing(APIView):
     def get(self, request):
 
         sending_currency = request.QUERY_PARAMS.get('currency')
-        site = get_site_by_request(self.request)
 
-        if not sending_currency or sending_currency not in settings.SITE_SENDING_CURRENCY[site.id]:
+        if not sending_currency:
             return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
 
         btc_currency = blockchain.get_btc_exchange_rate(currency=sending_currency)
@@ -311,10 +309,10 @@ class CoinapultPricing(APIView):
     def get(self, request):
 
         try:
-            site = get_site_by_request(self.request)
+
             sending_currency = request.QUERY_PARAMS.get('currency')
 
-            if not sending_currency or sending_currency not in settings.SITE_SENDING_CURRENCY[site.id]:
+            if not sending_currency:
                 return Response({'detail': '0'}, status=status.HTTP_400_BAD_REQUEST)
 
             market = '{}_BTC'.format(sending_currency)
