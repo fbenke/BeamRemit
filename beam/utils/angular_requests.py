@@ -27,11 +27,13 @@ def get_site_by_request(request):
 
 def get_country_blacklist_by_request(request):
 
-    bae_project_site = settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_USER_SL]
+    try:
+        bae_project_site = settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_USER_SL]
 
-    if get_frontend_domain(request) == bae_project_site:
+        if get_frontend_domain(request) == bae_project_site:
+            return list(set(settings.COUNTRY_BLACKLIST) - set(('US',)))
 
-        return list(set(settings.COUNTRY_BLACKLIST) - set(('US',)))
+    except KeyError:
+        pass
 
-    else:
-        return settings.COUNTRY_BLACKLIST
+    return settings.COUNTRY_BLACKLIST
