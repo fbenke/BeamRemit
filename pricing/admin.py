@@ -67,11 +67,11 @@ class ExchangeRateAdmin(DoNotDeleteModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll', 'gbp_eur')
+            return ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll', 'gbp_eur', 'gbp_ngn')
         else:
             return ('id', 'start', 'end')
 
-    list_display = ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll', 'gbp_eur')
+    list_display = ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll', 'gbp_eur', 'gbp_ngn')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:

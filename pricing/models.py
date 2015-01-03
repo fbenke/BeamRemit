@@ -156,6 +156,7 @@ class ExchangeRate(models.Model):
         settings.EUR: 'gbp_eur',
         settings.CEDI: 'gbp_ghs',
         settings.LEONE: 'gbp_sll',
+        settings.NAIRA: 'gbp_ngn'
     }
 
     start = models.DateTimeField(
@@ -190,6 +191,11 @@ class ExchangeRate(models.Model):
     gbp_eur = models.FloatField(
         'GBP to EUR Exchange Rate',
         help_text='Exchange Rate from GBP to EUR without markup'
+    )
+
+    gbp_ngn = models.FloatField(
+        'GBP to NGN Exchange Rate',
+        help_text='Exchange Rate from GBP to NGN without markup'
     )
 
     def _get_gbp_to_currency(self, currency):
