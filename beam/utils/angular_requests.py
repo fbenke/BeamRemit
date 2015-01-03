@@ -12,6 +12,10 @@ def get_frontend_domain(request):
 
 
 def get_site_by_request(request):
+
+    if not settings.MULTIPLE_SITE_SUPPORT:
+        return Site.objects.get_current()
+
     try:
         frontend_domain = get_frontend_domain(request)
         return Site.objects.get(domain__iexact=frontend_domain)
