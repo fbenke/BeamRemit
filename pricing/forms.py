@@ -22,6 +22,7 @@ class ExchangeRateForm(forms.ModelForm):
             self.fields['gbp_ghs'].initial = exchange_rate.gbp_ghs
             self.fields['gbp_usd'].initial = exchange_rate.gbp_usd
             self.fields['gbp_sll'].initial = exchange_rate.gbp_sll
+            self.fields['gbp_ngn'].initial = exchange_rate.gbp_ngn
         except (KeyError, ObjectDoesNotExist):
             pass
 

@@ -55,7 +55,8 @@ class TestUtils(object):
         'gbp_ghs': 5.3,
         'gbp_usd': 1.6,
         'gbp_sll': 7040,
-        'gbp_eur': 1.25
+        'gbp_eur': 1.25,
+        'gbp_ngn': 281.18
     }
 
     default_comparison = '{"gbpGhs": {"wu": 5.0932009, "mg": 5.158165}}'

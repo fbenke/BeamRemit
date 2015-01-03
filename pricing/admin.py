@@ -71,7 +71,7 @@ class ExchangeRateAdmin(DoNotDeleteModelAdmin):
         else:
             return ('id', 'start', 'end')
 
-    list_display = ('id', 'start', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll', 'gbp_eur', 'gbp_ngn')
+    list_display = ('id', 'end', 'gbp_ghs', 'gbp_usd', 'gbp_sll', 'gbp_eur', 'gbp_ngn')
 
     def save_model(self, request, obj, form, change):
         if not obj.id:

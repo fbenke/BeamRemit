@@ -175,26 +175,31 @@ class ExchangeRate(models.Model):
 
     gbp_ghs = models.FloatField(
         'GBP to GHS Exchange Rate',
+        default=0,
         help_text='Exchange Rate from GBP to GHS without markup'
     )
 
     gbp_usd = models.FloatField(
         'GBP to USD Exchange Rate',
+        default=0,
         help_text='Exchange Rate from GBP to USD without markup'
     )
 
     gbp_sll = models.FloatField(
         'GBP to SSL Exchange Rate',
+        default=0,
         help_text='Exchange Rate from GBP to SSL without markup'
     )
 
     gbp_eur = models.FloatField(
         'GBP to EUR Exchange Rate',
+        default=0,
         help_text='Exchange Rate from GBP to EUR without markup'
     )
 
     gbp_ngn = models.FloatField(
         'GBP to NGN Exchange Rate',
+        default=0,
         help_text='Exchange Rate from GBP to NGN without markup'
     )
 
