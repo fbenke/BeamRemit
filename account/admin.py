@@ -104,7 +104,6 @@ class BeamProfileAdmin(admin.ModelAdmin):
                         email_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_TEXT,
                         html_email_template_name=settings.MAIL_VERIFICATION_SUCCESSFUL_HTML,
                         context={
-                            'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                             'protocol': settings.PROTOCOL,
                             'document': Profile.DOCUMENT_VERBAL[Profile.FIELD_DOCUMENT_MAPPING[field]],
                             'site': Site.objects.get_current(),
@@ -125,7 +124,6 @@ class BeamProfileAdmin(admin.ModelAdmin):
                         email_template_name=settings.MAIL_VERIFICATION_FAILED_TEXT,
                         html_email_template_name=settings.MAIL_VERIFICATION_FAILED_HTML,
                         context={
-                            'domain': settings.ENV_SITE_MAPPING[settings.ENV][settings.SITE_API],
                             'protocol': settings.PROTOCOL,
                             'document': Profile.DOCUMENT_VERBAL[Profile.FIELD_DOCUMENT_MAPPING[field]],
                             'site': Site.objects.get_current(),
