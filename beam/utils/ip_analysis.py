@@ -53,7 +53,7 @@ def country_blocked(request):
 
 def is_tor_node(request):
 
-    if settings.ENV == settings.ENV_LOCAL:
+    if settings.ENV == settings.ENV_LOCAL or not settings.TOR_BLOCKING:
         return False
 
     ip_address = get_client_ip(request)

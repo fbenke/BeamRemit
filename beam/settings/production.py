@@ -412,6 +412,7 @@ COUNTRY_BLACKLIST = (
     'MM'  # Myanmar
 )
 
+TOR_BLOCKING = True
 TOR_TIMEOUT = 5
 
 GEOIP_PATH = BASE_DIR('static', 'geo_data', 'GeoIP.dat')
