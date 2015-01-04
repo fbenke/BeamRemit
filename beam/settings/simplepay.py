@@ -27,8 +27,8 @@ MULTIPLE_SITE_SUPPORT = False
 
 TIME_ZONE = 'Africa/Lagos'
 
-AWS_BUCKET_DEV = 'simplepay-dev'
-AWS_BUCKET_PROD = 'simplepay`'
+AWS_BUCKET_DEV = 'simplepayverification-dev'
+AWS_BUCKET_PROD = 'simplepayverification'
 
 CORS_ORIGIN_ALLOW_ALL = True
 
