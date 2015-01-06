@@ -33,6 +33,7 @@ TIME_ZONE = 'Africa/Lagos'
 
 AWS_BUCKET_DEV = 'simplepayverification-dev'
 AWS_BUCKET_PROD = 'simplepayverification'
+AWS_BUCKET = ENV_BUCKET_MAPPING[ENV]
 
 # TODO: create whitelist
 CORS_ORIGIN_ALLOW_ALL = True
