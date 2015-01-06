@@ -4,11 +4,11 @@ from beam.settings.production import *
 ENV_SITE_MAPPING = {
     ENV_DEV: {
         SITE_API: 'simplepay-dev.herokuapp.com',
-        SITE_USER: 'dev.simplepay.com',
+        SITE_USER: 'dev.simplepay4u.com',
     },
     ENV_PROD: {
         SITE_API: 'simplepay-prod.herokuapp.com',
-        SITE_USER: 'simplepay.com',
+        SITE_USER: 'simplepay4u.com',
     }
 }
 
@@ -51,9 +51,9 @@ COUNTRY_BLACKLIST = (
 )
 
 # TODO: replace with information provided by SP
-BEAM_MAIL_ADDRESS = 'Simple Pay <hello@simplepay.com>'
+BEAM_MAIL_ADDRESS = 'Simple Pay <hello@simplepay4u.com>'
 DEFAULT_FROM_EMAIL = BEAM_MAIL_ADDRESS
-BEAM_SUPPORT = 'hello@simplepay.com'
+BEAM_SUPPORT = 'hello@simplepay4u.com'
 
 # TODO: replace with information provided by SP
 MAIL_ACTIVATION_URL = '#!/auth/activate/{}/'
