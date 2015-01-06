@@ -33,6 +33,11 @@ TIME_ZONE = 'Africa/Lagos'
 
 AWS_BUCKET_DEV = 'simplepayverification-dev'
 AWS_BUCKET_PROD = 'simplepayverification'
+ENV_BUCKET_MAPPING = {
+    ENV_DEV: AWS_BUCKET_DEV,
+    ENV_PROD: AWS_BUCKET_PROD,
+}
+
 AWS_BUCKET = ENV_BUCKET_MAPPING[ENV]
 
 # TODO: create whitelist
