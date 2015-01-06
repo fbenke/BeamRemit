@@ -310,7 +310,7 @@ class EmailConfirm(APIView):
 
         user = UserenaSignup.objects.confirm_email(confirmation_key)
         if user:
-            return Response(status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
 
         return Response({'detail': constants.INVALID_PARAMETERS}, status.HTTP_400_BAD_REQUEST)
 
