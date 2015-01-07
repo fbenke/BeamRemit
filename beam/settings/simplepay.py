@@ -68,6 +68,7 @@ MAIL_PASSWORD_RESET_URL = '#!/auth/forgot/{}-{}/'
 MAIL_VERIFICATION_SITE = '#!/verify'
 MAIL_TRANSACTION_HISTORY_SITE = '#!/history'
 
+GOCOIN_INVOICE_CALLBACK_URL = API_BASE_URL + '/api/v1/btc_payment/gocoin/'
 # TODO: replace with information provided by SP
 GOCOIN_INVOICE_REDIRECT_SUFFIX = '/#!/send/complete/{}'
 GOCOIN_PAYMENT_REDIRECT = {
