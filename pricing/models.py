@@ -34,7 +34,10 @@ def get_current_exchange_rate():
 
 
 def get_current_comparison():
-    return get_current_object(Comparison)
+    try:
+        return Comparison.objects.get(end__isnull=True)
+    except ObjectDoesNotExist:
+        return None
 
 
 def get_current_pricing(site):

@@ -33,11 +33,13 @@ class PricingCurrent(APIView):
             response_dict['exchange_rate_id'] = get_current_exchange_rate().id
             response_dict['fees'] = {str(f.id): {f.currency: f.amount} for f in get_current_fees(site)}
             response_dict['rates'] = pricing.exchange_rates
-            response_dict['comparison'] = comparison.price_comparison
-            response_dict['comparison_retrieved'] = comparison.start
             response_dict['operation_mode'] = get_current_state(site).state
             response_dict['default_currency'] = default_currency if default_currency in currencies else currencies[0]
-
+            
+            if comparison:
+                response_dict['comparison'] = comparison.price_comparison
+                response_dict['comparison_retrieved'] = comparison.start
+        
         except ObjectDoesNotExist:
 
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
