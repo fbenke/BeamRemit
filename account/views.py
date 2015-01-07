@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
+from django.core.exceptions import ValidationError
 from django.db import transaction as dbtransaction
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_bytes
@@ -598,7 +599,7 @@ class UploadComplete(APIView):
 
             return Response()
 
-        except (AccountException, AttributeError, KeyError):
+        except (AccountException, ValidationError, AttributeError, KeyError):
             return Response(
                 {'detail': constants.INVALID_PARAMETERS},
                 status=status.HTTP_400_BAD_REQUEST
