@@ -309,31 +309,21 @@ class LimitAPITests(APITestCase, TestUtils):
 
         response = self.client.get(self.url_get_current, {}, HTTP_REFERER='http://dev.beamremit.com/')
 
-        i = 0
+        self.assertEqual(response.data['GBPGHS']['user_limit_basic'], 40)
+        self.assertEqual(response.data['GBPGHS']['user_limit_complete'], 500)
+        self.assertEqual(response.data['GBPGHS']['transaction_min'], 2)
+        self.assertEqual(response.data['GBPGHS']['transaction_max'], 1000)
+        self.assertEqual(response.data['GBPGHS']['receiving_currency'], 'GHS')
+        self.assertEqual(response.data['GBPGHS']['transaction_min_receiving'], 10.282)
+        self.assertEqual(response.data['GBPGHS']['transaction_max_receiving'], 5141)
 
-        for limit in response.data:
-
-            if limit['sendingCurrency'] == 'GBP':
-                i = i + 1
-                self.assertEqual(limit['userLimitBasic'], 40)
-                self.assertEqual(limit['userLimitComplete'], 500)
-                self.assertEqual(limit['transactionMin'], 2)
-                self.assertEqual(limit['transactionMax'], 1000)
-                self.assertEqual(limit['receivingCurrency'], 'GHS')
-                self.assertEqual(limit['transactionMinReceiving'], 10.282)
-                self.assertEqual(limit['transactionMaxReceiving'], 5141)
-
-            elif limit['sendingCurrency'] == 'EUR':
-                i = i + 1
-                self.assertEqual(limit['userLimitBasic'], 50)
-                self.assertEqual(limit['userLimitComplete'], 600)
-                self.assertEqual(limit['transactionMin'], 1)
-                self.assertEqual(limit['transactionMax'], 1200)
-                self.assertEqual(limit['receivingCurrency'], 'GHS')
-                self.assertEqual(limit['transactionMinReceiving'], 4.1128)
-                self.assertEqual(limit['transactionMaxReceiving'], 4935.36)
-
-        self.assertEqual(i, 2)
+        self.assertEqual(response.data['EURGHS']['user_limit_basic'], 50)
+        self.assertEqual(response.data['EURGHS']['user_limit_complete'], 600)
+        self.assertEqual(response.data['EURGHS']['transaction_min'], 1)
+        self.assertEqual(response.data['EURGHS']['transaction_max'], 1200)
+        self.assertEqual(response.data['EURGHS']['receiving_currency'], 'GHS')
+        self.assertEqual(response.data['EURGHS']['transaction_min_receiving'], 4.1128)
+        self.assertEqual(response.data['EURGHS']['transaction_max_receiving'], 4935.36)
 
     def test_get_limit_bae(self):
 
@@ -349,14 +339,14 @@ class LimitAPITests(APITestCase, TestUtils):
         )
         
         response = self.client.get(self.url_get_current, {}, HTTP_REFERER='http://dev.bitcoinagainstebola.org/')
-        self.assertEqual(response.data[0]['userLimitBasic'], 50)
-        self.assertEqual(response.data[0]['userLimitComplete'], 700)
-        self.assertEqual(response.data[0]['transactionMin'], 3)
-        self.assertEqual(response.data[0]['transactionMax'], 600)
-        self.assertEqual(response.data[0]['sendingCurrency'], 'USD')
-        self.assertEqual(response.data[0]['receivingCurrency'], 'SLL')
-        self.assertEqual(response.data[0]['transactionMinReceiving'], 12936)
-        self.assertEqual(response.data[0]['transactionMaxReceiving'], 2587200)
+        self.assertEqual(response.data['USDSLL']['user_limit_basic'], 50)
+        self.assertEqual(response.data['USDSLL']['user_limit_complete'], 700)
+        self.assertEqual(response.data['USDSLL']['transaction_min'], 3)
+        self.assertEqual(response.data['USDSLL']['transaction_max'], 600)
+        self.assertEqual(response.data['USDSLL']['sending_currency'], 'USD')
+        self.assertEqual(response.data['USDSLL']['receiving_currency'], 'SLL')
+        self.assertEqual(response.data['USDSLL']['transaction_min_receiving'], 12936)
+        self.assertEqual(response.data['USDSLL']['transaction_max_receiving'], 2587200)
 
 
 class PricingConversionTests(TestCase, TestUtils):

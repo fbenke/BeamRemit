@@ -35,11 +35,11 @@ class PricingCurrent(APIView):
             response_dict['rates'] = pricing.exchange_rates
             response_dict['operation_mode'] = get_current_state(site).state
             response_dict['default_currency'] = default_currency if default_currency in currencies else currencies[0]
-            
+
             if comparison:
                 response_dict['comparison'] = comparison.price_comparison
                 response_dict['comparison_retrieved'] = comparison.start
-        
+
         except ObjectDoesNotExist:
 
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -54,3 +54,16 @@ class LimitCurrent(ListAPIView):
     def get_queryset(self, queryset=None):
         site = get_site_by_request(self.request)
         return get_current_limits(site)
+
+    def get(self, request, *args, **kwargs):
+        response = super(LimitCurrent, self).get(request, *args, **kwargs)
+        new_response = {}
+        for i in range(len(response.data)):
+            new_response['{}{}'.format(
+                response.data[i]['sending_currency'],
+                response.data[i]['receiving_currency'])
+            ] = response.data[i]
+
+        response.data= new_response
+
+        return response
